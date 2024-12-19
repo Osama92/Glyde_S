@@ -34,7 +34,7 @@ export default function O_screen3() {
         <View style={styles.pagination3}></View>
        </View>
 
-       <TouchableOpacity style={styles.button} onPress={() => router.push('/getStarted')}>
+       <TouchableOpacity style={styles.button} onPress={() => router.push('/onboarding/getStarted')}>
         <Text style={styles.customFont3}>Get Started</Text>
        </TouchableOpacity>
 
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   pagination2: {
     width: 8,
-    height: 15,
+    height: 20,
     backgroundColor:'lightgrey',
     margin:8,
     borderRadius: 20

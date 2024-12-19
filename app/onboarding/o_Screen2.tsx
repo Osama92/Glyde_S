@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   pagination2: {
     width: 8,
-    height: 15,
+    height: 20,
     backgroundColor:'#263238',
     margin:8,
     borderRadius: 20

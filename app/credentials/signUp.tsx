@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
-import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential, ConfirmationResult } from 'firebase/auth';
+import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential} from 'firebase/auth';
 import { app } from '../firebase';
 
 type SignUpProps = {};
@@ -52,6 +52,7 @@ export default function SignUp({}: SignUpProps) {
   };
 
   const auth = getAuth(app);
+  
 
   const sendOtp = async () => {
     if (phoneNumber.length < 10) {
@@ -60,8 +61,8 @@ export default function SignUp({}: SignUpProps) {
     }
 
     try {
-    //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
-      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
+      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+    //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
       setVerificationId(confirmationResult.verificationId);
       setIsOtpStep(true);
       Alert.alert('OTP Sent', 'Please check your phone for the OTP.');
@@ -82,6 +83,7 @@ export default function SignUp({}: SignUpProps) {
       await signInWithCredential(auth, credential);
       Alert.alert('Success', 'OTP verified successfully!');
       // Navigate to the next screen or perform the desired action
+      router.push('/credentials/whoami');
     } catch (error) {
       console.error('Error verifying OTP:', error);
       Alert.alert('Error', 'Failed to verify OTP. Please try again.');
@@ -101,7 +103,7 @@ export default function SignUp({}: SignUpProps) {
         firebaseConfig={app.options}
         attemptInvisibleVerification={true}
       />
-          <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
+          <TouchableOpacity onPress={() => router.push('/credentials/whoami')}>
             <Text style={styles.customFont2}>Go to sign in</Text>
           </TouchableOpacity>
           <Image

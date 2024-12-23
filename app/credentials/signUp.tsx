@@ -60,7 +60,8 @@ export default function SignUp({}: SignUpProps) {
     }
 
     try {
-      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+    //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
       setVerificationId(confirmationResult.verificationId);
       setIsOtpStep(true);
       Alert.alert('OTP Sent', 'Please check your phone for the OTP.');
@@ -236,7 +237,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 10,
     paddingVertical: 15,
-    //paddingHorizontal: 30,
     marginTop: 20,
     width: '50%'
   },

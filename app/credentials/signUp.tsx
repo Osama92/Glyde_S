@@ -1,276 +1,4 @@
-// import React, { useEffect } from 'react';
-// import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, TextInput } from 'react-native';
-// import { useRouter } from 'expo-router';
-// import { useFonts } from 'expo-font';
-// import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-
-// export default function SignUp() {
-//   const router = useRouter();
-
-//   const [fontsLoaded] = useFonts({
-//     Poppins: require('../../assets/fonts/Poppins-Bold.ttf'),
-//     Nunito: require('../../assets/fonts/Nunito-Regular.ttf'),
-//   });
-
-  
-
-//   return (
-    
-//       <View style={styles.container}>
-//         <View style={styles.topSection}>
-//             <TouchableOpacity>
-//             <Text style={styles.customFont2}>Go to sign in</Text>
-//             </TouchableOpacity>
-//             <Image source={require('../../assets/images/Arrow.png')} style={{width: 30, resizeMode:'contain'}}/>
-//         </View>
-
-//         <View style={styles.heroSection}>
-//             <Text style={styles.customFont1}>Sign Up</Text>
-//             <Text style={styles.customFont3}>Let’s get you on board!</Text>
-//             <View style={styles.phoneEntry}>
-//                 <Text style={{paddingBottom:30}}>Enter Mobile Number</Text>
-//                 <TextInput style={styles.phoneInput} keyboardType='numeric' maxLength={11} textAlign='center' returnKeyType='done'/>
-//             </View>
-
-//         </View>
-        
-//       </View>
-
-   
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     flexDirection:'column'
-//   },
-//   customFont1: {
-//     fontFamily: 'Poppins',
-//     fontSize: 54,
-//     color: 'black',
-//     marginBottom: 10,
-//     paddingLeft: 30
-//   },
-//   customFont2: {
-//     fontFamily: 'Nunito',
-//     fontSize: 16,
-//     color: 'black',
-//     textAlign: 'center',
-//     paddingRight:10
-//   },
-//   customFont3: {
-//     fontFamily: 'Nunito',
-//     fontSize: 20,
-//     color: 'black',
-//     paddingLeft:30
-//   },
-//   topSection: {
-//     width: '100%',
-//     height: '20%',
-//     // position: 'absolute',
-//     // top: 50,
-//     flexDirection:'row',
-//     alignItems:'center',
-//     justifyContent:'flex-end',
-//     paddingRight: 30
-//   },
-//   heroSection: {
-//     height:'80%',
-//     width: '100%',
-//   },
-//   phoneEntry: {
-//     flexDirection:'column',
-//     width:'100%',
-//     height: '30%',
-//     alignItems: 'center',
-//     justifyContent: 'flex-end',
-//     fontFamily: 'Nunito',
-//     marginTop:20
-//   },
-//   phoneInput: {
-//     height:50,
-//     width: '80%',
-//     backgroundColor: '#f3f3f3'
-
-//   }
-//   });
-
-
-
-
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   TextInput,
-//   Keyboard,
-//   TouchableWithoutFeedback,
-//   Image,
-//   KeyboardAvoidingView,
-//   Platform,
-// } from 'react-native';
-// import { useRouter } from 'expo-router';
-// import { useFonts } from 'expo-font';
-// import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-
-// export default function SignUp() {
-//   const router = useRouter();
-//   const [phoneNumber, setPhoneNumber] = useState('');
-//   const [isInputFocused, setIsInputFocused] = useState(false);
-
-//   const [fontsLoaded] = useFonts({
-//     Poppins: require('../../assets/fonts/Poppins-Bold.ttf'),
-//     Nunito: require('../../assets/fonts/Nunito-Regular.ttf'),
-//   });
-
-//   // Animation for the input container when keyboard is active
-//   const translateY = useSharedValue(0);
-
-//   const animatedContainerStyle = useAnimatedStyle(() => {
-//     return {
-//       transform: [
-//         { translateY: withTiming(isInputFocused ? -100 : 0, { duration: 300 }) },
-//       ],
-//     };
-//   });
-
-//   // Dismiss keyboard when tapping anywhere
-//   const dismissKeyboard = () => {
-//     Keyboard.dismiss();
-//     setIsInputFocused(false);
-//   };
-
-//   return (
-//     <TouchableWithoutFeedback onPress={dismissKeyboard}>
-//       <KeyboardAvoidingView
-//         style={styles.container}
-//         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-//       >
-//         <View style={styles.topSection}>
-//           <TouchableOpacity onPress={() => router.push('/signin')}>
-//             <Text style={styles.customFont2}>Go to sign in</Text>
-//           </TouchableOpacity>
-//           <Image
-//             source={require('../../assets/images/Arrow.png')}
-//             style={{ width: 30, resizeMode: 'contain' }}
-//           />
-//         </View>
-
-//         <Animated.View style={[styles.heroSection, animatedContainerStyle]}>
-//           <Text style={styles.customFont1}>Sign Up</Text>
-//           <Text style={styles.customFont3}>Let’s get you on board!</Text>
-//           <View style={styles.phoneEntry}>
-//             <Text style={{ paddingBottom: 30, fontFamily:'Nunito' }}>Enter Mobile Number</Text>
-//             <View style={styles.inputWrapper}>
-//               <TextInput
-//                 style={styles.phoneInput}
-//                 keyboardType="numeric"
-//                 maxLength={11}
-//                 textAlign="center"
-//                 returnKeyType="done"
-//                 value={phoneNumber}
-//                 onFocus={() => setIsInputFocused(true)}
-//                 onBlur={() => setIsInputFocused(false)}
-//                 onChangeText={(text) => setPhoneNumber(text)}
-//                 placeholder="Your phone number"
-//                 placeholderTextColor="#aaa"
-//               />
-//               {phoneNumber.length > 0 && (
-//                 <TouchableOpacity
-//                   style={styles.clearIcon}
-//                   onPress={() => setPhoneNumber('')}
-//                 >
-//                   <Text style={styles.clearText}>✕</Text>
-//                 </TouchableOpacity>
-//               )}
-//             </View>
-//           </View>
-//         </Animated.View>
-//       </KeyboardAvoidingView>
-//     </TouchableWithoutFeedback>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//   },
-//   customFont1: {
-//     fontFamily: 'Poppins',
-//     fontSize: 54,
-//     color: 'black',
-//     marginBottom: 10,
-//     paddingLeft: 30,
-//   },
-//   customFont2: {
-//     fontFamily: 'Nunito',
-//     fontSize: 16,
-//     color: 'black',
-//     textAlign: 'center',
-//     paddingRight: 10,
-//   },
-//   customFont3: {
-//     fontFamily: 'Nunito',
-//     fontSize: 20,
-//     color: 'black',
-//     paddingLeft: 30,
-//   },
-//   topSection: {
-//     width: '100%',
-//     height: '20%',
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'flex-end',
-//     paddingRight: 30,
-//   },
-//   heroSection: {
-//     height: '80%',
-//     width: '100%',
-//   },
-//   phoneEntry: {
-//     flexDirection: 'column',
-//     width: '100%',
-//     height: '30%',
-//     alignItems: 'center',
-//     justifyContent: 'flex-end',
-//     fontFamily: 'Nunito',
-//     marginTop: 20,
-//   },
-//   phoneInput: {
-//     height: 50,
-//     width: '80%',
-//     backgroundColor: '#f3f3f3',
-//     borderRadius: 10,
-//     fontSize: 20,
-//     paddingHorizontal: 10,
-//     fontFamily: 'Nunito',
-//     color: '#000',
-//   },
-//   inputWrapper: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     position: 'relative',
-//   },
-//   clearIcon: {
-//     position: 'absolute',
-//     right: 20,
-//     height: '100%',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   clearText: {
-//     fontSize: 18,
-//     color: '#aaa',
-//   },
-// });
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -287,16 +15,21 @@ import {
 import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
-import { app } from '../firebase'; // Make sure this points to your firebaseConfig file
+import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential, ConfirmationResult } from 'firebase/auth';
+import { app } from '../firebase';
 
-export default function SignUp() {
+type SignUpProps = {};
+
+export default function SignUp({}: SignUpProps) {
+
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
-  const [isOtpStep, setIsOtpStep] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [verificationId, setVerificationId] = useState<string>('');
+  const [otp, setOtp] = useState<string>('');
+  const recaptchaVerifier = useRef(null);
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
 
   const [fontsLoaded] = useFonts({
     Poppins: require('../../assets/fonts/Poppins-Bold.ttf'),
@@ -313,14 +46,13 @@ export default function SignUp() {
     };
   });
 
-  const dismissKeyboard = () => {
+  const dismissKeyboard = (): void => {
     Keyboard.dismiss();
     setIsInputFocused(false);
   };
 
   const auth = getAuth(app);
 
-  // Function to send OTP
   const sendOtp = async () => {
     if (phoneNumber.length < 10) {
       Alert.alert('Invalid Input', 'Please enter a valid phone number.');
@@ -328,30 +60,29 @@ export default function SignUp() {
     }
 
     try {
-      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
-      setConfirmation(confirmationResult);
+      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+      setVerificationId(confirmationResult.verificationId);
       setIsOtpStep(true);
       Alert.alert('OTP Sent', 'Please check your phone for the OTP.');
     } catch (error) {
-      console.error(error);
+      console.error('Error sending OTP:', error);
       Alert.alert('Error', 'Failed to send OTP. Please try again.');
     }
   };
 
-  // Function to verify OTP
   const verifyOtp = async () => {
     if (otp.length !== 6) {
-      Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP sent to your phone.');
+      Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP.');
       return;
     }
 
     try {
-      const credential = PhoneAuthProvider.credential(confirmation.verificationId, otp);
+      const credential = PhoneAuthProvider.credential(verificationId, otp);
       await signInWithCredential(auth, credential);
       Alert.alert('Success', 'OTP verified successfully!');
-      router.push('/dashboard'); // Navigate to the dashboard
+      // Navigate to the next screen or perform the desired action
     } catch (error) {
-      console.error(error);
+      console.error('Error verifying OTP:', error);
       Alert.alert('Error', 'Failed to verify OTP. Please try again.');
     }
   };
@@ -363,7 +94,13 @@ export default function SignUp() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.topSection}>
-          <TouchableOpacity onPress={() => router.push('/signin')}>
+        {/* Add reCAPTCHA modal */}
+      <FirebaseRecaptchaVerifierModal
+        ref={recaptchaVerifier}
+        firebaseConfig={app.options}
+        attemptInvisibleVerification={true}
+      />
+          <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
             <Text style={styles.customFont2}>Go to sign in</Text>
           </TouchableOpacity>
           <Image
@@ -384,14 +121,14 @@ export default function SignUp() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.phoneInput}
-                keyboardType="numeric"
-                maxLength={isOtpStep ? 6 : 11}
+                keyboardType='phone-pad'
+                maxLength={isOtpStep ? 6 : 14}
                 textAlign="center"
                 returnKeyType="done"
                 value={isOtpStep ? otp : phoneNumber}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                onChangeText={(text) =>
+                onChangeText={(text: string) =>
                   isOtpStep ? setOtp(text) : setPhoneNumber(text)
                 }
                 placeholder={isOtpStep ? 'Enter OTP' : 'Your phone number'}
@@ -405,9 +142,9 @@ export default function SignUp() {
                   <Text style={styles.clearText}>✕</Text>
                 </TouchableOpacity>
               )}
+
             </View>
-          </View>
-          <TouchableOpacity
+            <TouchableOpacity
             style={styles.submitButton}
             onPress={isOtpStep ? verifyOtp : sendOtp}
           >
@@ -415,6 +152,8 @@ export default function SignUp() {
               {isOtpStep ? 'Verify OTP' : 'Send OTP'}
             </Text>
           </TouchableOpacity>
+          </View>
+          
         </Animated.View>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -460,7 +199,7 @@ const styles = StyleSheet.create({
   phoneEntry: {
     flexDirection: 'column',
     width: '100%',
-    height: '30%',
+    height: '40%',
     alignItems: 'center',
     justifyContent: 'flex-end',
     fontFamily: 'Nunito',
@@ -497,8 +236,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 10,
     paddingVertical: 15,
-    paddingHorizontal: 30,
+    //paddingHorizontal: 30,
     marginTop: 20,
+    width: '50%'
   },
   submitButtonText: {
     color: '#fff',
@@ -507,3 +247,95 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+// import React, { useState, useRef } from 'react';
+// import { View, TextInput, TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
+// import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+// import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
+// import { app } from '../firebase'; // Your Firebase configuration
+
+// export default function SignUp() {
+//   const [phoneNumber, setPhoneNumber] = useState<string>('');
+//   const [verificationId, setVerificationId] = useState<string>('');
+//   const [otp, setOtp] = useState<string>('');
+//   const recaptchaVerifier = useRef(null);
+
+//   const auth = getAuth(app);
+
+  
+
+//   const sendOtp = async () => {
+//     if (phoneNumber.length < 10) {
+//       Alert.alert('Invalid Input', 'Please enter a valid phone number.');
+//       return;
+//     }
+
+//     try {
+//       const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+//       setVerificationId(confirmationResult.verificationId);
+//       Alert.alert('OTP Sent', 'Please check your phone for the OTP.');
+//     } catch (error) {
+//       console.error('Error sending OTP:', error);
+//       Alert.alert('Error', 'Failed to send OTP. Please try again.');
+//     }
+//   };
+
+//   const verifyOtp = async () => {
+//     if (otp.length !== 6) {
+//       Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP.');
+//       return;
+//     }
+
+//     try {
+//       const credential = PhoneAuthProvider.credential(verificationId, otp);
+//       await signInWithCredential(auth, credential);
+//       Alert.alert('Success', 'OTP verified successfully!');
+//       // Navigate to the next screen or perform the desired action
+//     } catch (error) {
+//       console.error('Error verifying OTP:', error);
+//       Alert.alert('Error', 'Failed to verify OTP. Please try again.');
+//     }
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       {/* Add reCAPTCHA modal */}
+//       <FirebaseRecaptchaVerifierModal
+//         ref={recaptchaVerifier}
+//         firebaseConfig={app.options}
+//       />
+//       <TextInput
+//         placeholder="Enter phone number"
+//         keyboardType="phone-pad"
+//         onChangeText={setPhoneNumber}
+//         value={phoneNumber}
+//         style={styles.input}
+//       />
+//       <TouchableOpacity onPress={sendOtp} style={styles.button}>
+//         <Text style={styles.buttonText}>Send OTP</Text>
+//       </TouchableOpacity>
+
+//       {verificationId ? (
+//         <>
+//           <TextInput
+//             placeholder="Enter OTP"
+//             keyboardType="number-pad"
+//             onChangeText={setOtp}
+//             value={otp}
+//             style={styles.input}
+//           />
+//           <TouchableOpacity onPress={verifyOtp} style={styles.button}>
+//             <Text style={styles.buttonText}>Verify OTP</Text>
+//           </TouchableOpacity>
+//         </>
+//       ) : null}
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+//   input: { width: '80%', borderBottomWidth: 1, marginBottom: 20 },
+//   button: { backgroundColor: 'blue', padding: 10, borderRadius: 5 },
+//   buttonText: { color: 'white', textAlign: 'center' },
+// });

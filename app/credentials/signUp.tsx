@@ -27,7 +27,7 @@ export default function SignUp({}: SignUpProps) {
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [verificationId, setVerificationId] = useState<string>('');
   const [otp, setOtp] = useState<string>('');
-  const recaptchaVerifier = useRef(null);
+  const recaptchaVerifier: any = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
 

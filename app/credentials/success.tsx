@@ -44,14 +44,13 @@ export default function Success() {
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
 
-        <Text style={styles.customFont1}>Welclome to Glyde</Text>
-        <Text style={styles.customFont2}>Everything Looks Good</Text>
+      <Text style={styles.customFont1}>Welclome to Glyde.</Text>
       
       <Image source={require('../../assets/images/Care.png')} resizeMode='cover' style={styles.gifStyle}/>
    
        
        <TouchableOpacity style={styles.button} onPress={handlePress}>
-        <Text style={styles.customFont3}>Next</Text>
+        <Text style={styles.customFont3}>Let's Go!</Text>
        </TouchableOpacity>
 
     </Animated.View>
@@ -67,15 +66,14 @@ const styles = StyleSheet.create({
   },
   customFont1: {
     fontFamily: 'Poppins',
-    fontSize: 24,
+    fontSize: 40,
     color: 'black',
   },
   customFont2: {
     fontFamily: 'Nunito',
     fontSize: 16,
     color: 'black',
-    textAlign:'center',
-    padding:10
+    padding:10,
   },
   customFont3: {
     fontFamily: 'Poppins',

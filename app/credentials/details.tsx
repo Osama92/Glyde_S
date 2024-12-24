@@ -340,7 +340,7 @@ export default function Details() {
     >
         <View style={styles.topSection}>
                 
-                  <TouchableOpacity onPress={() => router.back()}>
+                  <TouchableOpacity onPress={() => router.push('/credentials/success')}>
                     <Text>Go Back</Text>
                   </TouchableOpacity>
                   <Image

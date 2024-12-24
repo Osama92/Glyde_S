@@ -43,18 +43,13 @@ export default function Success() {
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
+
+        <Text style={styles.customFont1}>Welclome to Glyde</Text>
+        <Text style={styles.customFont2}>Everything Looks Good</Text>
       
-      <Image source={require('../../assets/images/Tracking.png')} resizeMode='cover' style={styles.gifStyle}/>
+      <Image source={require('../../assets/images/Care.png')} resizeMode='cover' style={styles.gifStyle}/>
    
-       <Text style={styles.customFont1}>Real-time Tracking</Text>
-       <Text style={styles.customFont2}>Monitor your deliveries seamlessly from the comfort of your home all the way to their final destination</Text>
-
-       <View style={styles.paginationContainer}>
-        <View style={styles.pagination1}></View>
-        <View style={styles.pagination2}></View>
-        <View style={styles.pagination3}></View>
-       </View>
-
+       
        <TouchableOpacity style={styles.button} onPress={handlePress}>
         <Text style={styles.customFont3}>Next</Text>
        </TouchableOpacity>

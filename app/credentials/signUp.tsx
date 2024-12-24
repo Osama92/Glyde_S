@@ -96,13 +96,14 @@ export default function SignUp({}: SignUpProps) {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.topSection}>
         {/* Add reCAPTCHA modal */}
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
         firebaseConfig={app.options}
         attemptInvisibleVerification={true}
       />
+        <View style={styles.topSection}>
+        
           <TouchableOpacity onPress={() => router.push('/credentials/whoami')}>
             <Text style={styles.customFont2}>Go to sign in</Text>
           </TouchableOpacity>

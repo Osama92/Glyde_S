@@ -251,11 +251,13 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  Image
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { app } from "../firebase";
+import { useFonts } from 'expo-font';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -274,7 +276,15 @@ export default function Details() {
 
   const dismissKeyboard = () => Keyboard.dismiss();
 
-  const handleContinue = async () => {
+
+    const [fontsLoaded] = useFonts({
+      Poppins: require('../../assets/fonts/Poppins-Bold.ttf'),
+      Nunito: require('../../assets/fonts/Nunito-Regular.ttf'),
+    });
+  
+    if (!fontsLoaded) return null;
+
+    const handleContinue = async () => {
     if (!email.includes("@")) {
       alert("Please enter a valid email address.");
       return;
@@ -328,6 +338,17 @@ export default function Details() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+        <View style={styles.topSection}>
+                
+                  <TouchableOpacity onPress={() => router.back()}>
+                    <Text>Go Back</Text>
+                  </TouchableOpacity>
+                  <Image
+                    source={require('../../assets/images/Back.png')}
+                    style={{ width: 30, resizeMode: 'contain', marginLeft: 15 }}
+                  />
+                </View>
+        
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
         <View style={styles.innerContainer}>
           <Text style={styles.title}>Complete your profile</Text>
@@ -414,43 +435,67 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
+  topSection: {
+    width: '100%',
+    height: '15%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: 30,
+    
+  },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 40,
+    fontFamily: "Poppins",
+    textAlign: "left",
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    height: 50,
+    width: '100%',
+    backgroundColor: '#f3f3f3',
+    borderRadius: 10,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    fontFamily: 'Nunito',
+    color: '#000',
+    marginTop:15
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    // borderWidth: 1,
+    // borderColor: "#ddd",
+    // borderRadius: 8,
+    //padding: 10,
+    //marginBottom: 15,
   },
   passwordInput: {
+    height: 50,
+    width: '100%',
+    backgroundColor: '#f3f3f3',
+    borderRadius: 10,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    fontFamily: 'Nunito',
+    color: '#000',
+    marginTop:15,
     flex: 1,
+    
   },
   toggleButton: {
     marginLeft: 10,
   },
   toggleText: {
-    color: "#007BFF",
-    fontWeight: "bold",
+    color: "#000",
+    //fontWeight: "bold",
   },
   button: {
     backgroundColor: "#000",
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
+    marginTop: 20
   },
   buttonText: {
     color: "#fff",

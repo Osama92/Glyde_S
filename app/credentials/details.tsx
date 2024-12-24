@@ -326,8 +326,8 @@ export default function Details() {
 
       setLoading(false);
       alert("Data saved successfully!");
-      router.push("/success");
-    } catch (error) {
+      router.push("/credentials/success");
+    } catch (error: any) {
       setLoading(false);
       alert("Error saving data: " + error.message);
     }

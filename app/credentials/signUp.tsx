@@ -104,7 +104,7 @@ export default function SignUp({}: SignUpProps) {
       />
         <View style={styles.topSection}>
         
-          <TouchableOpacity onPress={() => router.push('/credentials/whoami')}>
+          <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
             <Text style={styles.customFont2}>Go to sign in</Text>
           </TouchableOpacity>
           <Image

@@ -225,19 +225,7 @@
 //     borderRadius: 8,
 //     padding: 10,
 //     marginBottom: 15,
-//   },
-//   button: {
-//     backgroundColor: "#000",
-//     paddingVertical: 15,
-//     borderRadius: 8,
-//     alignItems: "center",
-//   },
-//   buttonText: {
-//     color: "#fff",
-//     fontSize: 16,
-//     fontWeight: "bold",
-//   },
-// });
+
 
 import React, { useState } from "react";
 import {

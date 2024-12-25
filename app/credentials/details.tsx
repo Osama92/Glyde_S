@@ -451,12 +451,7 @@ const styles = StyleSheet.create({
   },
   passwordContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    // borderWidth: 1,
-    // borderColor: "#ddd",
-    // borderRadius: 8,
-    //padding: 10,
-    //marginBottom: 15,
+    alignItems: "center"
   },
   passwordInput: {
     height: 50,
@@ -475,8 +470,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   toggleText: {
-    color: "#000",
-    //fontWeight: "bold",
+    color: "#000"
   },
   button: {
     backgroundColor: "#000",

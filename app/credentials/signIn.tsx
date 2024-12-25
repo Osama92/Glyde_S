@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDocs, query, where, collection } from "firebase/firestore";
 import { app } from "../firebase";
 
 const db = getFirestore(app);
@@ -39,32 +39,45 @@ export default function SignIn() {
   const dismissKeyboard = () => Keyboard.dismiss();
 
   const handleLogin = async () => {
+    const collections = ["deliveryDriver", "customer", "fieldAgent", "transporter"]; // Add your collection names here
+    let userFound = false;
+  
     if (!phoneNumber || !password) {
       Alert.alert("Error", "Please enter both phone number and password.");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
-      const userDoc = await getDoc(doc(db, "users", phoneNumber)); // Adjust the Firestore collection name if needed
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-
-        if (userData.password === password) {
-          // Save phone number to AsyncStorage for persistence
-          await AsyncStorage.setItem("phoneNumber", phoneNumber);
-
-          setLoading(false);
-          //router.push("/dashboard"); // Navigate to the Dashboard screen
-        } else {
-          setLoading(false);
-          Alert.alert("Error", "Invalid password. Please try again.");
+      for (const collectionName of collections) {
+        const userQuery = query(
+          collection(db, collectionName), // Replace "db" with your Firestore instance
+          where("phoneNumber", "==", phoneNumber)
+        );
+  
+        const querySnapshot = await getDocs(userQuery);
+  
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach(async (doc) => {
+            const userData = doc.data();
+            if (userData.password === password) {
+              userFound = true;
+  
+              // Save phone number to AsyncStorage for persistence
+              await AsyncStorage.setItem("phoneNumber", phoneNumber);
+  
+              // Navigate to the Dashboard screen
+              setLoading(false);
+              router.push("/main/dashboard");
+            }
+          });
         }
-      } else {
+      }
+  
+      if (!userFound) {
         setLoading(false);
-        Alert.alert("Error", "User does not exist. Please sign up first.");
+        Alert.alert("Error", "Invalid phone number or password.");
       }
     } catch (error: any) {
       setLoading(false);
@@ -126,17 +139,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    height: 50,
+    width: '100%',
+    backgroundColor: '#f3f3f3',
+    borderRadius: 10,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    fontFamily: 'Nunito',
+    color: '#000',
+    marginTop:15
   },
   button: {
     backgroundColor: "#000",
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
+    marginTop: 20
   },
   buttonText: {
     color: "#fff",

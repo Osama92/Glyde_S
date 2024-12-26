@@ -11,11 +11,20 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   Alert,
+  Image
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { getFirestore, doc, getDocs, query, where, collection } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDocs,
+  query,
+  where,
+  collection,
+} from "firebase/firestore";
 import { app } from "../firebase";
+import { useFonts } from "expo-font";
 
 const db = getFirestore(app);
 
@@ -24,6 +33,13 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const [fontsLoaded] = useFonts({
+    Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
+    Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
+  });
+
+  if (!fontsLoaded) return null;
 
   useEffect(() => {
     // Load the persisted phone number from AsyncStorage
@@ -39,34 +55,39 @@ export default function SignIn() {
   const dismissKeyboard = () => Keyboard.dismiss();
 
   const handleLogin = async () => {
-    const collections = ["deliveryDriver", "customer", "fieldAgent", "transporter"]; // Add your collection names here
+    const collections = [
+      "deliveryDriver",
+      "customer",
+      "fieldAgent",
+      "transporter",
+    ]; // Add your collection names here
     let userFound = false;
-  
+
     if (!phoneNumber || !password) {
       Alert.alert("Error", "Please enter both phone number and password.");
       return;
     }
-  
+
     setLoading(true);
-  
+
     try {
       for (const collectionName of collections) {
         const userQuery = query(
           collection(db, collectionName), // Replace "db" with your Firestore instance
           where("phoneNumber", "==", phoneNumber)
         );
-  
+
         const querySnapshot = await getDocs(userQuery);
-  
+
         if (!querySnapshot.empty) {
           querySnapshot.forEach(async (doc) => {
             const userData = doc.data();
             if (userData.password === password) {
               userFound = true;
-  
+
               // Save phone number to AsyncStorage for persistence
               await AsyncStorage.setItem("phoneNumber", phoneNumber);
-  
+
               // Navigate to the Dashboard screen
               setLoading(false);
               router.push("/main/dashboard");
@@ -74,7 +95,7 @@ export default function SignIn() {
           });
         }
       }
-  
+
       if (!userFound) {
         setLoading(false);
         Alert.alert("Error", "Invalid phone number or password.");
@@ -91,7 +112,20 @@ export default function SignIn() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        
+
         <View style={styles.innerContainer}>
+
+        <View style={styles.topSection}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text>Back to sign up</Text>
+          </TouchableOpacity>
+          <Image
+            source={require("../../assets/images/Back.png")}
+            style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+          />
+        </View>
+
           <Text style={styles.title}>Login</Text>
 
           <TextInput
@@ -108,6 +142,7 @@ export default function SignIn() {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
+            placeholderTextColor={"grey"}
           />
 
           {loading ? (
@@ -133,32 +168,42 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 40,
     fontWeight: "bold",
-    textAlign: "center",
+    textAlign: "left",
     marginBottom: 20,
+    fontFamily: "Poppins",
   },
   input: {
     height: 50,
-    width: '100%',
-    backgroundColor: '#f3f3f3',
+    width: "100%",
+    backgroundColor: "#f3f3f3",
     borderRadius: 10,
     fontSize: 18,
     paddingHorizontal: 10,
-    fontFamily: 'Nunito',
-    color: '#000',
-    marginTop:15
+    fontFamily: "Nunito",
+    color: "#000",
+    marginTop: 15,
   },
   button: {
     backgroundColor: "#000",
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 20
+    marginTop: 20,
+    width:'50%',
+    alignSelf:'center'
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontFamily: 'Nunito'
+  },
+  topSection: {
+    width: '100%',
+    height: '20%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
 });

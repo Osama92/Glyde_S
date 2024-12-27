@@ -116,7 +116,10 @@ export default function Dashboard() {
       {/*Scroll View will live here */}
         <ScrollView style={{width:'100%', height:'70%'}}>
           <View style={{width: '100%', height: 250, backgroundColor:'pink', borderRadius: 30}}>
-            
+            <View style={{flexDirection:'row', height: '30%', width: '100%', backgroundColor:'grey', alignItems:'center', justifyContent:'space-between'}}>
+              <View style={{width:'60%', height:'100%',backgroundColor:'green'}}></View>
+              <View style={{width: '30%', height: '60%', backgroundColor: '#F6984C', borderRadius: 30}}></View>
+            </View>
           </View>
         </ScrollView>
 

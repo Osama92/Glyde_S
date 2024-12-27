@@ -1,50 +1,68 @@
-// // Import the functions you need from the SDKs you need
-// import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics";
-// import { getAuth } from "firebase/auth";
-// // TODO: Add SDKs for Firebase products that you want to use
-// // https://firebase.google.com/docs/web/setup#available-libraries
 
-// // Your web app's Firebase configuration
-// // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// firebaseConfig.ts
+// import { initializeApp, getApps, getApp } from "firebase/app";
+// import { getAuth, initializeAuth, browserLocalPersistence, } from "firebase/auth";
+// import { getFirestore } from "firebase/firestore";
+// import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+// import {Platform} from 'react-native'
+
 // const firebaseConfig = {
 //   apiKey: "AIzaSyC0j22QXZAxyeMDG2RAzIPx6MZUr-M9Ygs",
 //   authDomain: "glyde-f716b.firebaseapp.com",
 //   projectId: "glyde-f716b",
-//   storageBucket: "glyde-f716b.firebasestorage.app",
+//   storageBucket: "glyde-f716b.appspot.com",
 //   messagingSenderId: "375704357328",
 //   appId: "1:375704357328:web:bb4474f5a54f9cee5b91d5",
-//   measurementId: "G-T9Q7GY1127"
+//   measurementId: "G-T9Q7GY1127",
 // };
 
-// // Initialize Firebase
+// //const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 // const app = initializeApp(firebaseConfig);
 // const auth = getAuth(app);
-// // const analytics = getAnalytics(app);
+// const db = getFirestore(app);
 
-// export {auth};
+// export { app, auth, db };
 
-// firebaseConfig.ts
+
+
+
+
+
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, initializeAuth } from "firebase/auth";
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import {Platform} from 'react-native'
+import {
+  getAuth,
+  initializeAuth,
+  browserLocalPersistence,
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0j22QXZAxyeMDG2RAzIPx6MZUr-M9Ygs",
   authDomain: "glyde-f716b.firebaseapp.com",
   projectId: "glyde-f716b",
-  storageBucket: "glyde-f716b.firebasestorage.app",
+  storageBucket: "glyde-f716b.appspot.com", // Fix typo here
   messagingSenderId: "375704357328",
   appId: "1:375704357328:web:bb4474f5a54f9cee5b91d5",
   measurementId: "G-T9Q7GY1127",
 };
 
+// Initialize the Firebase app (singleton pattern)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-//const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
-export { app, auth };
+// Initialize Firebase Auth with platform-specific logic
+let auth;
+if (Platform.OS === "web") {
+  auth = getAuth(app);
+  auth.setPersistence(browserLocalPersistence); // Use local persistence for web
+} else {
+  auth = initializeAuth(app, {
+    persistence: ReactNativeAsyncStorage, // Use async-storage for React Native
+  });
+}
 
+// Initialize Firestore
+const db = getFirestore(app);
 
-
+export { app, auth, db };

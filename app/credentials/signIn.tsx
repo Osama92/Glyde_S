@@ -26,7 +26,7 @@ import {
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 
-const db = getFirestore(app);
+const db = getFirestore();
 
 export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState("");

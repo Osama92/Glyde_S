@@ -20,7 +20,7 @@ import {
 import { app } from "../firebase";
 import StepIndicator from "react-native-step-indicator";
 
-const db = getFirestore(app);
+const db = getFirestore();
 
 const collections = ["deliveryDriver", "customer", "fieldAgent", "transporter"];
 const labels = ["Loaded", "Dispatched", "In-Transit", "Delivered"];
@@ -227,7 +227,7 @@ export default function Dashboard() {
               <Image
                 source={require("../../assets/images/Support.png")}
                 resizeMode="cover"
-                style={{ width: 20, height: 20 }}
+                style={{ width: 20, height: 20}}
               />
             </View>
             <View style={{ flexDirection: "column" }}>
@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     //justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor:'#fff'
   },
   loaderContainer: {
     flex: 1,

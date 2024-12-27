@@ -52,8 +52,8 @@ export default function SignUp({}: SignUpProps) {
     setIsInputFocused(false);
   };
 
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const auth = getAuth();
+  const db = getFirestore();
 
   const sendOtp = async () => {
     if (phoneNumber.length < 10) {
@@ -71,7 +71,7 @@ export default function SignUp({}: SignUpProps) {
       Alert.alert('Duplicate Phone Number', 'This phone number is already registered.');
       return;
     }
-      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
+      const confirmationResult = await signInWithPhoneNumber(getAuth(), `+${phoneNumber}`, recaptchaVerifier.current);
     //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
       setVerificationId(confirmationResult.verificationId);
       setIsOtpStep(true);
@@ -264,95 +264,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-// import React, { useState, useRef } from 'react';
-// import { View, TextInput, TouchableOpacity, Text, Alert, StyleSheet } from 'react-native';
-// import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
-// import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
-// import { app } from '../firebase'; // Your Firebase configuration
-
-// export default function SignUp() {
-//   const [phoneNumber, setPhoneNumber] = useState<string>('');
-//   const [verificationId, setVerificationId] = useState<string>('');
-//   const [otp, setOtp] = useState<string>('');
-//   const recaptchaVerifier = useRef(null);
-
-//   const auth = getAuth(app);
-
-  
-
-//   const sendOtp = async () => {
-//     if (phoneNumber.length < 10) {
-//       Alert.alert('Invalid Input', 'Please enter a valid phone number.');
-//       return;
-//     }
-
-//     try {
-//       const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
-//       setVerificationId(confirmationResult.verificationId);
-//       Alert.alert('OTP Sent', 'Please check your phone for the OTP.');
-//     } catch (error) {
-//       console.error('Error sending OTP:', error);
-//       Alert.alert('Error', 'Failed to send OTP. Please try again.');
-//     }
-//   };
-
-//   const verifyOtp = async () => {
-//     if (otp.length !== 6) {
-//       Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP.');
-//       return;
-//     }
-
-//     try {
-//       const credential = PhoneAuthProvider.credential(verificationId, otp);
-//       await signInWithCredential(auth, credential);
-//       Alert.alert('Success', 'OTP verified successfully!');
-//       // Navigate to the next screen or perform the desired action
-//     } catch (error) {
-//       console.error('Error verifying OTP:', error);
-//       Alert.alert('Error', 'Failed to verify OTP. Please try again.');
-//     }
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       {/* Add reCAPTCHA modal */}
-//       <FirebaseRecaptchaVerifierModal
-//         ref={recaptchaVerifier}
-//         firebaseConfig={app.options}
-//       />
-//       <TextInput
-//         placeholder="Enter phone number"
-//         keyboardType="phone-pad"
-//         onChangeText={setPhoneNumber}
-//         value={phoneNumber}
-//         style={styles.input}
-//       />
-//       <TouchableOpacity onPress={sendOtp} style={styles.button}>
-//         <Text style={styles.buttonText}>Send OTP</Text>
-//       </TouchableOpacity>
-
-//       {verificationId ? (
-//         <>
-//           <TextInput
-//             placeholder="Enter OTP"
-//             keyboardType="number-pad"
-//             onChangeText={setOtp}
-//             value={otp}
-//             style={styles.input}
-//           />
-//           <TouchableOpacity onPress={verifyOtp} style={styles.button}>
-//             <Text style={styles.buttonText}>Verify OTP</Text>
-//           </TouchableOpacity>
-//         </>
-//       ) : null}
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-//   input: { width: '80%', borderBottomWidth: 1, marginBottom: 20 },
-//   button: { backgroundColor: 'blue', padding: 10, borderRadius: 5 },
-//   buttonText: { color: 'white', textAlign: 'center' },
-// });

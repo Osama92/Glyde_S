@@ -18,6 +18,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential} from 'firebase/auth';
 import { app } from '../firebase';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
 type SignUpProps = {};
 
@@ -27,7 +28,7 @@ export default function SignUp({}: SignUpProps) {
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [verificationId, setVerificationId] = useState<string>('');
   const [otp, setOtp] = useState<string>('');
-  const recaptchaVerifier: any = useRef(null);
+  const recaptchaVerifier = useRef<any>(null);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
 
@@ -52,7 +53,7 @@ export default function SignUp({}: SignUpProps) {
   };
 
   const auth = getAuth(app);
-  
+  const db = getFirestore(app);
 
   const sendOtp = async () => {
     if (phoneNumber.length < 10) {
@@ -61,6 +62,15 @@ export default function SignUp({}: SignUpProps) {
     }
 
     try {
+      // Check if the phone number already exists
+    const usersCollection = collection(db, 'users'); // Replace 'users' with your Firestore collection name
+    const phoneQuery = query(usersCollection, where('phone', '==', phoneNumber));
+    const querySnapshot = await getDocs(phoneQuery);
+
+    if (!querySnapshot.empty) {
+      Alert.alert('Duplicate Phone Number', 'This phone number is already registered.');
+      return;
+    }
       const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
     //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
       setVerificationId(confirmationResult.verificationId);
@@ -96,24 +106,28 @@ export default function SignUp({}: SignUpProps) {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Add reCAPTCHA modal */}
+      
+        
+
+          {/* Add reCAPTCHA modal */}
       <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
         firebaseConfig={app.options}
         attemptInvisibleVerification={true}
       />
-        <View style={styles.topSection}>
-        
-          <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
-            <Text style={styles.customFont2}>Go to sign in</Text>
-          </TouchableOpacity>
-          <Image
-            source={require('../../assets/images/Arrow.png')}
-            style={{ width: 30, resizeMode: 'contain' }}
-          />
-        </View>
 
         <Animated.View style={[styles.heroSection, animatedContainerStyle]}>
+        <View style={styles.topSection}>
+        
+        <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
+          <Text style={styles.customFont2}>Go to sign in</Text>
+        </TouchableOpacity>
+        <Image
+          source={require('../../assets/images/Arrow.png')}
+          style={{ width: 30, resizeMode: 'contain' }}
+        />
+      </View>
+          <Image source={require('../../assets/images/SignUp.png')} resizeMode='contain' style={{width:'25%', height:'25%', marginLeft:10}}/>
           <Text style={styles.customFont1}>Sign Up</Text>
           <Text style={styles.customFont3}>
             {isOtpStep ? 'Verify OTP' : 'Let’s get you on board!'}

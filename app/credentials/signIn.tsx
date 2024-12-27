@@ -56,7 +56,7 @@ export default function SignIn() {
 
   const handleLogin = async () => {
     const collections = [
-      "deliveryDriver",
+      "deliverydriver",
       "customer",
       "fieldAgent",
       "transporter",
@@ -125,6 +125,8 @@ export default function SignIn() {
             style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
           />
         </View>
+
+        <Image source={require('../../assets/images/signIn.png')} resizeMode='contain' style={{width:'50%', height:'25%'}}/>
 
           <Text style={styles.title}>Login</Text>
 

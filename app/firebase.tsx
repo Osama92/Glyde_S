@@ -25,8 +25,10 @@
 // export {auth};
 
 // firebaseConfig.ts
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, initializeAuth } from "firebase/auth";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import {Platform} from 'react-native'
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0j22QXZAxyeMDG2RAzIPx6MZUr-M9Ygs",
@@ -38,7 +40,11 @@ const firebaseConfig = {
   measurementId: "G-T9Q7GY1127",
 };
 
-const app = initializeApp(firebaseConfig);
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+//const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 export { app, auth };
+
+
+

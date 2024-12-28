@@ -109,7 +109,7 @@ export default function SignIn() {
     const collections = [
       "deliverydriver",
       "customer",
-      "fieldAgent",
+      "fieldagent",
       "transporter",
     ]; // Add your collection names here
     let userFound = false;
@@ -145,7 +145,7 @@ export default function SignIn() {
                 screen = "/customer/dashboard";
               } else if (collectionName === "deliverydriver") {
                 screen = "/driver/dashboard";
-              } else if (collectionName === "fieldAgent") {
+              } else if (collectionName === "fieldagent") {
                 screen = "/agent/dashboard";
               } else if (collectionName === "transporter") {
                 screen = "/transporter/dashboard";

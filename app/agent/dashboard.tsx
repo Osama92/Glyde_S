@@ -128,7 +128,7 @@ export default function Dashboard() {
                 Your location
               </Text>
               <TouchableOpacity>
-                <Text>Home</Text>
+                <Text>Work</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -163,7 +163,7 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "column" }}>
               <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Track Delivery
+                Track Shipment
               </Text>
               <TouchableOpacity>
                 <Text>Track by ID</Text>
@@ -207,6 +207,17 @@ export default function Dashboard() {
       </View>
       {/*Scroll View will live here */}
       <ScrollView style={{ width: "100%", height: "70%" }}>
+        <View style={{flexDirection:'row', height: 100, width: '100%', marginBottom: 10, justifyContent:'space-between'}}>
+            <View style={{width:'40%',height:'100%'}}>
+                <Text style={{fontSize: 20}}>Fleet Size</Text>
+            </View>
+            <View style={{width:'40%',height:'100%'}}>
+                <Text style={{fontSize: 20}}>Shipping Point</Text>
+            </View>
+            <View style={{width:'15%',height:'100%',justifyContent:'center', alignItems:'center'}}>
+                <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
+            </View>
+        </View>
         <View
           style={{
             width: "100%",

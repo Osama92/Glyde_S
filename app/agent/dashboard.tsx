@@ -207,12 +207,14 @@ export default function Dashboard() {
       </View>
       {/*Scroll View will live here */}
       <ScrollView style={{ width: "100%", height: "70%" }}>
-        <View style={{flexDirection:'row', height: 100, width: '100%', marginBottom: 10, justifyContent:'space-between'}}>
+        <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20}}>Fleet Size</Text>
+                <Text style={{fontSize: 20}}>13</Text>
             </View>
             <View style={{width:'40%',height:'100%'}}>
-                <Text style={{fontSize: 20}}>Shipping Point</Text>
+                <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
+                <Text>Shipping Point here</Text>
             </View>
             <View style={{width:'15%',height:'100%',justifyContent:'center', alignItems:'center'}}>
                 <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
@@ -226,7 +228,9 @@ export default function Dashboard() {
             borderRadius: 20,
           }}
         >
-          
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'orange', margin: 20, justifyContent:'center', alignItems:'center'}}>
+            <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

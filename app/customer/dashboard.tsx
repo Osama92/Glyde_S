@@ -20,7 +20,7 @@ import {
 import { app } from "../firebase";
 import StepIndicator from "react-native-step-indicator";
 
-const db = getFirestore();
+const db = getFirestore(app);
 
 const collections = ["deliveryDriver", "customer", "fieldAgent", "transporter"];
 const labels = ["Loaded", "Dispatched", "In-Transit", "Delivered"];

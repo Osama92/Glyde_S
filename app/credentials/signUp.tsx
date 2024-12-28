@@ -52,8 +52,8 @@ export default function SignUp({}: SignUpProps) {
     setIsInputFocused(false);
   };
 
-  const auth = getAuth();
-  const db = getFirestore();
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
   const sendOtp = async () => {
     if (phoneNumber.length < 10) {
@@ -71,7 +71,7 @@ export default function SignUp({}: SignUpProps) {
       Alert.alert('Duplicate Phone Number', 'This phone number is already registered.');
       return;
     }
-      const confirmationResult = await signInWithPhoneNumber(getAuth(), `+${phoneNumber}`, recaptchaVerifier.current);
+      const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier.current);
     //   const confirmationResult = await signInWithPhoneNumber(auth, `+${phoneNumber}`);
       setVerificationId(confirmationResult.verificationId);
       setIsOtpStep(true);

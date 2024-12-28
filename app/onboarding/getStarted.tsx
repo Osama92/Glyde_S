@@ -43,7 +43,7 @@ export default function GetStarted() {
 
     // Navigate to the next screen after 3 seconds
     setTimeout(() => {
-      router.push('/credentials/signUp');
+      router.push('/credentials/signIn');
     }, 5000); // 3 seconds
   }, []);
 

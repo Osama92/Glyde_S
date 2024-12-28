@@ -18,8 +18,8 @@ import { getAuth } from "firebase/auth";
 import { app } from "../firebase";
 import { useFonts } from 'expo-font';
 
-const db = getFirestore();
-const auth = getAuth();
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 export default function Details() {
   const { title } = useLocalSearchParams();

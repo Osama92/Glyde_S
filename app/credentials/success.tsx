@@ -28,7 +28,7 @@ export default function Success() {
     translateX.value = withTiming(-500, { duration: 300 });
 
     setTimeout(() => {
-      router.push('/main/dashboard'); // Navigate to the next screen
+      router.push('/credentials/signIn'); // Navigate to the next screen
     }, 300);
   };
 

@@ -26,7 +26,7 @@ import {
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 
-const db = getFirestore();
+const db = getFirestore(app);
 
 export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -54,6 +54,57 @@ export default function SignIn() {
 
   const dismissKeyboard = () => Keyboard.dismiss();
 
+  // const handleLogin = async () => {
+  //   const collections = [
+  //     "deliverydriver",
+  //     "customer",
+  //     "fieldAgent",
+  //     "transporter",
+  //   ]; // Add your collection names here
+  //   let userFound = false;
+
+  //   if (!phoneNumber || !password) {
+  //     Alert.alert("Error", "Please enter both phone number and password.");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     for (const collectionName of collections) {
+  //       const userQuery = query(
+  //         collection(db, collectionName), // Replace "db" with your Firestore instance
+  //         where("phoneNumber", "==", phoneNumber)
+  //       );
+
+  //       const querySnapshot = await getDocs(userQuery);
+
+  //       if (!querySnapshot.empty) {
+  //         querySnapshot.forEach(async (doc) => {
+  //           const userData = doc.data();
+  //           if (userData.password === password) {
+  //             userFound = true;
+
+  //             // Save phone number to AsyncStorage for persistence
+  //             await AsyncStorage.setItem("phoneNumber", phoneNumber);
+
+  //             // Navigate to the Dashboard screen
+  //             setLoading(false);
+  //             router.push("/main/dashboard");
+  //           }
+  //         });
+  //       }
+  //     }
+
+  //     if (!userFound) {
+  //       setLoading(false);
+  //       Alert.alert("Error", "Invalid phone number or password.");
+  //     }
+  //   } catch (error: any) {
+  //     setLoading(false);
+  //     Alert.alert("Error", `Login failed: ${error.message}`);
+  //   }
+  // };
   const handleLogin = async () => {
     const collections = [
       "deliverydriver",
@@ -62,40 +113,52 @@ export default function SignIn() {
       "transporter",
     ]; // Add your collection names here
     let userFound = false;
-
+  
     if (!phoneNumber || !password) {
       Alert.alert("Error", "Please enter both phone number and password.");
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       for (const collectionName of collections) {
         const userQuery = query(
           collection(db, collectionName), // Replace "db" with your Firestore instance
           where("phoneNumber", "==", phoneNumber)
         );
-
+  
         const querySnapshot = await getDocs(userQuery);
-
+  
         if (!querySnapshot.empty) {
-          querySnapshot.forEach(async (doc) => {
+          for (const doc of querySnapshot.docs) {
             const userData = doc.data();
             if (userData.password === password) {
               userFound = true;
-
+  
               // Save phone number to AsyncStorage for persistence
               await AsyncStorage.setItem("phoneNumber", phoneNumber);
-
-              // Navigate to the Dashboard screen
+  
+              // Redirect user based on their collection name
+              let screen: any = "/credentials/whoami"; // Default screen
+              if (collectionName === "customer") {
+                screen = "/customer/dashboard";
+              } else if (collectionName === "deliverydriver") {
+                screen = "/driver/dashboard";
+              } else if (collectionName === "fieldAgent") {
+                screen = "/agent/dashboard";
+              } else if (collectionName === "transporter") {
+                screen = "/transporter/dashboard";
+              }
+  
               setLoading(false);
-              router.push("/main/dashboard");
+              router.push(screen);
+              return; // Exit the loop and function after successful login
             }
-          });
+          }
         }
       }
-
+  
       if (!userFound) {
         setLoading(false);
         Alert.alert("Error", "Invalid phone number or password.");

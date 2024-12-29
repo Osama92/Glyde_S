@@ -153,7 +153,7 @@ export default function SignIn() {
   
               setLoading(false);
               router.push(screen);
-              return; // Exit the loop and function after successful login
+              return; 
             }
           }
         }

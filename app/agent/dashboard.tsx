@@ -18,6 +18,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { app } from "../firebase";
+import { router } from "expo-router";
 
 const db = getFirestore(app);
 
@@ -228,7 +229,7 @@ export default function Dashboard() {
             borderRadius: 20,
           }}
         >
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'orange', margin: 20, justifyContent:'center', alignItems:'center'}}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'orange', margin: 20, justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipment')}>
             <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
         </View>

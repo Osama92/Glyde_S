@@ -1,111 +1,133 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ActivityIndicator,
   Alert,
-  ScrollView,
+  Image,
+  StatusBar
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { getAuth } from "firebase/auth";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import {
+  getFirestore,
+  doc,
+  getDocs,
+  query,
+  where,
+  collection,
+} from "firebase/firestore";
+import { app } from "../firebase";
+import { useFonts } from "expo-font";
 
-const db = getFirestore();
+const db = getFirestore(app);
 
-export default function CreateShipment({ navigation }: { navigation: any }) {
-  const auth = getAuth();
-  const [transporter, setTransporter] = useState<string | undefined>();
-  const [vehicle, setVehicle] = useState<string | undefined>();
-  const [contactNumber, setContactNumber] = useState("");
-  const [driverName, setDriverName] = useState("");
+export default function Shipment() {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSaveShipment = async () => {
-    if (!transporter || !vehicle || !contactNumber || !driverName) {
-      Alert.alert("Missing Information", "Please fill in all fields.");
-      return;
-    }
+  const [fontsLoaded] = useFonts({
+    Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
+    Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
+  });
 
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        Alert.alert("Error", "No user logged in.");
-        return;
-      }
+  if (!fontsLoaded) return null;
 
-      const docRef = await addDoc(collection(db, "shipments"), {
-        transporter,
-        vehicle,
-        contactNumber,
-        driverName,
-        createdBy: user.uid,
-        createdAt: new Date().toISOString(),
-      });
+  
 
-      Alert.alert("Success", "Shipment created successfully!");
-      navigation.navigate("ShipmentCreated", { shipmentId: docRef.id });
-    } catch (error) {
-      Alert.alert("Error", "Failed to save shipment. Try again.");
-    }
-  };
+  const dismissKeyboard = () => Keyboard.dismiss();
+
+  
+  
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Create Shipment</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+        <StatusBar barStyle="dark-content"/>
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        
 
-      <Text style={styles.sectionTitle}>Assign Transporter</Text>
-      <TextInput style={styles.input} placeholder="Search" />
-      <Picker
-        selectedValue={transporter}
-        onValueChange={(itemValue) => setTransporter(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Select Transporter" value={undefined} />
-        <Picker.Item label="CapsLock" value="CapsLock" />
-        <Picker.Item label="Spacebar" value="Spacebar" />
-      </Picker>
+        <View style={styles.innerContainer}>
 
-      <Text style={styles.sectionTitle}>Assign Vehicle</Text>
-      <TextInput style={styles.input} placeholder="Search" />
-      <Picker
-        selectedValue={vehicle}
-        onValueChange={(itemValue) => setVehicle(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Select Vehicle" value={undefined} />
-        <Picker.Item label="KTU 677 XB" value="KTU 677 XB" />
-        <Picker.Item label="KJA 679 XN" value="KJA 679 XN" />
-      </Picker>
+        <View style={styles.topSection}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{fontSize:20, fontWeight:'bold'}}>Manage</Text>
+          </TouchableOpacity>
+          <Image
+            source={require("../../assets/images/Back.png")}
+            style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+          />
+        </View>
+        
+        <View style={{flexDirection:'row', width: '100%',height: 40, justifyContent: 'space-between', alignItems:'center'}}>
+            <Text style={{fontSize: 16}}>Current Shipping Point</Text>
+            <Text style={{color:'#F6984C'}}>Shipping point here</Text>
+        </View>
 
-      <Text style={styles.sectionTitle}>Driver Detail / Others</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Contact Number Here"
-        keyboardType="phone-pad"
-        value={contactNumber}
-        onChangeText={setContactNumber}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Driver's Name Here"
-        value={driverName}
-        onChangeText={setDriverName}
-      />
-
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveShipment}>
-        <Text style={styles.saveButtonText}>Save Shipment</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 15 },
-  picker: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, marginBottom: 15 },
-  saveButton: { backgroundColor: "black", padding: 15, borderRadius: 8, alignItems: "center" },
-  saveButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  container: {
+    flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    alignItems: "center",
+    padding: 20,
+  },
+  title: {
+    fontSize: 40,
+    fontWeight: "bold",
+    textAlign: "left",
+    marginBottom: 20,
+    fontFamily: "Poppins",
+  },
+  input: {
+    height: 50,
+    width: "100%",
+    backgroundColor: "#f3f3f3",
+    borderRadius: 10,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    fontFamily: "Nunito",
+    color: "#000",
+    marginTop: 15,
+  },
+  button: {
+    backgroundColor: "#000",
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20,
+    width:'50%',
+    alignSelf:'center'
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 20,
+    fontFamily: 'Nunito'
+  },
+  topSection: {
+    width: '100%',
+    height: '10%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
 });

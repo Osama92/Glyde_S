@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "375704357328",
+    "project_id": "glyde-f716b",
+    "storage_bucket": "glyde-f716b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:375704357328:android:7ab4d867018700635b91d5",
+        "android_client_info": {
+          "package_name": "com.glyde.glyde_s"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBM-nvCQgPxo1xAsSMl9q3xIzbT6eZSWy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

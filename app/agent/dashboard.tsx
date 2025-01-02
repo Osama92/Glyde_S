@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  StatusBar
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -75,6 +76,7 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content"/>
       <View style={styles.TopNav}>
         <View style={styles.leftNav}>
           <View
@@ -207,7 +209,7 @@ export default function Dashboard() {
         </View>
       </View>
       {/*Scroll View will live here */}
-      <ScrollView style={{ width: "100%", height: "70%" }}>
+      <ScrollView style={{ width: "100%", height: "70%"}}>
         <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20}}>Fleet Size</Text>
@@ -227,11 +229,16 @@ export default function Dashboard() {
             height: 300,
             backgroundColor: "#f4f4f4",
             borderRadius: 20,
+            flexDirection: 'row',
+            alignItems:'flex-start'
           }}
         >
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'orange', margin: 20, justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipment')}>
+          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipment')}>
             <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
+          <Text style={{textAlign:'center'}}>Create Shipment</Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -243,7 +250,8 @@ const styles = StyleSheet.create({
     flex: 1,
     //justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingLeft: 10,
+    paddingRight:10,
     backgroundColor:'#fff'
   },
   loaderContainer: {
@@ -266,22 +274,24 @@ const styles = StyleSheet.create({
   TopNav: {
     flexDirection: "row",
     width: "100%",
-    height: "30%",
+    height: 130,
     justifyContent: "space-between",
-    //backgroundColor: 'green',
-    alignItems: "center",
+    alignItems: 'flex-end',
+    marginTop:20
   },
   leftNav: {
     backgroundColor: "#f4f4f4",
     width: "48%",
-    height: "60%",
+    height: "80%",
     borderRadius: 30,
+    marginBottom:10
   },
   rightNav: {
     //backgroundColor:'#f4f4f4',
     width: "48%",
-    height: "60%",
+    height: "80%",
     borderRadius: 30,
     justifyContent: "space-between",
+    marginBottom:10
   },
 });

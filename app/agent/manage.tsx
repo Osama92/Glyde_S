@@ -1,124 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   StyleSheet,
-//   KeyboardAvoidingView,
-//   Platform,
-//   Keyboard,
-//   TouchableWithoutFeedback,
-//   ActivityIndicator,
-//   Alert,
-//   Image,
-//   StatusBar
-// } from "react-native";
-// import SearchableDropdown from 'react-native-searchable-dropdown';
-// import { useRouter } from "expo-router";
-// import {
-//   getFirestore,
-//   doc,
-//   getDocs,
-//   query,
-//   where,
-//   collection,
-// } from "firebase/firestore";
-// import firebase from 'firebase/app';
-// import 'firebase/firestore';
-// import { app } from "../firebase";
-// import { useFonts } from "expo-font";
-
-// const db = getFirestore(app);
-
-// export default function Shipment() {
-//     const [shippingPoints, setShippingPoints] = useState([]);
-//     const [selectedPoint, setSelectedPoint] = useState('');
-//     const [loading, setLoading] = useState(true);
-//   const router = useRouter();
-
-//   const [fontsLoaded] = useFonts({
-//     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
-//     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
-//   });
-
-//   if (!fontsLoaded) return null;
-
-  
-
-//   const dismissKeyboard = () => Keyboard.dismiss();
-
-//   // Fetch data from Firestore
-//   useEffect(() => {
-//     const fetchShippingPoints = async () => {
-//       try {
-//         const snapshot = await firebase.firestore().collection('ShippingPoint').get();
-//         const points = snapshot.docs.map((doc) => ({
-//           id: doc.id,
-//           name: doc.data().name, // Assuming the document has a `name` field
-//         }));
-//         setShippingPoints(points);
-//       } catch (error) {
-//         console.error('Error fetching shipping points:', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchShippingPoints();
-//   }, []);
-  
-
-//   return (
-//     <KeyboardAvoidingView
-//       style={styles.container}
-//       behavior={Platform.OS === "ios" ? "padding" : undefined}
-//     >
-//         <StatusBar barStyle="dark-content"/>
-//       <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        
-
-//         <View style={styles.innerContainer}>
-
-//         <View style={styles.topSection}>
-//           <TouchableOpacity onPress={() => router.back()}>
-//             <Text style={{fontSize:20, fontWeight:'bold'}}>Manage</Text>
-//           </TouchableOpacity>
-//           <Image
-//             source={require("../../assets/images/Back.png")}
-//             style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-//           />
-//         </View>
-        
-//         <View style={{flexDirection:'row', width: '100%',height: 40, justifyContent: 'space-between', alignItems:'center'}}>
-//             <Text style={{fontSize: 16}}>Current Shipping Point</Text>
-//             <Text style={{color:'#F6984C'}}>{selectedPoint}</Text>
-//         </View>
-
-//         <View style={{flexDirection:'row', width: '100%',height: 40, justifyContent: 'space-between', alignItems:'center'}}>
-//             <Text style={{fontSize: 20, fontWeight:'600'}}>Update Shipping Point</Text>
-//             <Text style={{color:'#F6984C'}}>See all</Text>
-        
-//         </View>
-//         {loading ? (
-//         <ActivityIndicator size="large" color="blue" />
-//       ) : (
-//         <>
-//           <Text>Select a Shipping Point:</Text>
-//           <SearchableDropdown
-//             items={shippingPoints}
-//             onItemSelect={(item:any) => setSelectedPoint(item.name)}
-//             placeholder="Search Shipping Point"
-//           />
-//           <Text style={{ marginTop: 20 }}>Selected Point: </Text>
-//         </>
-//       )}
-          
-//         </View>
-//       </TouchableWithoutFeedback>
-//     </KeyboardAvoidingView>
-//   );
-// }
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -133,7 +12,9 @@ import {
   ActivityIndicator,
   Image,
   StatusBar,
-  FlatList
+  FlatList,
+  Alert,
+  RefreshControl
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { useRouter } from "expo-router";
@@ -141,6 +22,8 @@ import {
   getFirestore,
   collection,
   getDocs,
+  doc,
+  updateDoc
 } from "firebase/firestore";
 import { app } from "../firebase"; // Ensure this points to your Firebase initialization file
 import { useFonts } from "expo-font";
@@ -154,59 +37,41 @@ export default function Manage() {
   const [selectedPoint, setSelectedPoint] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [rows, setRows] = useState<any[]>([]);
+  const [editableRowId, setEditableRowId] = useState<string | null>(null);
+  const [editedRow, setEditedRow] = useState<any>({});
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState(rows);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [fontsLoaded] = useFonts({
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
   });
 
-  const data = [
-    { id: "1", vehicleNo: "KTU 677 XB", transporter: "CapsLock", driver: "Fatai" },
-    { id: "2", vehicleNo: "LSR 123 XD", transporter: "SpaceBar", driver: "Latti" },
-    { id: "3", vehicleNo: "KJA 560 CX", transporter: "FunLogis", driver: "Dominic" },
-    { id: "4", vehicleNo: "GGE 143 VB", transporter: "FunLogis", driver: "Emmanuel" },
-    { id: "5", vehicleNo: "KJA 679 KN", transporter: "CapsLock", driver: "Seyi" },
-    { id: "6", vehicleNo: "GGE 234 SK", transporter: "Captain Inv", driver: "Bola" },
-    { id: "7", vehicleNo: "TTY 456 FC", transporter: "TSL", driver: "Ahmed" },
-    { id: "8", vehicleNo: "BDG 890 MN", transporter: "CapsLock", driver: "Simon" },
-    { id: "9", vehicleNo: "AGL 676 QA", transporter: "CapsLock", driver: "John" },
-  ];
-
-  const [searchText, setSearchText] = useState("");
-  const [filteredData, setFilteredData] = useState(data);
-
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    if (text.trim() === "") {
-      setFilteredData(data);
-    } else {
-      const filtered = data.filter(
-        (item) =>
-          item.vehicleNo.toLowerCase().includes(text.toLowerCase()) ||
-          item.transporter.toLowerCase().includes(text.toLowerCase()) ||
-          item.driver.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-  };
-
- 
   
-  const renderRow = ({ item }: { item: any }) => (
-    <View style={styles.row}>
-      <Text style={styles.cell}>{item.vehicleNo}</Text>
-      <Text style={styles.cell}>{item.transporter}</Text>
-      <Text style={styles.cell}>{item.driver}</Text>
-      <TouchableOpacity style={styles.editIcon}>
-        <Text>✏️</Text>
-      </TouchableOpacity>
-    </View>
-  );
 
-  if (!fontsLoaded) return null;
+  // Fetch data from Firestore
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const snapshot = await getDocs(collection(db, "shippingpoints")); // Use your collection name
+  //       const fetchedRows = snapshot.docs.map((doc) => ({
+  //         id: doc.id, 
+  //         ...doc.data(), 
+  //       }));
+  //       setRows(fetchedRows);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //       Alert.alert("Error", "Unable to fetch data from Firestore");
+  //     } finally {
+  //       setLoading(false);
+  //       setRefreshing(false);
+  //     }
+  //   };
 
-  const dismissKeyboard = () => Keyboard.dismiss();
-
+  //   fetchData();
+  // }, []);
   // Fetch data from Firestore
   useEffect(() => {
     const fetchShippingPoints = async () => {
@@ -219,7 +84,6 @@ export default function Manage() {
         }));
         
         setShippingPoints(points);
-        console.log(shippingPoints)
       } catch (error) {
         console.error("Error fetching shipping points:", error);
       } finally {
@@ -228,7 +92,163 @@ export default function Manage() {
     };
 
     fetchShippingPoints();
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const snapshot = await getDocs(collection(db, "shippingpoints")); // Use your collection name
+      const fetchedRows = snapshot.docs.map((doc) => ({
+        id: doc.id, // Document ID
+        ...doc.data(), // Document data (fields like vehicleNo, transporter, driver)
+      }));
+      setRows(fetchedRows);
+      setFilteredData(fetchedRows)
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      Alert.alert("Error", "Unable to fetch data from Firestore.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData();
   }, []);
+
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+  };
+
+  
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    if (text.trim() === "") {
+      setFilteredData(rows);
+    } else {
+      const filtered = rows.filter(
+        (item) =>
+          item.vehicleNo.toLowerCase().includes(text.toLowerCase()) ||
+          item.transporter.toLowerCase().includes(text.toLowerCase()) ||
+          item.driver.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredData(filtered);
+    }
+  };
+
+  // Handle edit action
+  const handleEdit = (row: any) => {
+    setEditableRowId(row.id);
+    setEditedRow({ ...row }); // Clone the row for editing
+  };
+
+  // Handle save action (locally and in Firestore)
+  const handleSave = async (id: string) => {
+    try {
+      // Update the local state
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === id ? { ...row, ...editedRow } : row
+        )
+      );
+
+      // Update Firestore
+      const docRef = doc(db, "shippingpoints", id); // Use your collection name
+      await updateDoc(docRef, editedRow);
+
+      Alert.alert("Success", "Row updated successfully.");
+    } catch (error) {
+      console.error("Error updating Firestore:", error);
+      Alert.alert("Error", "Unable to update data in Firestore.");
+    } finally {
+      setEditableRowId(null); // Exit edit mode
+    }
+  };
+
+  const confirmSave = (id: string) => {
+    Alert.alert(
+      "Confirm Save",
+      "Are you sure you want to save changes?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Save", onPress: () => handleSave(id) },
+      ]
+    );
+  };
+  
+
+  const renderRow = ({ item }: { item: any }) => {
+    const isEditable = editableRowId === item.id;
+
+    return (
+      <View style={styles.row}>
+        {/* Editable or Static Field for Vehicle No */}
+        {isEditable ? (
+          <TextInput
+            style={styles.cellInput}
+            value={editedRow.vehicleNo}
+            onChangeText={(text) =>
+              setEditedRow((prev: any) => ({ ...prev, vehicleNo: text }))
+            }
+          />
+        ) : (
+          <Text style={styles.cell}>{item.vehicleNo}</Text>
+        )}
+
+        {/* Editable or Static Field for Transporter */}
+        {isEditable ? (
+          <TextInput
+            style={styles.cellInput}
+            value={editedRow.transporter}
+            onChangeText={(text) =>
+              setEditedRow((prev: any) => ({ ...prev, transporter: text }))
+            }
+          />
+        ) : (
+          <Text style={styles.cell}>{item.transporter}</Text>
+        )}
+
+        {/* Editable or Static Field for Driver */}
+        {isEditable ? (
+          <TextInput
+            style={styles.cellInput}
+            value={editedRow.driver}
+            onChangeText={(text) =>
+              setEditedRow((prev: any) => ({ ...prev, driver: text }))
+            }
+          />
+        ) : (
+          <Text style={styles.cell}>{item.driver}</Text>
+        )}
+
+        {/* Edit/Save Icon */}
+        <TouchableOpacity
+          style={styles.editIcon}
+          // onPress={() =>
+          //   isEditable ? handleSave(item.id) : handleEdit(item)
+          // }
+          onPress={() =>
+            isEditable ? confirmSave(item.id) : handleEdit(item)
+          }
+        >
+          <Text style={{ fontSize: 16 }}>
+            {isEditable ? "✔️" : "✏️"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  if (!fontsLoaded) return null;
+
+  const dismissKeyboard = () => Keyboard.dismiss();
+
+  
 
   return (
     <KeyboardAvoidingView
@@ -312,7 +332,7 @@ export default function Manage() {
             </>
           )}
 
-          <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between'}}>
+          <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between', marginBottom:10}}>
             <Text style={{fontSize:20, fontWeight: "600"}}>Manage Drivers</Text>
             <TouchableOpacity>
               <Text style={{fontSize:14, fontWeight:'bold', color:'orange'}}> + New</Text>
@@ -336,13 +356,21 @@ export default function Manage() {
       </View>
 
       {/* Table Rows */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRow}
-        ListEmptyComponent={<Text style={styles.noDataText}>No Results Found</Text>}
-        style={{width:'100%'}}
-      />
+      {loading ? (
+        <Text style={styles.loadingText}>Loading...</Text>
+      ) : (
+        <FlatList
+          //data={rows}
+          data={filteredData}
+          keyExtractor={(item) => item.id}
+          renderItem={renderRow}
+          ListEmptyComponent={<Text style={styles.noDataText}>No Results Found</Text>}
+          style={{width:'100%'}}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        />
+      )}
           </>
         </View>
       </TouchableWithoutFeedback>
@@ -444,4 +472,19 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 20,
   },
+  loadingText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 20,
+    color: "#888",
+  },
+  cellInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    height: 40
+  }
 });

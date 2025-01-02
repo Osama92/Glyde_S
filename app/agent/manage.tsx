@@ -133,6 +133,7 @@ import {
   ActivityIndicator,
   Image,
   StatusBar,
+  FlatList
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { useRouter } from "expo-router";
@@ -158,6 +159,49 @@ export default function Manage() {
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
   });
+
+  const data = [
+    { id: "1", vehicleNo: "KTU 677 XB", transporter: "CapsLock", driver: "Fatai" },
+    { id: "2", vehicleNo: "LSR 123 XD", transporter: "SpaceBar", driver: "Latti" },
+    { id: "3", vehicleNo: "KJA 560 CX", transporter: "FunLogis", driver: "Dominic" },
+    { id: "4", vehicleNo: "GGE 143 VB", transporter: "FunLogis", driver: "Emmanuel" },
+    { id: "5", vehicleNo: "KJA 679 KN", transporter: "CapsLock", driver: "Seyi" },
+    { id: "6", vehicleNo: "GGE 234 SK", transporter: "Captain Inv", driver: "Bola" },
+    { id: "7", vehicleNo: "TTY 456 FC", transporter: "TSL", driver: "Ahmed" },
+    { id: "8", vehicleNo: "BDG 890 MN", transporter: "CapsLock", driver: "Simon" },
+    { id: "9", vehicleNo: "AGL 676 QA", transporter: "CapsLock", driver: "John" },
+  ];
+
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState(data);
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    if (text.trim() === "") {
+      setFilteredData(data);
+    } else {
+      const filtered = data.filter(
+        (item) =>
+          item.vehicleNo.toLowerCase().includes(text.toLowerCase()) ||
+          item.transporter.toLowerCase().includes(text.toLowerCase()) ||
+          item.driver.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredData(filtered);
+    }
+  };
+
+ 
+  
+  const renderRow = ({ item }: { item: any }) => (
+    <View style={styles.row}>
+      <Text style={styles.cell}>{item.vehicleNo}</Text>
+      <Text style={styles.cell}>{item.transporter}</Text>
+      <Text style={styles.cell}>{item.driver}</Text>
+      <TouchableOpacity style={styles.editIcon}>
+        <Text>✏️</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   if (!fontsLoaded) return null;
 
@@ -267,6 +311,39 @@ export default function Manage() {
               />
             </>
           )}
+
+          <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between'}}>
+            <Text style={{fontSize:20, fontWeight: "600"}}>Manage Drivers</Text>
+            <TouchableOpacity>
+              <Text style={{fontSize:14, fontWeight:'bold', color:'orange'}}> + New</Text>
+            </TouchableOpacity>
+          </View>
+          <>
+             {/* Search Input */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search"
+        value={searchText}
+        onChangeText={handleSearch}
+      />
+
+      {/* Table Header */}
+      <View style={styles.header}>
+        <Text style={[styles.cell, styles.headerText]}>Vehicle No.</Text>
+        <Text style={[styles.cell, styles.headerText]}>Transporter</Text>
+        <Text style={[styles.cell, styles.headerText]}>Driver</Text>
+        <Text style={styles.headerText}></Text>
+      </View>
+
+      {/* Table Rows */}
+      <FlatList
+        data={filteredData}
+        keyExtractor={(item) => item.id}
+        renderItem={renderRow}
+        ListEmptyComponent={<Text style={styles.noDataText}>No Results Found</Text>}
+        style={{width:'100%'}}
+      />
+          </>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -320,5 +397,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'flex-end',
+  },
+  searchBar: {
+    height: 40,
+    width:'100%',
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  header: {
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+  headerText: {
+    fontWeight: "bold",
+    fontSize: 14,
+    color: "#333",
+  },
+  row: {
+    flexDirection: "row",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    alignItems: "center",
+  },
+  cell: {
+    flex: 1,
+    width:'100%',
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+  },
+  editIcon: {
+    //flex: 0.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noDataText: {
+    textAlign: "center",
+    color: "#888",
+    marginTop: 20,
   },
 });

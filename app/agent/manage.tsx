@@ -50,28 +50,6 @@ export default function Manage() {
   });
 
   
-
-  // Fetch data from Firestore
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const snapshot = await getDocs(collection(db, "shippingpoints")); // Use your collection name
-  //       const fetchedRows = snapshot.docs.map((doc) => ({
-  //         id: doc.id, 
-  //         ...doc.data(), 
-  //       }));
-  //       setRows(fetchedRows);
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       Alert.alert("Error", "Unable to fetch data from Firestore");
-  //     } finally {
-  //       setLoading(false);
-  //       setRefreshing(false);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, []);
   // Fetch data from Firestore
   useEffect(() => {
     const fetchShippingPoints = async () => {

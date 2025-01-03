@@ -25,7 +25,7 @@ import {
   doc,
   updateDoc
 } from "firebase/firestore";
-import { app } from "../firebase"; // Ensure this points to your Firebase initialization file
+import { app } from "../firebase";
 import { useFonts } from "expo-font";
 
 
@@ -78,7 +78,7 @@ export default function Manage() {
       const snapshot = await getDocs(collection(db, "shippingpoints")); // Use your collection name
       const fetchedRows = snapshot.docs.map((doc) => ({
         id: doc.id, // Document ID
-        ...doc.data(), // Document data (fields like vehicleNo, transporter, driver)
+        ...doc.data(), 
       }));
       setRows(fetchedRows);
       setFilteredData(fetchedRows)
@@ -103,7 +103,6 @@ export default function Manage() {
   };
 
   
-
   const handleSearch = (text: string) => {
     setSearchText(text);
     if (text.trim() === "") {

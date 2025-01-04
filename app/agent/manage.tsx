@@ -75,7 +75,7 @@ export default function Manage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const snapshot = await getDocs(collection(db, "shippingpoints")); // Use your collection name
+      const snapshot = await getDocs(collection(db, "DriverOnBoarding")); // Use your collection name
       const fetchedRows = snapshot.docs.map((doc) => ({
         id: doc.id, // Document ID
         ...doc.data(), 
@@ -135,7 +135,7 @@ export default function Manage() {
       );
 
       // Update Firestore
-      const docRef = doc(db, "shippingpoints", id); // Use your collection name
+      const docRef = doc(db, "DriverOnBoarding", id); // Use your collection name
       await updateDoc(docRef, editedRow);
 
       Alert.alert("Success", "Row updated successfully.");
@@ -194,13 +194,13 @@ export default function Manage() {
         {isEditable ? (
           <TextInput
             style={styles.cellInput}
-            value={editedRow.driver}
+            value={editedRow.driverName}
             onChangeText={(text) =>
-              setEditedRow((prev: any) => ({ ...prev, driver: text }))
+              setEditedRow((prev: any) => ({ ...prev, driverName: text }))
             }
           />
         ) : (
-          <Text style={styles.cell}>{item.driver}</Text>
+          <Text style={styles.cell}>{item.driverName}</Text>
         )}
 
         {/* Edit/Save Icon */}
@@ -311,7 +311,7 @@ export default function Manage() {
 
           <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between', marginBottom:10}}>
             <Text style={{fontSize:20, fontWeight: "600"}}>Manage Drivers</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/agent/manageDriver')}>
               <Text style={{fontSize:14, fontWeight:'bold', color:'orange'}}> + New</Text>
             </TouchableOpacity>
           </View>

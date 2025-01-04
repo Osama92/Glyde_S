@@ -320,7 +320,7 @@ export default function ManageDriver() {
 
     {/* Image Upload here */}
         <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
-            <Text style={{fontFamily:'Poppins'}}>Insert Driver Photo here</Text>
+            <Text style={{fontFamily:'Poppins', color:'grey'}}>Insert Driver Photo here</Text>
             <View style={styles.imageActions}>
           <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
             <Text style={styles.buttonText}>Take Photo</Text>
@@ -332,7 +332,7 @@ export default function ManageDriver() {
         {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
         </View>
         <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
-            <Text style={{fontFamily:'Poppins'}}>Insert Licence here</Text>
+            <Text style={{fontFamily:'Poppins',color:'grey'}}>Insert Licence here</Text>
             <View style={styles.imageActions}>
           <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
             <Text style={styles.buttonText}>Take Photo</Text>
@@ -411,6 +411,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins',
     marginBottom: 10,
+   
   },
   imageActions: {
     flexDirection: 'row',

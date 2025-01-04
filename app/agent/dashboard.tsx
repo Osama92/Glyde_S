@@ -219,9 +219,9 @@ export default function Dashboard() {
                 <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
                 <Text>Shipping Point here</Text>
             </View>
-            <View style={{width:'15%',height:'100%',justifyContent:'center', alignItems:'center'}}>
+            <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push('/agent/manage')}>
                 <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
-            </View>
+            </TouchableOpacity>
         </View>
         <View
           style={{
@@ -234,7 +234,7 @@ export default function Dashboard() {
           }}
         >
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/manage')}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>alert('Oga work on shipment page')}>
             <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Shipment</Text>

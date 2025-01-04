@@ -218,11 +218,13 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, setDoc,getFirestore } from 'firebase/firestore';
 import { app } from "../firebase"; // Update this path based on your project structure
 import { useFonts } from 'expo-font';
+import { router } from 'expo-router';
 
 const db = getFirestore(app);
 
@@ -283,6 +285,7 @@ export default function ManageDriver() {
         licencePhoto,
       });
       alert('Data saved successfully!');
+      //router.back();
       setVehicleNo('');
       setTransporter('');
       setDriverName('');
@@ -298,12 +301,48 @@ export default function ManageDriver() {
   };
 
   if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#0000ff" style={styles.loading} />;
+    return <ActivityIndicator size="large" color="orange" style={styles.loading} />;
   }
 
   return (
+    <KeyboardAvoidingView behavior="height" style={{flex:1}}>
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Driver Onboarding</Text>
+        
+       <View style={styles.topSection}>
+                  <TouchableOpacity onPress={() => router.back()}>
+                    <Text style={{ fontSize: 20, fontWeight: "bold" }}>Capture</Text>
+                  </TouchableOpacity>
+                  <Image
+                    source={require("../../assets/images/Back.png")}
+                    style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+                  />
+                </View>
+
+    {/* Image Upload here */}
+        <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
+            <Text style={{fontFamily:'Poppins'}}>Insert Driver Photo here</Text>
+            <View style={styles.imageActions}>
+          <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => pickImage(setDriverPhoto)} style={styles.button}>
+            <Text style={styles.buttonText}>Upload Photo</Text>
+          </TouchableOpacity>
+        </View>
+        {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
+        </View>
+        <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
+            <Text style={{fontFamily:'Poppins'}}>Insert Licence here</Text>
+            <View style={styles.imageActions}>
+          <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => pickImage(setLicencePhoto)} style={styles.button}>
+            <Text style={styles.buttonText}>Upload Photo</Text>
+          </TouchableOpacity>
+        </View>
+        {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
+        </View>
 
       <TextInput
         placeholder="Vehicle No"
@@ -331,40 +370,16 @@ export default function ManageDriver() {
         style={styles.input}
       />
 
-      <View style={styles.imageSection}>
-        <Text style={styles.label}>Driver Photo</Text>
-        <View style={styles.imageActions}>
-          <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => pickImage(setDriverPhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Upload Photo</Text>
-          </TouchableOpacity>
-        </View>
-        {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
-      </View>
-
-      <View style={styles.imageSection}>
-        <Text style={styles.label}>Driver Licence</Text>
-        <View style={styles.imageActions}>
-          <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => pickImage(setLicencePhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Upload Photo</Text>
-          </TouchableOpacity>
-        </View>
-        {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
-      </View>
-
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="orange" />
       ) : (
         <TouchableOpacity onPress={saveToFirestore} style={styles.saveButton}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       )}
+      
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -376,7 +391,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'MontserratExtraBold',
+    fontFamily: 'Poppins',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -385,15 +400,16 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     padding: 10,
-    marginBottom: 15,
-    fontFamily: 'Montserrat',
+    marginBottom: 10,
+    fontFamily: 'Nunito',
+    height: 50,
   },
   imageSection: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontFamily: 'MontserratExtraBold',
+    fontFamily: 'Poppins',
     marginBottom: 10,
   },
   imageActions: {
@@ -402,33 +418,42 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: '#007bff',
-    padding: 10,
+    backgroundColor: 'black',
+    padding: 5,
+    margin:5,
     borderRadius: 8,
   },
   buttonText: {
     color: '#fff',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Nunito',
+    fontSize: 10
   },
   image: {
-    width: '100%',
-    height: 200,
+    width: 60,
+    height: 60,
     borderRadius: 8,
   },
   saveButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: 'black',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
-    fontFamily: 'MontserratExtraBold',
+    fontFamily: 'Poppins',
     fontSize: 16,
   },
   loading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  topSection: {
+    width: '100%',
+    height: '10%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
 });

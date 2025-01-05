@@ -341,7 +341,7 @@ export default function ManageDriver() {
             <Text style={styles.buttonText}>Upload Photo</Text>
           </TouchableOpacity>
         </View>
-        {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
+        {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
         </View>
 
       <TextInput

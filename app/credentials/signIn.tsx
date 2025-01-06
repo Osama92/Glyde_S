@@ -181,7 +181,7 @@ export default function SignIn() {
 
         <View style={styles.topSection}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text>Back to sign up</Text>
+            <Text style={{fontSize:20}}>Back to sign up</Text>
           </TouchableOpacity>
           <Image
             source={require("../../assets/images/Back.png")}
@@ -189,7 +189,7 @@ export default function SignIn() {
           />
         </View>
 
-        <Image source={require('../../assets/images/signIn.png')} resizeMode='contain' style={{width:'50%', height:'25%'}}/>
+        <Image source={require('../../assets/images/signIn.png')} resizeMode='contain' style={{width:200, height:200}}/>
 
           <Text style={styles.title}>Login</Text>
 

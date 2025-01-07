@@ -413,7 +413,7 @@ export default function CreateShipment() {
               setSelectedTransporter(item);
               setSelectedT(item.name);
             }}
-            placeholder="Select a Transporter"
+            placeholder="⌕ Select a Transporter"
             containerStyle={styles.dropdownContainer}
             textInputStyle={styles.input}
             itemStyle={styles.item}

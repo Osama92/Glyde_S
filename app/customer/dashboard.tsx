@@ -286,7 +286,7 @@ export default function Dashboard() {
             <View style={{width:'100%', height: '30%', marginTop: 20, justifyContent:'center'}}>
             <StepIndicator
             customStyles={customStyles}
-            currentPosition={2} // Change this index based on the current progress
+            currentPosition={1} // Change this index based on the current progress
             labels={labels}
             stepCount={4}
           />

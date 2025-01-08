@@ -25,7 +25,7 @@ import {
   doc,
   updateDoc
 } from "firebase/firestore";
-import { app } from "../firebase";
+import { app, auth } from "../firebase";
 import { useFonts } from "expo-font";
 
 
@@ -146,6 +146,8 @@ export default function Manage() {
       setEditableRowId(null); // Exit edit mode
     }
   };
+
+
 
   const confirmSave = (id: string) => {
     Alert.alert(
@@ -279,7 +281,7 @@ export default function Manage() {
             <>
               <SearchableDropdown
                 items={shippingPoints}
-                onItemSelect={(item:any) => setSelectedPoint(item.name)} 
+                onItemSelect={(item:any) => {setSelectedPoint(item.name)}}
                 containerStyle={{  width:'100%' }}
                 itemTextStyle={{ color: '#222' }}
                 itemsContainerStyle={{ height: 80, marginTop: 10 }}

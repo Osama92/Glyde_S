@@ -239,6 +239,18 @@ export default function Dashboard() {
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Shipment</Text>
           </View>
+          {/* Create Delivery */}
+          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createDelivery')}>
+            <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
+          </TouchableOpacity>
+          <Text style={{textAlign:'center'}}>Create Delivery</Text>
+          </View>
+
+          {/* Create Delivery */}
+          <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+            <Text>create Material</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

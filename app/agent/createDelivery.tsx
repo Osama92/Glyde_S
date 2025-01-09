@@ -179,8 +179,8 @@ export default function CreateDelivery() {
       behavior="padding"
       enabled
     >
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <View>
+      
+        <View style={styles.container}>
           <View style={styles.topSection}>
             <TouchableOpacity onPress={() => router.back()}>
               <Text style={{ fontSize: 20, fontWeight: "bold" }}>
@@ -193,6 +193,7 @@ export default function CreateDelivery() {
             />
           </View>
 
+          <ScrollView  keyboardShouldPersistTaps="handled">
           {/* Customer Section */}
           <View
             style={{
@@ -337,8 +338,9 @@ export default function CreateDelivery() {
           >
             <Text style={styles.saveButtonText}>Save Delivery</Text>
           </TouchableOpacity>
+          </ScrollView>
         </View>
-      </ScrollView>
+      
     </KeyboardAvoidingView>
   );
 }

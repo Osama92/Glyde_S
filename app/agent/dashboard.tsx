@@ -251,6 +251,11 @@ export default function Dashboard() {
           <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
             <Text>create Material</Text>
           </TouchableOpacity>
+
+          {/* Shipement Status */}
+          <TouchableOpacity onPress={(()=>router.push('/agent/shipmentStatus'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+            <Text>Shipment Status</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

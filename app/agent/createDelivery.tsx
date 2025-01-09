@@ -231,6 +231,7 @@ import {
   StyleSheet,
   FlatList,
   KeyboardAvoidingView,
+  Image
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import {
@@ -241,6 +242,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { app } from "../firebase";
+import { router } from 'expo-router';
 
 // Firestore initialization
 const db = getFirestore(app);
@@ -284,7 +286,7 @@ export default function CreateDelivery() {
       const customerData: Customer[] = [];
       const snapshot = await getDocs(collection(db, "customer"));
       snapshot.forEach((doc) => {
-        customerData.push({ id: doc.id, name: doc.data().name });
+        customerData.push({ id: doc.id, name: doc.data().name});
       });
       setCustomers(customerData);
     };
@@ -383,12 +385,28 @@ export default function CreateDelivery() {
     <KeyboardAvoidingView>
     <View style={styles.container}>
       
-      <Text style={styles.header}>Create Delivery</Text>
+      {/* <Text style={styles.header}>Create Delivery</Text> */}
+      <View style={styles.topSection}>
+                        <TouchableOpacity onPress={() => router.back()}>
+                          <Text style={{ fontSize: 20, fontWeight: "bold" }}>Create Delivery</Text>
+                        </TouchableOpacity>
+                        <Image
+                          source={require("../../assets/images/Back.png")}
+                          style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+                        />
+                      </View>
 
       {/* Customer Section */}
-      <Text style={styles.label}>Deliver to?</Text>
+      <View style={{flexDirection:'row', width:'100%', height: 30, alignItems:'center',justifyContent:'space-between'}}>
+      <Text style={styles.label}>Current Shipping Point</Text>
+      <Text style={{color:'orange'}}>Agbara - Unilever NG</Text>
+      </View>
+
+      <View style={{flexDirection:'row', width:'100%', height: 30, alignItems:'center',justifyContent:'space-between',marginTop:10, marginBottom:10}}>
+      <Text style={{fontSize:28}}>Deliver to?</Text>
+      </View>
       <SearchableDropdown
-        items={customers.map((c) => ({ id: c.id, name: c.name }))}
+        items={customers.map((c) => ({ id: c.id, name: c.name}))}
         onItemSelect={(item: Customer) => setSelectedCustomer(item)}
         placeholder="Select a Customer"
         textInputStyle={styles.dropdownInput}
@@ -396,7 +414,6 @@ export default function CreateDelivery() {
         itemTextStyle={styles.dropdownItemText}
         textInputProps={
           {
-            placeholder: "Search Shipping Point",
             underlineColorAndroid: "transparent",
             style: {
                 padding: 12,
@@ -408,6 +425,10 @@ export default function CreateDelivery() {
           }
         }
       />
+      <View style={{flexDirection:'row', width:'100%',height:40, alignItems:'center',justifyContent:'space-between'}}>
+      <Text style={styles.label1}>{selectedCustomer?.name}</Text>
+      <Text style={styles.label1}>{selectedCustomer?.id}</Text>
+      </View>
 
       {/* Origin Point Section */}
       <Text style={styles.label}>Shipping Point</Text>
@@ -502,10 +523,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+    marginTop: 20,
   },
   label: {
     fontSize: 16,
-    marginBottom: 5,
+
+  },
+  label1: {
+    fontSize: 15,
+    fontWeight: '600'
   },
   input: {
     borderWidth: 1,
@@ -569,5 +595,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontSize: 18,
+  },
+  topSection: {
+    width: '100%',
+    height: '10%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
 });

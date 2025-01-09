@@ -221,6 +221,12 @@
 //   );
 // }
 
+
+
+
+
+
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -231,7 +237,8 @@ import {
   StyleSheet,
   FlatList,
   KeyboardAvoidingView,
-  Image
+  Image,
+  ScrollView,
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import {
@@ -382,8 +389,10 @@ export default function CreateDelivery() {
   );
 
   return (
-    <KeyboardAvoidingView>
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column',justifyContent: 'center',}} behavior="padding" enabled>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <View>
+    
       
       {/* <Text style={styles.header}>Create Delivery</Text> */}
       <View style={styles.topSection}>
@@ -396,6 +405,9 @@ export default function CreateDelivery() {
                         />
                       </View>
 
+     
+      
+     
       {/* Customer Section */}
       <View style={{flexDirection:'row', width:'100%', height: 30, alignItems:'center',justifyContent:'space-between'}}>
       <Text style={styles.label}>Current Shipping Point</Text>
@@ -409,8 +421,9 @@ export default function CreateDelivery() {
         items={customers.map((c) => ({ id: c.id, name: c.name}))}
         onItemSelect={(item: Customer) => setSelectedCustomer(item)}
         placeholder="Select a Customer"
-        textInputStyle={styles.dropdownInput}
+        //textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
+        itemsContainerStyle={{ maxHeight: 140 }}
         itemTextStyle={styles.dropdownItemText}
         textInputProps={
           {
@@ -423,6 +436,7 @@ export default function CreateDelivery() {
             },
             onTextChange: text => (null)
           }
+          
         }
       />
       <View style={{flexDirection:'row', width:'100%',height:40, alignItems:'center',justifyContent:'space-between'}}>
@@ -443,17 +457,21 @@ export default function CreateDelivery() {
       />
 
       {/* Materials Section */}
-      <Text style={styles.label}>Item(s) to deliver</Text>
+      <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+      <Text style={{fontSize:28, marginBottom:10}}>Item(s) to deliver</Text>
+      <TouchableOpacity onPress={handleAddMaterial}>
+        <Text style={{fontSize:15, color:'orange', fontWeight:'500'}}>+ Add item</Text>
+      </TouchableOpacity>
+      </View>
       <SearchableDropdown
         items={materials.map((m) => ({ id: m.id, name: m.name }))}
         onItemSelect={(item: Material) => setMaterialInput(item.name)}
-        placeholder="Select a Material"
-        textInputStyle={styles.dropdownInput}
+        placeholder="Select a Item"
+        //textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
         itemTextStyle={styles.dropdownItemText}
         textInputProps={
           {
-            placeholder: "Search Shipping Point",
             underlineColorAndroid: "transparent",
             style: {
                 padding: 12,
@@ -465,9 +483,7 @@ export default function CreateDelivery() {
           }
         }
       />
-      <TouchableOpacity style={styles.addButton} onPress={handleAddMaterial}>
-        <Text style={styles.addButtonText}>+ Add Material</Text>
-      </TouchableOpacity>
+      
 
       {/* FlatList for Materials */}
       <FlatList
@@ -483,9 +499,10 @@ export default function CreateDelivery() {
         items={shipments.map((s) => ({ id: s.id, name: s.name }))}
         onItemSelect={(item: Shipment) => setSelectedShipment(item)}
         placeholder="Select a Shipment"
-        textInputStyle={styles.dropdownInput}
+        //textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
         itemTextStyle={styles.dropdownItemText}
+        itemsContainerStyle={{ maxHeight: 140 }}
         textInputProps={
           {
             placeholder: "Search Shipping Point",
@@ -505,9 +522,13 @@ export default function CreateDelivery() {
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveDelivery}>
         <Text style={styles.saveButtonText}>Save Delivery</Text>
       </TouchableOpacity>
+     
+      
       
     </View>
+    </ScrollView>
     </KeyboardAvoidingView>
+    
   );
 }
 
@@ -548,8 +569,10 @@ const styles = StyleSheet.create({
   },
   dropdownItem: {
     padding: 10,
+    marginTop: 2,
+    backgroundColor: '#ddd',
+    borderColor: '#bbb',
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 5,
   },
   dropdownItemText: {

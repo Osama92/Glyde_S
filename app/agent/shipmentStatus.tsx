@@ -7,6 +7,7 @@ import {
   Modal,
   StyleSheet,
   Alert,
+  Button
 } from "react-native";
 import {
   getFirestore,
@@ -89,35 +90,47 @@ export default function ShipmentsScreen() {
   
 
   // Update shipment status
-  const updateShipmentStatus = async (shipmentId: string, statusId: number) => {
+//   const updateShipmentStatus = async (shipmentId: string, statusId: number) => {
+//     try {
+//       const shipmentDoc = doc(db, "Shipment", shipmentId);
+//       await updateDoc(shipmentDoc, { statusId });
+
+//       Alert.alert("Success", "Status updated successfully!");
+//       setModalVisible(false);
+//       fetchShipments(); // Refresh data
+//     } catch (error) {
+//       console.error("Error updating shipment status:", error);
+//       Alert.alert("Error", "Failed to update status.");
+//     }
+//   };
+
+const updateShipmentStatus = async (shipmentId: string, newStatusId?: number) => {
     try {
       const shipmentDoc = doc(db, "Shipment", shipmentId);
-      await updateDoc(shipmentDoc, { statusId });
-
-      Alert.alert("Success", "Status updated successfully!");
+      await updateDoc(shipmentDoc, { statusId: newStatusId || "Pending" });
       setModalVisible(false);
-      fetchShipments(); // Refresh data
+      fetchShipments(); // Refresh the data after updating
     } catch (error) {
-      console.error("Error updating shipment status:", error);
-      Alert.alert("Error", "Failed to update status.");
+      console.error("Error updating status:", error);
     }
   };
+  
 
   // Fetch the current status ID for the step indicator
-  const fetchStatusId = async (shipmentId: string) => {
-    try {
-      const shipmentDoc = doc(db, "Shipment", shipmentId);
-      const snapshot = await getDoc(shipmentDoc);
+//   const fetchStatusId = async (shipmentId: string) => {
+//     try {
+//       const shipmentDoc = doc(db, "Shipment", shipmentId);
+//       const snapshot = await getDoc(shipmentDoc);
 
-      if (snapshot.exists()) {
-        setCurrentPosition(snapshot.data()?.statusId || 0);
-      } else {
-        console.warn("No such shipment exists!");
-      }
-    } catch (error) {
-      console.error("Error fetching status ID:", error);
-    }
-  };
+//       if (snapshot.exists()) {
+//         setCurrentPosition(snapshot.data()?.statusId || 0);
+//       } else {
+//         console.warn("No such shipment exists!");
+//       }
+//     } catch (error) {
+//       console.error("Error fetching status ID:", error);
+//     }
+//   };
 
   // Fetch delivery numbers by customer name
   const fetchDeliveryNumberByCustomer = async (
@@ -143,10 +156,20 @@ export default function ShipmentsScreen() {
     }
   };
 
+  const openStatusModal = (shipmentId: string) => {
+    const selectedShipment = shipments.find((shipment) => shipment.id === shipmentId);
+    setSelectedShipment({
+      id: shipmentId,
+      status: selectedShipment?.status || "Pending",
+    });
+    setModalVisible(true);
+  };
+  
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Shipments</Text>
-      <FlatList
+      {/* <FlatList
         data={shipments}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -166,7 +189,37 @@ export default function ShipmentsScreen() {
             </TouchableOpacity>
           </View>
         )}
+      /> */}
+
+{shipments.length > 0 ? (
+      <FlatList
+        data={shipments}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={{ marginBottom: 10, padding: 10, backgroundColor: "#f1f1f1" }}>
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>Shipment ID: {item.id}</Text>
+            <Text>Status: {item.statusId || "Pending"}</Text>
+            {item.deliveries.length > 0 ? (
+              <FlatList
+                data={item.deliveries}
+                keyExtractor={(delivery) => delivery.id}
+                renderItem={({ item: delivery }) => (
+                  <Text style={{ marginLeft: 0 }}>Delivery: {JSON.stringify(delivery.id)}</Text>
+                )}
+              />
+            ) : (
+              <Text>No deliveries found.</Text>
+            )}
+            <Button
+              title="Change Status"
+              onPress={() => openStatusModal(item.id)}
+            />
+          </View>
+        )}
       />
+    ) : (
+      <Text>No shipments found</Text>
+    )}
 
       <Modal visible={modalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
@@ -194,7 +247,7 @@ export default function ShipmentsScreen() {
         </View>
       </Modal>
 
-      {selectedShipment && (
+      {/* {selectedShipment && (
         <View style={styles.stepIndicatorContainer}>
           <Text style={styles.stepIndicatorTitle}>Status Tracker</Text>
           <StepIndicator
@@ -203,35 +256,35 @@ export default function ShipmentsScreen() {
             labels={["Loaded", "Dispatched"]}
           />
         </View>
-      )}
+      )} */}
     </View>
   );
 }
 
 // Step indicator styles
-const stepIndicatorStyles = {
-  stepIndicatorSize: 30,
-  currentStepIndicatorSize: 40,
-  separatorStrokeWidth: 2,
-  currentStepStrokeWidth: 3,
-  stepStrokeCurrentColor: "#fe7013",
-  stepStrokeWidth: 3,
-  stepStrokeFinishedColor: "#fe7013",
-  stepStrokeUnFinishedColor: "#aaaaaa",
-  separatorFinishedColor: "#fe7013",
-  separatorUnFinishedColor: "#aaaaaa",
-  stepIndicatorFinishedColor: "#fe7013",
-  stepIndicatorUnFinishedColor: "#ffffff",
-  stepIndicatorCurrentColor: "#ffffff",
-  stepIndicatorLabelFontSize: 13,
-  currentStepIndicatorLabelFontSize: 13,
-  stepIndicatorLabelCurrentColor: "#fe7013",
-  stepIndicatorLabelFinishedColor: "#ffffff",
-  stepIndicatorLabelUnFinishedColor: "#aaaaaa",
-  labelColor: "#999999",
-  labelSize: 13,
-  currentStepLabelColor: "#fe7013",
-};
+// const stepIndicatorStyles = {
+//   stepIndicatorSize: 30,
+//   currentStepIndicatorSize: 40,
+//   separatorStrokeWidth: 2,
+//   currentStepStrokeWidth: 3,
+//   stepStrokeCurrentColor: "#fe7013",
+//   stepStrokeWidth: 3,
+//   stepStrokeFinishedColor: "#fe7013",
+//   stepStrokeUnFinishedColor: "#aaaaaa",
+//   separatorFinishedColor: "#fe7013",
+//   separatorUnFinishedColor: "#aaaaaa",
+//   stepIndicatorFinishedColor: "#fe7013",
+//   stepIndicatorUnFinishedColor: "#ffffff",
+//   stepIndicatorCurrentColor: "#ffffff",
+//   stepIndicatorLabelFontSize: 13,
+//   currentStepIndicatorLabelFontSize: 13,
+//   stepIndicatorLabelCurrentColor: "#fe7013",
+//   stepIndicatorLabelFinishedColor: "#ffffff",
+//   stepIndicatorLabelUnFinishedColor: "#aaaaaa",
+//   labelColor: "#999999",
+//   labelSize: 13,
+//   currentStepLabelColor: "#fe7013",
+// };
 
 const styles = StyleSheet.create({
   container: {

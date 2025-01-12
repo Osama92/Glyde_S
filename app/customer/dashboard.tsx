@@ -410,6 +410,7 @@ export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const [deliveryShipment, setdeliveryShipment] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -450,7 +451,12 @@ try {
 
   if (!deliverySnapshot.empty) {
     deliverySnapshot.forEach((doc) => {
-      console.log("Delivery Data:", doc.data());
+      //console.log("Delivery Data:", doc.data().shipment);
+      // check if the delivery is for the current shipment
+      if (doc.data().shipment === shipmentDoc.id) {
+        setdeliveryShipment(shipmentDoc.id);
+        console.log("Delivery Shipment:", shipmentDoc.id);
+      }
     });
   } else {
     console.log("No matching deliveries found for customer:", displayName);
@@ -463,7 +469,6 @@ try {
 
             if (!deliverySnapshot.empty) {
               const deliveryData = deliverySnapshot.docs[0].data();
-              //console.log(deliveryData.deliveryNumber)
               setCurrentStep(deliveryData.statusId || 0); // Default to 0 if stepIndicatorId is missing
             }
           });

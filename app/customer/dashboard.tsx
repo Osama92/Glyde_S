@@ -465,7 +465,8 @@ try {
   console.error("Error fetching delivery data:", error.message);
 }
 
-            const deliverySnapshot = await getDocs(deliveryQuery);
+            //const deliverySnapshot = await getDocs(deliveryQuery);
+            const deliverySnapshot = await getDocs(shipmentQuery);
 
             if (!deliverySnapshot.empty) {
               const deliveryData = deliverySnapshot.docs[0].data();

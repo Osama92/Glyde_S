@@ -351,8 +351,6 @@
 
 
 
-
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -447,7 +445,7 @@ export default function Dashboard() {
     const deliveryQuery = query(deliveriesRef, where("customer", "==", displayName));
 
 try {
-  const deliverySnapshot = await getDocs(deliveryQuery);
+  const deliverySnapshot = await getDocs(shipmentQuery);
 
   if (!deliverySnapshot.empty) {
     deliverySnapshot.forEach((doc) => {
@@ -455,7 +453,11 @@ try {
       // check if the delivery is for the current shipment
       if (doc.data().shipment === shipmentDoc.id) {
         setdeliveryShipment(shipmentDoc.id);
-        console.log("Delivery Shipment:", shipmentDoc.id);
+        //console.log("Delivery Shipment:", shipmentDoc.id);
+        
+        const deliveryData = deliverySnapshot.docs[0].data();
+              setCurrentStep(deliveryData.statusId || 0); // Default to 0 if stepIndicatorId is missing
+              console.log("kai:", currentStep);
       }
     });
   } else {
@@ -465,12 +467,12 @@ try {
   console.error("Error fetching delivery data:", error.message);
 }
 
-            //const deliverySnapshot = await getDocs(deliveryQuery);
+            //const deliverySnapshot = await getDocs(deliveryQuery)
             const deliverySnapshot = await getDocs(shipmentQuery);
 
             if (!deliverySnapshot.empty) {
-              const deliveryData = deliverySnapshot.docs[0].data();
-              setCurrentStep(deliveryData.statusId || 0); // Default to 0 if stepIndicatorId is missing
+              // const deliveryData = deliverySnapshot.docs[0].data();
+              // setCurrentStep(deliveryData.statusId || 0); // Default to 0 if stepIndicatorId is missing
             }
           });
         }
@@ -494,8 +496,8 @@ try {
   }
 
   return (
-    <View style={styles.container}>
-      {/* User Info */}
+        <View style={styles.container}>
+      
       <View style={styles.TopNav}>
         <View style={styles.leftNav}>
           <View
@@ -520,19 +522,175 @@ try {
               </TouchableOpacity>
             </View>
           </View>
+          <View
+            style={{
+              width: "100%",
+              height: "50%",
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                backgroundColor: "#EDEBEB",
+                borderRadius: 20,
+                margin: 5,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={require("../../assets/images/Pin.png")}
+                resizeMode="cover"
+                style={{ width: 20, height: 20 }}
+              />
+            </View>
+            <View style={{ flexDirection: "column" }}>
+              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
+                Your location
+              </Text>
+              <TouchableOpacity>
+                <Text>Home</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        <View style={styles.rightNav}>
+          <View
+            style={{
+              flexDirection: "row",
+              width: "100%",
+              height: "46%",
+              alignItems: "center",
+              backgroundColor: "#f4f4f4",
+              borderRadius: 30,
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                backgroundColor: "#EDEBEB",
+                borderRadius: 20,
+                margin: 5,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={require("../../assets/images/Trackk.png")}
+                resizeMode="cover"
+                style={{ width: 20, height: 20 }}
+              />
+            </View>
+            <View style={{ flexDirection: "column" }}>
+              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
+                Track Delivery
+              </Text>
+              <TouchableOpacity>
+                <Text>Track by ID</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View
+            style={{
+              width: "100%",
+              height: "46%",
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#f4f4f4",
+              borderRadius: 30,
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                backgroundColor: "#F6984C",
+                borderRadius: 20,
+                margin: 5,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={require("../../assets/images/Support.png")}
+                resizeMode="cover"
+                style={{ width: 20, height: 20}}
+              />
+            </View>
+            <View style={{ flexDirection: "column" }}>
+              <TouchableOpacity>
+                <Text>Support Desk</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
-
-      {/* Step Indicator */}
+      {/*Scroll View will live here */}
       <ScrollView style={{ width: "100%", height: "70%" }}>
-        <View style={{ width: "100%", height: 300, backgroundColor: "#f4f4f4", borderRadius: 20 }}>
-          <View style={{ width: "100%", height: "30%", marginTop: 20, justifyContent: "center" }}>
+        <View
+          style={{
+            width: "100%",
+            height: 300,
+            backgroundColor: "#f4f4f4",
+            borderRadius: 20,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              height: "30%",
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "space-around",
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{ width: "60%", height: "100%", justifyContent: "center" }}
+            >
+              <Text
+                style={{ fontSize: 20, fontWeight: "400", marginBottom: 10 }}
+              >
+                Incoming Deliveries
+              </Text>
+              <Text style={{ fontSize: 35}}>{deliveryShipment}</Text>
+            </View>
+            <View
+              style={{
+                width: "30%",
+                height: "40%",
+                backgroundColor: "#F6984C",
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <TouchableOpacity>
+                <Text style={{ color: "white" }}>View on Map</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+            <View style={{width:'100%', height: '30%', marginTop: 20, justifyContent:'center'}}>
             <StepIndicator
-              customStyles={customStyles}
-              currentPosition={currentStep}
-              labels={labels}
-              stepCount={4}
-            />
+            customStyles={customStyles}
+            currentPosition={currentStep} // Change this index based on the current progress
+            labels={labels}
+            stepCount={4}
+          />
+            </View>
+          <View style={{width:'100%', height: '25%', position:'absolute', bottom:0, flexDirection: 'row'}}>
+            <View style={{width:'50%', height: '100%',justifyContent:'center', alignItems: 'center'}}>
+              <Text style={{fontWeight:'600', marginBottom:10}}>Delivery Origin</Text>
+              <Text>Delivery Date</Text>
+            </View>
+            <View style={{width:'50%', height: '100%', justifyContent:'center', alignItems: 'center'}}>
+            <Text style={{fontWeight:'600', marginBottom:10}}>Delivery Origin</Text>
+            <Text>Delivery Date</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -543,20 +701,34 @@ try {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    //justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor:'#fff'
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  info: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  label: {
+    fontWeight: "bold",
+  },
   TopNav: {
     flexDirection: "row",
     width: "100%",
     height: "30%",
     justifyContent: "space-between",
+    //backgroundColor: 'green',
     alignItems: "center",
   },
   leftNav: {
@@ -565,5 +737,11 @@ const styles = StyleSheet.create({
     height: "60%",
     borderRadius: 30,
   },
+  rightNav: {
+    //backgroundColor:'#f4f4f4',
+    width: "48%",
+    height: "60%",
+    borderRadius: 30,
+    justifyContent: "space-between",
+  },
 });
-

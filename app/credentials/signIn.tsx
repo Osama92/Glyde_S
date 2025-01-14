@@ -144,7 +144,7 @@ export default function SignIn() {
               if (collectionName === "customer") {
                 screen = "/customer/dashboard";
               } else if (collectionName === "deliverydriver") {
-                screen = "/driver/dashboard";
+                screen = "/driver/notificationScreen";
               } else if (collectionName === "fieldagent") {
                 screen = "/agent/dashboard";
               } else if (collectionName === "transporter") {

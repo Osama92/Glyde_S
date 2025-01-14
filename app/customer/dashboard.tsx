@@ -742,7 +742,7 @@ export default function Dashboard() {
           console.log("Delivery Document:", deliveryDoc);
   
           setDeliveryNumber(deliveryDoc.deliveryNumber || "N/A");
-          setStatusId(shipmentData.statusId || "Unknown");
+          setStatusId(shipmentData.statusId || 0);
           return; // Stop looping after finding the first match
         }
       }
@@ -916,6 +916,7 @@ export default function Dashboard() {
       </View>
       {/*Scroll View will live here */}
       <ScrollView style={{ width: "100%", height: "70%" }}>
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>
         <View
           style={{
             width: "100%",
@@ -962,7 +963,7 @@ export default function Dashboard() {
             <View style={{width:'100%', height: '30%', marginTop: 20, justifyContent:'center'}}>
             <StepIndicator
             customStyles={customStyles}
-            currentPosition={statusId} // Change this index based on the current progress
+            currentPosition={statusId ? parseInt(statusId) : undefined} // Change this index based on the current progress
             labels={labels}
             stepCount={4}
           />

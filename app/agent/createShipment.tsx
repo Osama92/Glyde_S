@@ -371,6 +371,7 @@ export default function CreateShipment() {
       vehicleNo: selectedItem,
       mobileNumber,
       driverName,
+      statusId: 0,
       createdAt: new Date().toISOString(),
     };
 

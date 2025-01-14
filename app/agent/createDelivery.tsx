@@ -75,7 +75,7 @@ export default function CreateDelivery() {
       const shipmentData: Shipment[] = [];
       const snapshot = await getDocs(collection(db, "Shipment"));
       snapshot.forEach((doc) => {
-        shipmentData.push({ id: doc.id, name: doc.id });
+        shipmentData.push({ id: doc.id, name: doc.id});
       });
       setShipments(shipmentData);
     };
@@ -135,6 +135,7 @@ export default function CreateDelivery() {
         deliveryData
       );
       Alert.alert("Success", `Delivery created with number: ${deliveryNumber}`);
+      router.back();
     } catch (error) {
       console.error("Error saving delivery:", error);
       Alert.alert("Error", "Failed to save delivery. Please try again.");

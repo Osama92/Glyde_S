@@ -617,13 +617,7 @@
 //     justifyContent: "space-between",
 //     alignItems: "center",
 //   },
-//   leftNav: {
-//     backgroundColor: "#f4f4f4",
-//     width: "48%",
-//     height: "60%",
-//     borderRadius: 30,
-//   },
-// });
+
 
 
 import React, { useEffect, useState, useCallback } from "react";

@@ -265,11 +265,15 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //justifyContent: "center",
+    justifyContent: "center",
     alignItems: "center",
-    paddingLeft: 10,
-    paddingRight:10,
-    backgroundColor:'#fff'
+    //paddingLeft: 10,
+    //paddingRight:10,
+    padding:10,
+    backgroundColor:'#fff',
+    width:'100%',
+    height:'100%'
+
   },
   loaderContainer: {
     flex: 1,

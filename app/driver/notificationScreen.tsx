@@ -24,6 +24,7 @@ const NotificationScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [shipmentId, setShipmentId] = useState(""); // Shipment with statusId == 2
   const [shipmentDisplayName, setShipmentDisplayName] = useState<string>("");
+  const [driverName, setDriverName] = useState<string>("");
 
   // Fetch phone number from AsyncStorage
   useEffect(() => {
@@ -59,6 +60,7 @@ const NotificationScreen = () => {
         const shipment = querySnapshot.docs[0]; // Assuming one shipment per user
         setShipmentId(shipment.id);
         setShipmentDisplayName(shipment.data().mobileNumber);
+        setDriverName(shipment.data().driverName);
         setShowRedDot(true);
         console.log("Shipment found:", shipment.id, shipment.data());
       } else {
@@ -115,6 +117,7 @@ const NotificationScreen = () => {
       <TouchableOpacity onPress={()=>router.navigate("/driver/shipmentScreen")}>
         <Text>View all shipments</Text>
       </TouchableOpacity>
+      <Text>Driver: {driverName}</Text>
 
       {/* Modal for Accept/Decline */}
       <Modal visible={isModalVisible} transparent animationType="slide">

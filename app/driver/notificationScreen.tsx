@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onSnapshot, query, where, updateDoc, getFirestore, collection, doc } from "firebase/firestore";
 import { app } from "../firebase";
+import { router } from "expo-router";
 
 const db = getFirestore(app);
 
@@ -92,7 +93,7 @@ const NotificationScreen = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="orange" />
         <Text>Loading...</Text>
       </View>
     );
@@ -101,15 +102,19 @@ const NotificationScreen = () => {
   return (
     <View style={styles.container}>
       {/* Notification Icon */}
-      <TouchableOpacity
+      <View
         style={styles.iconContainer}
-        onPress={() => shipmentId && setIsModalVisible(true)}
+        
       >
-        <View style={styles.icon}>
+        <TouchableOpacity style={styles.icon} onPress={() => shipmentId && setIsModalVisible(true)}>
+          <Image source={require("../../assets/images/notifications.png")} style={{width: 30, height:30}} />
           {showRedDot && <View style={styles.redDot} />}
+        </TouchableOpacity>
         </View>
-      </TouchableOpacity>
       {shipmentDisplayName ? <Text>📦 {shipmentDisplayName}</Text> : <Text>No shipments available.</Text>}
+      <TouchableOpacity onPress={()=>router.navigate("/driver/shipmentScreen")}>
+        <Text>View all shipments</Text>
+      </TouchableOpacity>
 
       {/* Modal for Accept/Decline */}
       <Modal visible={isModalVisible} transparent animationType="slide">
@@ -128,19 +133,23 @@ const NotificationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    //justifyContent: "center",
     alignItems: "center",
+    marginTop:30
   },
   iconContainer: {
     position: "relative",
+    width:'100%',
+    alignItems:'flex-end',
   },
   icon: {
-    width: 50,
-    height: 50,
-    backgroundColor: "black",
+    width: 40,
+    height: 40,
+    //backgroundColor: "black",
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
+    marginRight:20
   },
   redDot: {
     width: 10,

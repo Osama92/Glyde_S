@@ -859,7 +859,7 @@ export default function Dashboard() {
 
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
+    //setRefreshing(true);
     await fetchAllData();
     setRefreshing(false);
     await fetchUserDetails();

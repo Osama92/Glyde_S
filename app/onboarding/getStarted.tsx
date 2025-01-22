@@ -31,20 +31,20 @@ export default function GetStarted() {
   useEffect(() => {
     // Start the scale animation with timing
     scale.value = withTiming(5, {
-      duration: 3000,
+      duration: 2500,
       easing: Easing.out(Easing.exp),
     });
 
     // Fade out the initial screen
     opacity.value = withTiming(0, {
-      duration: 3000,
+      duration: 2500,
       easing: Easing.inOut(Easing.ease),
     });
 
     // Navigate to the next screen after 3 seconds
     setTimeout(() => {
       router.push('/credentials/signIn');
-    }, 5000); // 3 seconds
+    }, 2000); // seconds
   }, []);
 
   return (
@@ -54,7 +54,7 @@ export default function GetStarted() {
       <Text style={styles.text}>Let's get you started!</Text>
 
       {/* You can add additional buttons or components here if needed */}
-      <TouchableOpacity style={styles.skipButton} onPress={() => router.push('/credentials/signUp')}>
+      <TouchableOpacity style={styles.skipButton} onPress={() => router.push('/credentials/signIn')}>
         <Text style={styles.skipButtonText}>Skip</Text>
       </TouchableOpacity>
     </View>
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'white',
   },
   circle: {
     width: width * 1.5, // Ensuring the circle covers the entire screen when fully scaled

@@ -1,114 +1,3 @@
-// import React, { useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   Alert,
-//   StyleSheet,
-// } from "react-native";
-// import { getFirestore, collection, addDoc } from "firebase/firestore";
-// import { app } from "../firebase"; // Ensure you have configured Firebase in this file
-
-// // Firestore initialization
-// const db = getFirestore(app);
-
-// export default function CreateMaterialScreen() {
-//   const [materialName, setMaterialName] = useState<string>("");
-//   const [originName, setOriginName] = useState<string>("");
-//   const [isSaving, setIsSaving] = useState<boolean>(false);
-
-//   const handleSaveMaterial = async () => {
-//     if (!materialName.trim()) {
-//       Alert.alert("Error", "Material name cannot be empty.");
-//       return;
-//     }
-
-//     setIsSaving(true);
-
-//     try {
-//       await addDoc(collection(db, `originPoint/${originName}/materials`), {
-//         name: materialName,
-//         createdAt: new Date().toISOString(),
-//       });
-//       Alert.alert("Success", "Material saved successfully.");
-//       setMaterialName("");
-//       setOriginName(""); // Clear the input field
-//     } catch (error) {
-//       console.error("Error saving material:", error);
-//       Alert.alert("Error", "Failed to save material. Please try again.");
-//     } finally {
-//       setIsSaving(false);
-//     }
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.header}>Create Material</Text>
-
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Origin Name"
-//         value={originName}
-//         onChangeText={(text) => setOriginName(text)}
-//       />
-
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Enter Material Name"
-//         value={materialName}
-//         onChangeText={(text) => setMaterialName(text)}
-//       />
-
-
-//       <TouchableOpacity
-//         style={styles.saveButton}
-//         onPress={handleSaveMaterial}
-//         disabled={isSaving}
-//       >
-//         <Text style={styles.saveButtonText}>{isSaving ? "Saving..." : "Save Material"}</Text>
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     padding: 20,
-//     backgroundColor: "#f5f5f5",
-//   },
-//   header: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     marginBottom: 20,
-//   },
-//   input: {
-//     width: "100%",
-//     height: 50,
-//     borderColor: "#ccc",
-//     borderWidth: 1,
-//     borderRadius: 8,
-//     paddingHorizontal: 10,
-//     marginBottom: 20,
-//     backgroundColor: "#fff",
-//   },
-//   saveButton: {
-//     backgroundColor: "#007BFF",
-//     paddingVertical: 15,
-//     paddingHorizontal: 30,
-//     borderRadius: 8,
-//     alignItems: "center",
-//   },
-//   saveButtonText: {
-//     color: "#fff",
-//     fontSize: 16,
-//     fontWeight: "bold",
-//   },
-// });
-
 import React, { useState } from "react";
 import {
   View,
@@ -182,6 +71,7 @@ export default function CreateMaterialScreen() {
       <TextInput
         style={styles.input}
         placeholder="Origin Name"
+        placeholderTextColor={"#666"}
         value={originName}
         onChangeText={(text) => setOriginName(text)}
       />
@@ -189,6 +79,7 @@ export default function CreateMaterialScreen() {
       <TextInput
         style={styles.input}
         placeholder="Enter Material Name"
+        placeholderTextColor={"#666"}
         value={materialName}
         onChangeText={(text) => setMaterialName(text)}
       />
@@ -212,7 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
   },
   header: {
     fontSize: 24,
@@ -227,7 +118,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginBottom: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f5",
+    color: "#000",
   },
   saveButton: {
     backgroundColor: "#007BFF",

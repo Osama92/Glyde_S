@@ -226,6 +226,7 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   innerContainer: {
     flex: 1,
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     width: "100%",
-    backgroundColor: "#f3f3f3",
+    backgroundColor: "#f5f5f5",
     borderRadius: 10,
     fontSize: 18,
     paddingHorizontal: 10,

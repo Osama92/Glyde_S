@@ -181,6 +181,7 @@ export default function SignUp({}: SignUpProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   customFont1: {
     fontFamily: 'Poppins',
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
   phoneInput: {
     height: 50,
     width: '80%',
-    backgroundColor: '#f3f3f3',
+    backgroundColor: '#f5f5f5',
     borderRadius: 10,
     fontSize: 18,
     paddingHorizontal: 10,

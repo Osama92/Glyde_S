@@ -71,16 +71,37 @@ export default function Manage() {
     fetchShippingPoints();
   }, [])
 
+  // const fetchData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const snapshot = await getDocs(collection(db, "DriverOnBoarding")); // Use your collection name
+  //     const fetchedRows = snapshot.docs.map((doc) => ({
+  //       id: doc.id, // Document ID
+  //       ...doc.data(), 
+  //     }));
+  //     setRows(fetchedRows);
+  //     setFilteredData(fetchedRows)
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //     Alert.alert("Error", "Unable to fetch data from Firestore.");
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // };
   const fetchData = async () => {
     try {
       setLoading(true);
       const snapshot = await getDocs(collection(db, "DriverOnBoarding")); // Use your collection name
-      const fetchedRows = snapshot.docs.map((doc) => ({
-        id: doc.id, // Document ID
-        ...doc.data(), 
-      }));
+      const fetchedRows = snapshot.docs
+        .map((doc) => ({
+          id: doc.id, // Document ID
+          ...doc.data(),
+        }))
+        .filter((row: any) => row.LoadingPoint === shippingPoint); // Filter based on the condition
+  
       setRows(fetchedRows);
-      setFilteredData(fetchedRows)
+      setFilteredData(fetchedRows);
     } catch (error) {
       console.error("Error fetching data:", error);
       Alert.alert("Error", "Unable to fetch data from Firestore.");
@@ -89,6 +110,7 @@ export default function Manage() {
       setRefreshing(false);
     }
   };
+  
 
   // Initial data fetch
   useEffect(() => {
@@ -101,21 +123,29 @@ export default function Manage() {
     await fetchData();
   };
 
-  
   const handleSearch = (text: string) => {
     setSearchText(text);
     if (text.trim() === "") {
       setFilteredData(rows);
     } else {
-      const filtered = rows.filter(
-        (item) =>
-          item.vehicleNo.toLowerCase().includes(text.toLowerCase()) ||
-          item.transporter.toLowerCase().includes(text.toLowerCase()) ||
-          item.driver.toLowerCase().includes(text.toLowerCase())
-      );
+      const filtered = rows.filter((item) => {
+        // Safely access the properties and convert to lower case
+        const vehicleNo = item.vehicleNo?.toLowerCase() || "";
+        const transporter = item.transporter?.toLowerCase() || "";
+        const driver = item.driverName?.toLowerCase() || "";
+  
+        // Perform the search
+        return (
+          vehicleNo.includes(text.toLowerCase()) ||
+          transporter.includes(text.toLowerCase()) ||
+          driver.includes(text.toLowerCase())
+        );
+      });
       setFilteredData(filtered);
     }
   };
+  
+  
 
   // Handle edit action
   const handleEdit = (row: any) => {
@@ -256,7 +286,7 @@ export default function Manage() {
             }}
           >
             <Text style={{ fontSize: 16 }}>Current Shipping Point</Text>
-            <Text style={{ color: "#F6984C" }}>{shippingPoint}</Text>
+            <Text style={{ color: "#F6984C", fontSize:18 }}>{shippingPoint}</Text>
           </View>
 
           <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between', marginBottom:10}}>

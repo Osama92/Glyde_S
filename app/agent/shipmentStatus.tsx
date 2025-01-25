@@ -18,7 +18,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-// Firestore initialization
+
 const db = getFirestore();
 
 type Shipment = {

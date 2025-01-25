@@ -161,6 +161,7 @@ export default function Dashboard() {
     await fetchUserDetails();
     await fetchDeliveryDetails();
     setLoading(false);
+    //console.log(displayName)
   };
 
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function Dashboard() {
 
 
   const onRefresh = useCallback(async () => {
-    //setRefreshing(true);
+    setRefreshing(true);
     await fetchAllData();
     setRefreshing(false);
     await fetchUserDetails();
@@ -232,7 +233,7 @@ export default function Dashboard() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Pending Deliveries</Text>
+      <Text style={styles.sectionTitle}>Incoming Deliveries</Text>
       <FlatList
        data={pendingDeliveries}
        keyExtractor={(item) => `${item.shipmentId}-${item.id}`}

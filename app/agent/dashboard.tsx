@@ -235,7 +235,7 @@ export default function Dashboard() {
         >
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
           <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createShipment')}>
-            <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
+            <Image source={require('../../assets/images/Shipment.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Shipment</Text>
           </View>
@@ -247,15 +247,19 @@ export default function Dashboard() {
           <Text style={{textAlign:'center'}}>Create Delivery</Text>
           </View>
 
+          {/* Shipement Status */}
+          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipmentStatus')}>
+            <Image source={require('../../assets/images/View.png')} style={{width: 30, height:30}}/>
+          </TouchableOpacity>
+          <Text style={{textAlign:'center'}}>Shipment Status</Text>
+          </View>
+
           {/* Create Delivery */}
           <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
             <Text>create Material</Text>
           </TouchableOpacity>
-
-          {/* Shipement Status */}
-          <TouchableOpacity onPress={(()=>router.push('/agent/shipmentStatus'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-            <Text>Shipment Status</Text>
-          </TouchableOpacity>
+        
         </View>
       </ScrollView>
     </View>
@@ -267,8 +271,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    //paddingLeft: 10,
-    //paddingRight:10,
     padding:10,
     backgroundColor:'#fff',
     width:'100%',

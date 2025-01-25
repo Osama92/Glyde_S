@@ -231,7 +231,7 @@ export default function Dashboard() {
                 <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
                 <Text>{shippingPoint}</Text>
             </View>
-            <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push('/agent/manage')}>
+            <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push(`/agent/manage?shippingPoint=${shippingPoint}`)}>
                 <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
             </TouchableOpacity>
         </View>

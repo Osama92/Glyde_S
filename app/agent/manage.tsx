@@ -17,7 +17,7 @@ import {
   RefreshControl
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   getFirestore,
   collection,
@@ -34,7 +34,6 @@ const db = getFirestore(app);
 
 export default function Manage() {
   const [shippingPoints, setShippingPoints] = useState([]);
-  const [selectedPoint, setSelectedPoint] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [rows, setRows] = useState<any[]>([]);
@@ -49,7 +48,7 @@ export default function Manage() {
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
   });
 
-  
+  const { shippingPoint } = useLocalSearchParams();
   // Fetch data from Firestore
   useEffect(() => {
     const fetchShippingPoints = async () => {
@@ -257,59 +256,8 @@ export default function Manage() {
             }}
           >
             <Text style={{ fontSize: 16 }}>Current Shipping Point</Text>
-            <Text style={{ color: "#F6984C" }}>{selectedPoint}</Text>
+            <Text style={{ color: "#F6984C" }}>{shippingPoint}</Text>
           </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: 40,
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 20, fontWeight: "600" }}>
-              Update Shipping Point
-            </Text>
-            <Text style={{ color: "#F6984C" }}>See all</Text>
-          </View>
-
-          {loading ? (
-            <ActivityIndicator size="large" color="Orange" />
-          ) : (
-            <>
-              <SearchableDropdown
-                items={shippingPoints}
-                onItemSelect={(item:any) => {setSelectedPoint(item.name)}}
-                containerStyle={{  width:'100%' }}
-                itemTextStyle={{ color: '#222' }}
-                itemsContainerStyle={{ height: 80, marginTop: 10 }}
-                resetValue={true}
-                itemStyle={{
-                  padding: 10,
-                  marginTop: 2,
-                  backgroundColor: '#ddd',
-                  borderColor: '#bbb',
-                  borderWidth: 1,
-                  borderRadius: 5,
-                }}
-                textInputProps={
-                    {
-                      placeholder: "Search Shipping Point",
-                      underlineColorAndroid: "transparent",
-                      style: {
-                          padding: 12,
-                          borderWidth: 1,
-                          borderColor: '#ccc',
-                          borderRadius: 5,
-                      },
-                      onTextChange: text => (null)
-                    }
-                  }
-              />
-            </>
-          )}
 
           <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between', marginBottom:10}}>
             <Text style={{fontSize:20, fontWeight: "600"}}>Manage Drivers</Text>

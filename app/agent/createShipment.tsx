@@ -11,14 +11,16 @@ import {
   Alert,
   TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { collection, getDocs, getFirestore, doc, setDoc } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 const db = getFirestore(app);
+
 
 interface DropdownItem {
   id: string;
@@ -42,6 +44,38 @@ export default function CreateShipment() {
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
+  const { shippingPoint } = useLocalSearchParams();
+
+  // useEffect(() => {
+  //   const fetchTransportersAndVehicles = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const transporterSet = new Set<string>();
+  //       const vehicleNoData: { transporter: string; vehicleNo: string }[] = [];
+  //       const snapshot = await getDocs(collection(db, "DriverOnBoarding"));
+
+  //       snapshot.forEach((doc) => {
+  //         const [transporter, vehicleNo] = doc.id.split("-");
+  //         if (transporter && vehicleNo) {
+  //           transporterSet.add(transporter);
+  //           vehicleNoData.push({ transporter, vehicleNo });
+  //         }
+  //       });
+
+  //       setTransporters(
+  //         Array.from(transporterSet).map((item) => ({ id: item, name: item }))
+  //       );
+  //       setVehicleNumbers(vehicleNoData);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //       alert("Failed to fetch data. Please try again.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchTransportersAndVehicles();
+  // }, []);
   useEffect(() => {
     const fetchTransportersAndVehicles = async () => {
       setLoading(true);
@@ -49,15 +83,19 @@ export default function CreateShipment() {
         const transporterSet = new Set<string>();
         const vehicleNoData: { transporter: string; vehicleNo: string }[] = [];
         const snapshot = await getDocs(collection(db, "DriverOnBoarding"));
-
+  
         snapshot.forEach((doc) => {
+          const data = doc.data();
+          const { LoadingPoint } = data; // Assuming LoadingPoint is a field in the document
           const [transporter, vehicleNo] = doc.id.split("-");
-          if (transporter && vehicleNo) {
+  
+          // Check if LoadingPoint matches the shippingPoint
+          if (transporter && vehicleNo && LoadingPoint === shippingPoint) {
             transporterSet.add(transporter);
             vehicleNoData.push({ transporter, vehicleNo });
           }
         });
-
+  
         setTransporters(
           Array.from(transporterSet).map((item) => ({ id: item, name: item }))
         );
@@ -69,9 +107,10 @@ export default function CreateShipment() {
         setLoading(false);
       }
     };
-
+  
     fetchTransportersAndVehicles();
-  }, []);
+  }, [shippingPoint]);
+  
 
   useEffect(() => {
     if (selectedTransporter) {
@@ -140,7 +179,7 @@ export default function CreateShipment() {
               style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
             />
           </View>
-
+          <ScrollView keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Assign Transporter</Text>
           <SearchableDropdown
             items={transporters}
@@ -148,7 +187,7 @@ export default function CreateShipment() {
               setSelectedTransporter(item);
               setSelectedT(item.name);
             }}
-            placeholder="⌕ Select a Transporter"
+            placeholder="Select a Transporter"
             containerStyle={styles.dropdownContainer}
             textInputStyle={styles.input}
             itemStyle={styles.item}
@@ -200,6 +239,8 @@ export default function CreateShipment() {
             keyboardType="default"
             style={styles.input}
           />
+
+          </ScrollView>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveShipment}>
             <Text style={styles.saveButtonText}>Save Shipment</Text>

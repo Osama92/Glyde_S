@@ -19,9 +19,14 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { app } from "../firebase";
-import { router } from "expo-router";
+import { router, useLocalSearchParams, useGlobalSearchParams, } from "expo-router";
+
 
 const db = getFirestore(app);
+
+interface ShippingPointCounterProps {
+  shippingPoint: string;
+}
 
 const collections = ["deliverydriver", "customer", "fieldagent", "transporter"];
 
@@ -29,6 +34,7 @@ export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [shippingPoint, setShippingPoint] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -51,6 +57,7 @@ export default function Dashboard() {
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0].data();
             setDisplayName(userDoc.name || "Unknown User");
+            setShippingPoint(userDoc.LoadingPoint || "Not Defined")
             setCollectionName(colName);
             break;
           }
@@ -66,13 +73,18 @@ export default function Dashboard() {
     fetchUserDetails();
   }, []);
 
+  
+  
+
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color="orange" />
       </View>
     );
   }
+
+  
 
   return (
     <View style={styles.container}>
@@ -213,11 +225,11 @@ export default function Dashboard() {
         <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20}}>Fleet Size</Text>
-                <Text style={{fontSize: 20}}>13</Text>
+                <Text style={{fontSize: 20}}>130</Text>
             </View>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
-                <Text>Shipping Point here</Text>
+                <Text>{shippingPoint}</Text>
             </View>
             <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push('/agent/manage')}>
                 <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
@@ -226,7 +238,7 @@ export default function Dashboard() {
         <View
           style={{
             width: "100%",
-            height: 300,
+            height: 200,
             backgroundColor: "#f4f4f4",
             borderRadius: 20,
             flexDirection: 'row',
@@ -234,7 +246,7 @@ export default function Dashboard() {
           }}
         >
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createShipment')}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
             <Image source={require('../../assets/images/Shipment.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Shipment</Text>

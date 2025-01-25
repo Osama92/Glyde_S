@@ -112,6 +112,7 @@ export default function Dashboard() {
         const deliveriesQuery = query(
           deliveriesRef,
           where("customer", "==", displayName)
+          
         );
 
         const deliveriesSnapshot = await getDocs(deliveriesQuery);
@@ -120,7 +121,7 @@ export default function Dashboard() {
 
         deliveriesSnapshot.forEach((doc) => {
           const delivery:any = { id: doc.id, ...doc.data(), shipmentId: shipmentDoc.id };
-          if (delivery.statusId === 3) {
+          if (delivery.statusId === 2) {
             pending.push(delivery);
           } else if (delivery.statusId === 4) {
             completed.push(delivery);

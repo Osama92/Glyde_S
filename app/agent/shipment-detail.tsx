@@ -10,7 +10,7 @@ export default function ShipmentDetail() {
     <View style={styles.container}>
         <View style={styles.topSection}>
                 
-                <TouchableOpacity onPress={() => router.push('/credentials/signIn')}>
+                <TouchableOpacity onPress={() => router.push('/agent/createDelivery')}>
                   <Text style={{fontSize:20}}>Go to delivery Creation</Text>
                 </TouchableOpacity>
                 <Image

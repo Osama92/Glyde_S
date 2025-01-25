@@ -100,7 +100,7 @@ export default function Details() {
         <View style={styles.topSection}>
                 
                   <TouchableOpacity onPress={() => router.back()}>
-                    <Text>Go Back</Text>
+                    <Text style={{fontWeight:'700', fontSize:20}}>Go Back</Text>
                   </TouchableOpacity>
                   <Image
                     source={require('../../assets/images/Back.png')}
@@ -118,6 +118,7 @@ export default function Details() {
               style={styles.input}
               value={organizationName}
               onChangeText={setOrganizationName}
+              placeholderTextColor={'#000'}
             />
           ) : (
             <TextInput
@@ -125,6 +126,7 @@ export default function Details() {
               style={styles.input}
               value={displayName}
               onChangeText={setDisplayName}
+              placeholderTextColor={'#000'}
             />
           )}
 
@@ -134,6 +136,7 @@ export default function Details() {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            placeholderTextColor={'#000'}
           />
 
           <View style={styles.passwordContainer}>
@@ -143,6 +146,7 @@ export default function Details() {
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
+              placeholderTextColor={'#000'}
             />
             <TouchableOpacity
               style={styles.toggleButton}
@@ -161,6 +165,7 @@ export default function Details() {
               secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              placeholderTextColor={'#000'}
             />
             <TouchableOpacity
               style={styles.toggleButton}
@@ -188,6 +193,7 @@ export default function Details() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor:'#fff'
   },
   innerContainer: {
     flex: 1,

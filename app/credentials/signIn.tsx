@@ -180,7 +180,7 @@ export default function SignIn() {
         <View style={styles.innerContainer}>
 
         <View style={styles.topSection}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.push("/credentials/signUp")}>
             <Text style={{fontSize:20}}>Back to sign up</Text>
           </TouchableOpacity>
           <Image

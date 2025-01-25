@@ -60,6 +60,7 @@ export default function CreateDelivery() {
   >([]);
   const [originPoint, setOriginPoint] = useState<string>("");
   const [materialInput, setMaterialInput] = useState<string>("");
+  const [statusID, setStatusID] = useState<number>(1);
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -78,6 +79,7 @@ export default function CreateDelivery() {
         shipmentData.push({ id: doc.id, name: doc.id});
       });
       setShipments(shipmentData);
+      
     };
 
     fetchCustomers();
@@ -127,6 +129,7 @@ export default function CreateDelivery() {
       materials: deliveryMaterials,
       deliveryNumber,
       createdAt: new Date().toISOString(),
+      statusId: 1,
     };
 
     try {
@@ -135,7 +138,7 @@ export default function CreateDelivery() {
         deliveryData
       );
       Alert.alert("Success", `Delivery created with number: ${deliveryNumber}`);
-      router.back();
+      router.push('/agent/dashboard');
     } catch (error) {
       console.error("Error saving delivery:", error);
       Alert.alert("Error", "Failed to save delivery. Please try again.");

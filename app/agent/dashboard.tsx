@@ -180,7 +180,7 @@ export default function Dashboard() {
               <Text style={{ fontWeight: "600", marginBottom: 3 }}>
                 Track Shipment
               </Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={()=>router.push('/agent/trackShipment')}>
                 <Text>Track by ID</Text>
               </TouchableOpacity>
             </View>

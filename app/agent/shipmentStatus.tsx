@@ -9,6 +9,7 @@ import {
   Button,
   ActivityIndicator,
   RefreshControl,
+  Image
 } from "react-native";
 import {
   getFirestore,
@@ -17,7 +18,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-
+import { router } from "expo-router";
 
 const db = getFirestore();
 
@@ -26,6 +27,7 @@ type Shipment = {
   deliveries?: Delivery[];
   statusId?: number;
   [key: string]: any;
+  vehicleNo: string;
 };
 
 type Delivery = {
@@ -74,6 +76,7 @@ export default function ShipmentsScreen() {
             id: doc.id,
             ...doc.data(),
             deliveries,
+            vehicleNo: doc.data().vehicleNo,
           };
         })
       );
@@ -123,6 +126,7 @@ export default function ShipmentsScreen() {
     setSelectedShipment({
       id: shipmentId,
       statusId: selectedShipment?.statusId || 0,
+      vehicleNo: selectedShipment?.vehicleNo || "",
     });
     setModalVisible(true);
   };
@@ -134,9 +138,18 @@ export default function ShipmentsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Shipments</Text>
+      <View style={styles.topSection}>
+                              <TouchableOpacity onPress={() => router.back()}>
+                                <Text style={{ fontSize: 20, fontWeight: "bold" }}>Shipment Status</Text>
+                              </TouchableOpacity>
+                              <Image
+                                source={require("../../assets/images/Back.png")}
+                                style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+                              />
+                            </View>
+      {/* <Text style={styles.header}>Shipments</Text> */}
       {loading ? (
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="orange" />
       ) : (
         <FlatList
           data={shipments}
@@ -145,6 +158,7 @@ export default function ShipmentsScreen() {
           renderItem={({ item }) => (
             <View style={styles.shipmentCard}>
               <Text style={styles.shipmentTitle}>Shipment ID: {item.id}</Text>
+              <Text style={styles.shipmentDetails}>Vehicle No: {item.vehicleNo}</Text>
               <Text>Status: {item.statusId ? statusOptions.find((s) => s.id === item.statusId)?.status : "Pending"}</Text>
               {item.deliveries && item.deliveries.length > 0 ? (
                 <FlatList
@@ -157,7 +171,10 @@ export default function ShipmentsScreen() {
               ) : (
                 <Text style={styles.shipmentDetails}>No deliveries found.</Text>
               )}
-              <Button title="Change Status" onPress={() => openStatusModal(item.id)} />
+              {/* <Button title="Change Status"  onPress={() => openStatusModal(item.id)} /> */}
+                <TouchableOpacity style={styles.btn} onPress={() => openStatusModal(item.id)}>
+                  <Text style={{color:'white'}}>Change Status</Text>
+                </TouchableOpacity>
             </View>
           )}
         />
@@ -257,5 +274,21 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginTop: 20,
+  },
+  topSection: {
+    width: "100%",
+    height: "10%",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop:20,
+    marginBottom: 10
+  },
+  btn: {
+    backgroundColor: "black",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems:'center'
   },
 });

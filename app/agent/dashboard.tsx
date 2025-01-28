@@ -108,7 +108,7 @@ export default function Dashboard() {
               <Text style={{ fontWeight: "600", marginBottom: 3 }}>
                 Hi, {displayName}
               </Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={()=>router.push(`/agent/editProfile?collectionName=${collectionName}`)}>
                 <Text>Edit my Profile</Text>
               </TouchableOpacity>
             </View>
@@ -273,6 +273,22 @@ export default function Dashboard() {
           </TouchableOpacity>
         
         </View>
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createShipment')}>
+          <Text style={{fontSize: 28, fontWeight:'800', width: '50%'}}>Create a Shipment</Text>
+          <Image source={require('../../assets/images/CreateShipment.png')} resizeMode="contain" style={{width:180, height:180}}/>
+          
+        </TouchableOpacity>
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row-reverse', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createDelivery')}>
+          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Create Delivery</Text>
+          <Image source={require('../../assets/images/CreateDelivery.png')} resizeMode="contain" style={{width:180, height:180}}/>
+          
+        </TouchableOpacity>
+
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createDelivery')}>
+          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Shipment Status</Text>
+          <Image source={require('../../assets/images/ShipmentStatus.png')} resizeMode="contain" style={{width:180, height:180}}/>
+          
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );

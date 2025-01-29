@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [shippingPoint, setShippingPoint] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -59,6 +60,9 @@ export default function Dashboard() {
             setDisplayName(userDoc.name || "Unknown User");
             setShippingPoint(userDoc.LoadingPoint || "Not Defined")
             setCollectionName(colName);
+            const encodedID = encodeURIComponent(userDoc.uid);
+            setId(encodedID)
+            
             break;
           }
         }
@@ -71,6 +75,7 @@ export default function Dashboard() {
     };
 
     fetchUserDetails();
+    console.log(id)
   }, []);
 
   
@@ -108,7 +113,7 @@ export default function Dashboard() {
               <Text style={{ fontWeight: "600", marginBottom: 3 }}>
                 Hi, {displayName}
               </Text>
-              <TouchableOpacity onPress={()=>router.push(`/agent/editProfile?collectionName=${collectionName}`)}>
+              <TouchableOpacity onPress={()=>router.push(`/agent/editProfile?collectionName=${collectionName}&id=${id}`)}>
                 <Text>Edit my Profile</Text>
               </TouchableOpacity>
             </View>
@@ -185,6 +190,7 @@ export default function Dashboard() {
               </TouchableOpacity>
             </View>
           </View>
+          
           <View
             style={{
               width: "100%",
@@ -235,7 +241,7 @@ export default function Dashboard() {
                 <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
             </TouchableOpacity>
         </View>
-        <View
+        {/* <View
           style={{
             width: "100%",
             height: 200,
@@ -251,7 +257,7 @@ export default function Dashboard() {
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Shipment</Text>
           </View>
-          {/* Create Delivery */}
+          
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
           <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createDelivery')}>
             <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
@@ -259,7 +265,7 @@ export default function Dashboard() {
           <Text style={{textAlign:'center'}}>Create Delivery</Text>
           </View>
 
-          {/* Shipement Status */}
+         
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
           <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipmentStatus')}>
             <Image source={require('../../assets/images/View.png')} style={{width: 30, height:30}}/>
@@ -267,13 +273,13 @@ export default function Dashboard() {
           <Text style={{textAlign:'center'}}>Shipment Status</Text>
           </View>
 
-          {/* Create Delivery */}
+          
           <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
             <Text>create Material</Text>
           </TouchableOpacity>
         
-        </View>
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createShipment')}>
+        </View> */}
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
           <Text style={{fontSize: 28, fontWeight:'800', width: '50%'}}>Create a Shipment</Text>
           <Image source={require('../../assets/images/CreateShipment.png')} resizeMode="contain" style={{width:180, height:180}}/>
           
@@ -284,7 +290,7 @@ export default function Dashboard() {
           
         </TouchableOpacity>
 
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createDelivery')}>
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/shipmentStatus')}>
           <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Shipment Status</Text>
           <Image source={require('../../assets/images/ShipmentStatus.png')} resizeMode="contain" style={{width:180, height:180}}/>
           

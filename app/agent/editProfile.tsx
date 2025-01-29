@@ -1,4 +1,4 @@
-// import React, { useState } from "react";
+// import React, { useEffect, useState } from "react";
 // import {
 //   View,
 //   Text,
@@ -10,44 +10,65 @@
 //   ScrollView,
 //   ActivityIndicator,
 // } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 // import * as ImagePicker from "expo-image-picker";
-// import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 // import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-// import { app } from "../firebase";
+// import { doc, getDoc, setDoc, getFirestore, collection } from "firebase/firestore";
+// import { app } from "../firebase"; // Adjust path to your Firebase config file
+// import {useLocalSearchParams, router} from 'expo-router'
 
 // const db = getFirestore(app);
 // const storage = getStorage(app);
 
+
+
 // const ProfileScreen = () => {
-//   const [phoneNumber, setPhoneNumber] = useState("");
-//   const [profile, setProfile] = useState<any>(null);
+//   const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "" });
 //   const [loading, setLoading] = useState(false);
 //   const [uploading, setUploading] = useState(false);
-//   const [saving, setSaving] = useState(false);
 
-//   // Search user by phone number
-//   const searchUser = async () => {
+//   const {collectionName, id} = useLocalSearchParams()
+
+//   useEffect(() => {
+//     fetchPhoneNumberAndProfile();
+//   }, []);
+
+//   // Fetch phoneNumber from AsyncStorage and existing profile from Firestore
+//   const fetchPhoneNumberAndProfile = async () => {
 //     try {
-//       setLoading(true);
-//       const usersRef = collection(db, "fieldagent"); // Change "users" to your collection name
-//       const q = query(usersRef, where("phoneNumber", "==", phoneNumber));
-//       const querySnapshot = await getDocs(q);
-
-//       if (!querySnapshot.empty) {
-//         const userData = querySnapshot.docs[0].data();
-//         setProfile({ ...userData, id: querySnapshot.docs[0].id });
+//       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
+//       if (phoneNumber) {
+//         setProfile((prev) => ({ ...prev, phoneNumber }));
+//         await fetchProfileFromFirestore(phoneNumber);
 //       } else {
-//         Alert.alert("Error", "No user found with this phone number");
+//         Alert.alert("Error", "Phone number not found in AsyncStorage!");
 //       }
 //     } catch (error) {
-//       Alert.alert("Error", "Failed to search user");
-//       console.error("Search User Error:", error);
+//       Alert.alert("Error", "Failed to fetch phone number from AsyncStorage!");
+//     }
+//   };
+
+//   const fetchProfileFromFirestore = async (phoneNumber) => {
+//     try {
+//       setLoading(true);     
+//       const docRef = doc(db, collectionName as string, decodeURIComponent(Array.isArray(id) ? id[0] : id) as string);
+//       const docSnap = await getDoc(docRef);
+//       if (docSnap.exists()) {
+//         setProfile((prev) => ({
+//           ...prev,
+//           ...docSnap.data(),
+//         }));
+//       }
+//     } catch (error) {
+//       Alert.alert("Error", "Failed to fetch profile from Firestore!");
+      
+//       console.log(error);
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   // Handle image upload
+//   // Handle image upload to Firebase Storage
 //   const handleImageUpload = async () => {
 //     try {
 //       const result = await ImagePicker.launchImageLibraryAsync({
@@ -62,86 +83,82 @@
 //         const uri = result.assets[0].uri;
 //         const response = await fetch(uri);
 //         const blob = await response.blob();
-//         const imageRef = ref(storage, `profile_pictures/${profile.id}.jpg`);
+//         const imageRef = ref(storage, `profile_pictures/${profile.phoneNumber}.jpg`);
+
+//         // Upload image to Firebase Storage
 //         await uploadBytes(imageRef, blob);
 //         const downloadURL = await getDownloadURL(imageRef);
 
-//         setProfile((prev: any) => ({ ...prev, imageUrl: downloadURL }));
-//         Alert.alert("Success", "Profile picture updated!");
+//         // Update profile with image URL
+//         setProfile((prev) => ({ ...prev, imageUrl: downloadURL }));
+
+//         // Save profile to Firestore
+//         await saveProfileToFirestore();
+
+//         Alert.alert("Success", "Profile picture uploaded successfully!");
 //       }
 //     } catch (error) {
 //       Alert.alert("Error", "Failed to upload image!");
-//       console.error("Image Upload Error:", error);
+//       console.log(error);
 //     } finally {
 //       setUploading(false);
 //     }
 //   };
 
-//   // Save profile updates
-//   const handleSave = async () => {
+//   // Save profile to Firestore
+//   const saveProfileToFirestore = async () => {
 //     try {
-//       setSaving(true);
-//       const userRef = doc(db, "fieldagent", profile.id); // Update "users" to your collection name
-//       await updateDoc(userRef, { name: profile.name });
+//       setLoading(true);
+//       const docRef = doc(db, collectionName as string, id as string);
+//       await setDoc(docRef, profile, { merge: true });
 //       Alert.alert("Success", "Profile updated successfully!");
 //     } catch (error) {
 //       Alert.alert("Error", "Failed to update profile!");
-//       console.error("Save Profile Error:", error);
+//       console.log(error);
 //     } finally {
-//       setSaving(false);
+//       setLoading(false);
 //     }
 //   };
 
+//   if (loading) {
+//     return (
+//       <View style={styles.loaderContainer}>
+//         <ActivityIndicator size="large" color="#000" />
+//       </View>
+//     );
+//   }
+
 //   return (
 //     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.label}>Search by Phone Number</Text>
-//       <View style={styles.inputRow}>
-//         <TextInput
-//           style={styles.input}
-//           value={phoneNumber}
-//           onChangeText={setPhoneNumber}
-//           placeholder="Enter phone number"
-//         />
-//         <TouchableOpacity onPress={searchUser} style={styles.searchButton}>
-//           {loading ? (
-//             <ActivityIndicator size="small" color="#fff" />
-//           ) : (
-//             <Text style={styles.searchButtonText}>Search</Text>
-//           )}
-//         </TouchableOpacity>
-//       </View>
-
-//       {profile && (
-//         <>
-//           <TouchableOpacity onPress={handleImageUpload} style={styles.imageContainer}>
-//             {profile.imageUrl ? (
-//               <Image source={{ uri: profile.imageUrl }} style={styles.profileImage} />
-//             ) : (
-//               <View style={styles.placeholder}>
-//                 <Text style={styles.placeholderText}>Upload</Text>
-//               </View>
-//             )}
-//             {uploading && <ActivityIndicator style={styles.imageLoader} size="small" color="#000" />}
-//           </TouchableOpacity>
-
-//           <Text style={styles.label}>Name</Text>
-//           <View style={styles.inputRow}>
-//             <TextInput
-//               style={styles.input}
-//               value={profile.name || ""}
-//               onChangeText={(text) => setProfile((prev: any) => ({ ...prev, name: text }))}
-//             />
+//       {/* Profile Image Upload */}
+//       <TouchableOpacity onPress={handleImageUpload} style={styles.imageContainer}>
+//         {profile.imageUrl ? (
+//           <Image source={{ uri: profile.imageUrl }} style={styles.profileImage} />
+//         ) : (
+//           <View style={styles.placeholder}>
+//             <Text style={styles.placeholderText}>Upload</Text>
 //           </View>
+//         )}
+//         {uploading && <ActivityIndicator style={styles.imageLoader} size="small" color="#000" />}
+//       </TouchableOpacity>
 
-//           <TouchableOpacity onPress={handleSave} style={[styles.button, styles.saveButton]}>
-//             {saving ? (
-//               <ActivityIndicator size="small" color="#fff" />
-//             ) : (
-//               <Text style={styles.saveButtonText}>Save</Text>
-//             )}
-//           </TouchableOpacity>
-//         </>
-//       )}
+//       {/* Display Name */}
+//       <Text style={styles.label}>Display Name</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={profile.name}
+//         onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+//       />
+
+//       {/* Save Button */}
+//       <TouchableOpacity onPress={saveProfileToFirestore} style={[styles.button, styles.saveButton]}>
+//         <Text style={styles.saveButtonText}>Save</Text>
+//       </TouchableOpacity>
+
+//       {/* Logout Button */}
+//       <TouchableOpacity style={styles.logoutButton}>
+//         <Text style={styles.logoutText}>Log Out</Text>
+//       </TouchableOpacity>
 //     </ScrollView>
 //   );
 // };
@@ -153,34 +170,10 @@
 //     padding: 20,
 //     alignItems: "center",
 //   },
-//   label: {
-//     alignSelf: "flex-start",
-//     fontSize: 16,
-//     marginBottom: 5,
-//     fontWeight: "600",
-//   },
-//   inputRow: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     marginBottom: 20,
-//     width: "100%",
-//   },
-//   input: {
+//   loaderContainer: {
 //     flex: 1,
-//     padding: 10,
-//     borderWidth: 1,
-//     borderColor: "#ccc",
-//     borderRadius: 8,
-//   },
-//   searchButton: {
-//     marginLeft: 10,
-//     padding: 10,
-//     backgroundColor: "#007bff",
-//     borderRadius: 8,
-//   },
-//   searchButtonText: {
-//     color: "#fff",
-//     fontWeight: "600",
+//     justifyContent: "center",
+//     alignItems: "center",
 //   },
 //   imageContainer: {
 //     marginBottom: 20,
@@ -208,6 +201,20 @@
 //     top: 50,
 //     left: 50,
 //   },
+//   label: {
+//     alignSelf: "flex-start",
+//     fontSize: 16,
+//     marginBottom: 5,
+//     fontWeight: "600",
+//   },
+//   input: {
+//     width: "100%",
+//     padding: 10,
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     marginBottom: 20,
+//   },
 //   button: {
 //     padding: 15,
 //     backgroundColor: "#f0f0f0",
@@ -219,9 +226,19 @@
 //     backgroundColor: "#007bff",
 //   },
 //   saveButtonText: {
+//     textAlign: "center",
+//     color: "#fff",
+//   },
+//   logoutButton: {
+//     backgroundColor: "#ff4444",
+//     padding: 15,
+//     borderRadius: 8,
+//     width: "100%",
+//   },
+//   logoutText: {
+//     textAlign: "center",
 //     color: "#fff",
 //     fontWeight: "600",
-//     textAlign: "center",
 //   },
 // });
 
@@ -240,22 +257,21 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import { doc, getDoc, setDoc, getFirestore, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";
 import { app } from "../firebase"; // Adjust path to your Firebase config file
-import {useLocalSearchParams, router} from 'expo-router'
+import { useLocalSearchParams } from 'expo-router';
 
 const db = getFirestore(app);
 const storage = getStorage(app);
-
-
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const {collectionName, id} = useLocalSearchParams()
+  const { collectionName, id } = useLocalSearchParams();
 
   useEffect(() => {
     fetchPhoneNumberAndProfile();
@@ -278,7 +294,7 @@ const ProfileScreen = () => {
 
   const fetchProfileFromFirestore = async (phoneNumber) => {
     try {
-      setLoading(true);     
+      setLoading(true);
       const docRef = doc(db, collectionName as string, decodeURIComponent(Array.isArray(id) ? id[0] : id) as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -289,7 +305,6 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       Alert.alert("Error", "Failed to fetch profile from Firestore!");
-      
       console.log(error);
     } finally {
       setLoading(false);
@@ -297,7 +312,48 @@ const ProfileScreen = () => {
   };
 
   // Handle image upload to Firebase Storage
-  const handleImageUpload = async () => {
+//   const handleImageUpload = async () => {
+//     try {
+//       const result = await ImagePicker.launchImageLibraryAsync({
+//         mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//         allowsEditing: true,
+//         aspect: [1, 1],
+//         quality: 1,
+//       });
+
+//       if (!result.canceled) {
+//         setUploading(true);
+//         const uri = result.assets[0].uri;
+
+//         // Convert the image to a Blob
+//         const response = await fetch(uri);
+//         const blob = await response.blob();
+
+//         // Create a reference to the Firebase Storage path
+//         const imageRef = ref(storage, `profile_pictures/${profile.phoneNumber}.jpg`);
+
+//         // Upload the image to Firebase Storage
+//         await uploadBytes(imageRef, blob);
+
+//         // Get the download URL of the uploaded image
+//         const downloadURL = await getDownloadURL(imageRef);
+
+//         // Update the profile state with the new image URL
+//         setProfile((prev) => ({ ...prev, imageUrl: downloadURL }));
+
+//         // Save the updated profile to Firestore
+//         await saveProfileToFirestore();
+
+//         Alert.alert("Success", "Profile picture uploaded successfully!");
+//       }
+//     } catch (error) {
+//       Alert.alert("Error", "Failed to upload image!");
+//       console.log(error);
+//     } finally {
+//       setUploading(false);
+//     }
+//   };
+const handleImageUpload = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -305,29 +361,50 @@ const ProfileScreen = () => {
         aspect: [1, 1],
         quality: 1,
       });
-
+  
       if (!result.canceled) {
         setUploading(true);
         const uri = result.assets[0].uri;
-        const response = await fetch(uri);
-        const blob = await response.blob();
+  
+        // Convert the image to a Blob using expo-file-system
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (!fileInfo.exists) {
+          throw new Error("File does not exist.");
+        }
+  
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => {
+            resolve(xhr.response);
+          };
+          xhr.onerror = (e) => {
+            reject(new TypeError("Network request failed"));
+          };
+          xhr.responseType = "blob";
+          xhr.open("GET", uri, true);
+          xhr.send(null);
+        });
+  
+        // Create a reference to the Firebase Storage path
         const imageRef = ref(storage, `profile_pictures/${profile.phoneNumber}.jpg`);
-
-        // Upload image to Firebase Storage
+  
+        // Upload the image to Firebase Storage
         await uploadBytes(imageRef, blob);
+  
+        // Get the download URL of the uploaded image
         const downloadURL = await getDownloadURL(imageRef);
-
-        // Update profile with image URL
+  
+        // Update the profile state with the new image URL
         setProfile((prev) => ({ ...prev, imageUrl: downloadURL }));
-
-        // Save profile to Firestore
+  
+        // Save the updated profile to Firestore
         await saveProfileToFirestore();
-
+  
         Alert.alert("Success", "Profile picture uploaded successfully!");
       }
     } catch (error) {
       Alert.alert("Error", "Failed to upload image!");
-      console.log(error);
+      console.error("Upload error:", error);
     } finally {
       setUploading(false);
     }

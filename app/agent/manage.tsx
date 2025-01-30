@@ -71,24 +71,6 @@ export default function Manage() {
     fetchShippingPoints();
   }, [])
 
-  // const fetchData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const snapshot = await getDocs(collection(db, "DriverOnBoarding")); // Use your collection name
-  //     const fetchedRows = snapshot.docs.map((doc) => ({
-  //       id: doc.id, // Document ID
-  //       ...doc.data(), 
-  //     }));
-  //     setRows(fetchedRows);
-  //     setFilteredData(fetchedRows)
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //     Alert.alert("Error", "Unable to fetch data from Firestore.");
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // };
   const fetchData = async () => {
     try {
       setLoading(true);

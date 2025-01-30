@@ -287,7 +287,7 @@ export default function Dashboard() {
           <Image source={require('../../assets/images/CreateShipment.png')} resizeMode="contain" style={{width:180, height:180}}/>
           
         </TouchableOpacity>
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row-reverse', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/createDelivery')}>
+        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row-reverse', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}>
           <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Create Delivery</Text>
           <Image source={require('../../assets/images/CreateDelivery.png')} resizeMode="contain" style={{width:180, height:180}}/>
           

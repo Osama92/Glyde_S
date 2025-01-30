@@ -45,37 +45,6 @@ export default function CreateShipment() {
   });
 
   const { shippingPoint } = useLocalSearchParams();
-
-  // useEffect(() => {
-  //   const fetchTransportersAndVehicles = async () => {
-  //     setLoading(true);
-  //     try {
-  //       const transporterSet = new Set<string>();
-  //       const vehicleNoData: { transporter: string; vehicleNo: string }[] = [];
-  //       const snapshot = await getDocs(collection(db, "DriverOnBoarding"));
-
-  //       snapshot.forEach((doc) => {
-  //         const [transporter, vehicleNo] = doc.id.split("-");
-  //         if (transporter && vehicleNo) {
-  //           transporterSet.add(transporter);
-  //           vehicleNoData.push({ transporter, vehicleNo });
-  //         }
-  //       });
-
-  //       setTransporters(
-  //         Array.from(transporterSet).map((item) => ({ id: item, name: item }))
-  //       );
-  //       setVehicleNumbers(vehicleNoData);
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       alert("Failed to fetch data. Please try again.");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchTransportersAndVehicles();
-  // }, []);
   useEffect(() => {
     const fetchTransportersAndVehicles = async () => {
       setLoading(true);
@@ -174,10 +143,12 @@ export default function CreateShipment() {
             <TouchableOpacity onPress={() => router.back()}>
               <Text style={{ fontSize: 20, fontWeight: "bold" }}>Create Shipment</Text>
             </TouchableOpacity>
-            <Image
+           <TouchableOpacity onPress={() => router.back()}>
+           <Image
               source={require("../../assets/images/Back.png")}
               style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
             />
+           </TouchableOpacity>
           </View>
           <ScrollView keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Assign Transporter</Text>
@@ -192,6 +163,16 @@ export default function CreateShipment() {
             textInputStyle={styles.input}
             itemStyle={styles.item}
             itemTextStyle={styles.itemText}
+            textInputProps={{
+              underlineColorAndroid: "transparent",
+              style: {
+                padding: 12,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 5,
+              },
+              onTextChange: (text) => null,
+            }}
           />
 
           <View style={{width:'100%', flexDirection:'row', height:30,marginBottom: 10, alignItems:'center'}}>
@@ -212,6 +193,16 @@ export default function CreateShipment() {
                 textInputStyle={styles.input}
                 itemStyle={styles.item}
                 itemTextStyle={styles.itemText}
+                textInputProps={{
+                  underlineColorAndroid: "transparent",
+                  style: {
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 5,
+                  },
+                  onTextChange: (text) => null,
+                }}
               />
               <View style={{width:'100%', flexDirection:'row', height:30,marginBottom: 10, alignItems:'center'}}>
             <Image source={require('../../assets/images/truck.png')} resizeMode="contain" style={{width: 30, height:30}}/>

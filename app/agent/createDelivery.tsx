@@ -20,7 +20,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { app } from "../firebase";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 // Firestore initialization
 const db = getFirestore(app);
@@ -62,6 +62,8 @@ export default function CreateDelivery() {
   const [materialInput, setMaterialInput] = useState<string>("");
   const [statusID, setStatusID] = useState<number>(1);
 
+  const {shippingPoint} = useLocalSearchParams();
+
   useEffect(() => {
     const fetchCustomers = async () => {
       const customerData: Customer[] = [];
@@ -89,9 +91,9 @@ export default function CreateDelivery() {
   const fetchMaterials = async (origin: string) => {
     const materialData: Material[] = [];
     const snapshot = await getDocs(
-      collection(db, `originPoint/${origin}/materials`)
+      collection(db, `originPoint/${shippingPoint}/materials`)
+      //collection(db, 'originPoint/Agbara/materials')
     );
-    //const snapshot = await getDocs(collection(db, `originPoint/${origin}`));
     snapshot.forEach((doc) => {
       materialData.push({ id: doc.id, name: doc.data().name });
     });
@@ -191,10 +193,12 @@ export default function CreateDelivery() {
                 Create Delivery
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.back()}>
             <Image
               source={require("../../assets/images/Back.png")}
               style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
             />
+            </TouchableOpacity>
           </View>
 
           <ScrollView  keyboardShouldPersistTaps="handled">
@@ -209,7 +213,7 @@ export default function CreateDelivery() {
             }}
           >
             <Text style={styles.label}>Current Shipping Point</Text>
-            <Text style={{ color: "orange" }}>Agbara - Unilever NG</Text>
+            <Text style={{ color: "orange" }}>{shippingPoint}</Text>
           </View>
 
           <View
@@ -256,18 +260,6 @@ export default function CreateDelivery() {
             <Text style={styles.label1}>{selectedCustomer?.id}</Text>
           </View>
 
-          {/* Origin Point Section */}
-          <Text style={styles.label}>Shipping Point</Text>
-          <TextInput
-            placeholder="Enter Origin Point"
-            value={originPoint}
-            onChangeText={(value) => {
-              setOriginPoint(value);
-              fetchMaterials(value);
-            }}
-            style={styles.input}
-          />
-
           {/* Materials Section */}
           <View
             style={{
@@ -276,7 +268,7 @@ export default function CreateDelivery() {
               alignItems: "center",
             }}
           >
-            <Text style={{ fontSize: 28, marginBottom: 10 }}>
+            <Text style={{ fontSize: 28, marginBottom: 10, fontWeight: '500' }}>
               Item(s) to deliver
             </Text>
             <TouchableOpacity onPress={handleAddMaterial}>
@@ -301,7 +293,12 @@ export default function CreateDelivery() {
                 borderColor: "#ccc",
                 borderRadius: 5,
               },
-              onTextChange: (text) => null,
+              onPressIn: (text) => {
+                if (typeof shippingPoint === 'string') {
+                  fetchMaterials(shippingPoint);
+                }
+              },
+              
             }}
           />
 
@@ -314,7 +311,7 @@ export default function CreateDelivery() {
           />
 
           {/* Shipment Section */}
-          <Text style={styles.label}>Assign to Shipment</Text>
+          <Text style={{fontSize:20, marginBottom:10, fontWeight: '400'}}>Assign to Shipment</Text>
           <SearchableDropdown
             items={shipments.map((s) => ({ id: s.id, name: s.name }))}
             onItemSelect={(item: Shipment) => setSelectedShipment(item)}
@@ -429,6 +426,7 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     padding: 15,
     borderRadius: 5,
+    marginTop:10
   },
   saveButtonText: {
     color: "#fff",

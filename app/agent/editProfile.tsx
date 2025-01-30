@@ -9,6 +9,7 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -201,6 +202,7 @@ const handleImageUpload = async () => {
       <TouchableOpacity style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+      
     </ScrollView>
     
   );
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   saveButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "black",
   },
   saveButtonText: {
     textAlign: "center",

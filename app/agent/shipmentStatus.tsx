@@ -139,15 +139,16 @@ export default function ShipmentsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topSection}>
-                              <TouchableOpacity onPress={() => router.back()}>
-                                <Text style={{ fontSize: 20, fontWeight: "bold" }}>Shipment Status</Text>
-                              </TouchableOpacity>
-                              <Image
-                                source={require("../../assets/images/Back.png")}
-                                style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-                              />
-                            </View>
-      {/* <Text style={styles.header}>Shipments</Text> */}
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>Shipment Status</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()}>
+          <Image
+            source={require("../../assets/images/Back.png")}
+            style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+          />
+          </TouchableOpacity>
+        </View>
       {loading ? (
         <ActivityIndicator size="large" color="orange" />
       ) : (

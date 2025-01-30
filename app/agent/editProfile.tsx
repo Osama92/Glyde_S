@@ -264,10 +264,10 @@ import { app } from "../firebase"; // Adjust path to your Firebase config file
 import { useLocalSearchParams } from 'expo-router';
 
 const db = getFirestore(app);
-const storage = getStorage(app);
+const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
 
 const ProfileScreen = () => {
-  const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "" });
+  const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "", email:"" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -311,48 +311,6 @@ const ProfileScreen = () => {
     }
   };
 
-  // Handle image upload to Firebase Storage
-//   const handleImageUpload = async () => {
-//     try {
-//       const result = await ImagePicker.launchImageLibraryAsync({
-//         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//         allowsEditing: true,
-//         aspect: [1, 1],
-//         quality: 1,
-//       });
-
-//       if (!result.canceled) {
-//         setUploading(true);
-//         const uri = result.assets[0].uri;
-
-//         // Convert the image to a Blob
-//         const response = await fetch(uri);
-//         const blob = await response.blob();
-
-//         // Create a reference to the Firebase Storage path
-//         const imageRef = ref(storage, `profile_pictures/${profile.phoneNumber}.jpg`);
-
-//         // Upload the image to Firebase Storage
-//         await uploadBytes(imageRef, blob);
-
-//         // Get the download URL of the uploaded image
-//         const downloadURL = await getDownloadURL(imageRef);
-
-//         // Update the profile state with the new image URL
-//         setProfile((prev) => ({ ...prev, imageUrl: downloadURL }));
-
-//         // Save the updated profile to Firestore
-//         await saveProfileToFirestore();
-
-//         Alert.alert("Success", "Profile picture uploaded successfully!");
-//       }
-//     } catch (error) {
-//       Alert.alert("Error", "Failed to upload image!");
-//       console.log(error);
-//     } finally {
-//       setUploading(false);
-//     }
-//   };
 const handleImageUpload = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -366,13 +324,8 @@ const handleImageUpload = async () => {
         setUploading(true);
         const uri = result.assets[0].uri;
   
-        // Convert the image to a Blob using expo-file-system
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        if (!fileInfo.exists) {
-          throw new Error("File does not exist.");
-        }
-  
-        const blob = await new Promise((resolve, reject) => {
+        // Convert the image to a Blob using XMLHttpRequest
+        const blob: any = await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.onload = () => {
             resolve(xhr.response);
@@ -404,12 +357,13 @@ const handleImageUpload = async () => {
       }
     } catch (error) {
       Alert.alert("Error", "Failed to upload image!");
+      console.log(storage)
       console.error("Upload error:", error);
     } finally {
       setUploading(false);
     }
   };
-
+  
   // Save profile to Firestore
   const saveProfileToFirestore = async () => {
     try {
@@ -452,6 +406,14 @@ const handleImageUpload = async () => {
       <TextInput
         style={styles.input}
         value={profile.name}
+        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+      />
+
+      {/* Display Email */}
+      <Text style={styles.label}>Display Email</Text>
+      <TextInput
+        style={styles.input}
+        value={profile.email}
         onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
       />
 

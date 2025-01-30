@@ -36,6 +36,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [shippingPoint, setShippingPoint] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -58,6 +60,7 @@ export default function Dashboard() {
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0].data();
             setDisplayName(userDoc.name || "Unknown User");
+            setProfileImage(userDoc.imageUrl || null);
             setShippingPoint(userDoc.LoadingPoint || "Not Defined")
             setCollectionName(colName);
             const encodedID = encodeURIComponent(userDoc.uid);
@@ -105,7 +108,7 @@ export default function Dashboard() {
             }}
           >
             <Image
-              source={require("../../assets/images/Aisha5.jpeg")}
+              source={profileImage ? { uri: profileImage } : require('../../assets/images/icon.png')}
               resizeMode="cover"
               style={{ width: 40, height: 40, borderRadius: 20, margin: 5 }}
             />

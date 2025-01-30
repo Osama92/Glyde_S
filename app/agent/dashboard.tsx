@@ -20,6 +20,7 @@ import {
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router, useLocalSearchParams, useGlobalSearchParams, } from "expo-router";
+import getCurrentLocation from "../getLocation";
 
 
 const db = getFirestore(app);
@@ -37,9 +38,23 @@ export default function Dashboard() {
   const [shippingPoint, setShippingPoint] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; district?: string } | null>(null);
+
   
 
   useEffect(() => {
+    const fetchLocation = async () => {
+      const loc = await getCurrentLocation();
+      setLocation(loc);
+      setLoading(false);
+    };
+
+    fetchLocation();
+  }, []);
+
+  useEffect(() => {
+
+
     const fetchUserDetails = async () => {
       try {
         // Get phone number from AsyncStorage
@@ -78,6 +93,7 @@ export default function Dashboard() {
     };
 
     fetchUserDetails();
+    
     console.log(id)
   }, []);
 
@@ -85,6 +101,7 @@ export default function Dashboard() {
   
 
   if (loading) {
+    
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="orange" />
@@ -147,12 +164,15 @@ export default function Dashboard() {
               />
             </View>
             <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Your location
-              </Text>
-              <TouchableOpacity>
-                <Text>Work</Text>
-              </TouchableOpacity>
+            {loading ? (
+        <ActivityIndicator size="small" color="#0000ff" />
+      ) : location ? (
+        <View>
+          <Text>{location.longitude}</Text>
+        </View>
+      ) : (
+        <Text>Not available</Text>
+      )}
             </View>
           </View>
         </View>

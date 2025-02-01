@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  Modal
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -35,9 +36,13 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
-   const [profileImage, setProfileImage] = useState<string | null>(null);
-   const [collectionName, setCollectionName] = useState<string | null>(null);
-   const [id, setId] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [collectionName, setCollectionName] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(null);
+  const [vehicleNo, setVehicleNo] = useState<string | null>(null);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const customStyles = {
   stepIndicatorSize: 30,
@@ -131,6 +136,7 @@ export default function Dashboard() {
           const delivery:any = { id: doc.id, ...doc.data(), shipmentId: shipmentDoc.id };
           if (delivery.statusId === 1||delivery.statusId === 2||delivery.statusId === 3) {
             pending.push(delivery);
+            setVehicleNo(shipmentData.vehicleNo)
           } else if (delivery.statusId === 4) {
             completed.push(delivery);
           }
@@ -153,7 +159,7 @@ export default function Dashboard() {
         "deliveries",
         delivery.id
       );
-      await updateDoc(deliveryRef, { statusId: 4 });
+      await updateDoc(deliveryRef, { statusId: 4, deliveredAt: new Date().toDateString() });
 
       setPendingDeliveries((prev) =>
         prev.filter((item) => item.id !== delivery.id)
@@ -185,9 +191,113 @@ export default function Dashboard() {
     await fetchDeliveryDetails();
   }, []);
 
-    const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => (
+// const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
+ 
+
+//   const handlePress = (deliveryItem: any) => {
+//     setSelectedItem(deliveryItem);
+//     setModalVisible(true);
+//   };
+
+//   const confirmDelivery = () => {
+//     if (selectedItem) {
+//       markAsReceived(selectedItem);
+//     }
+//     setModalVisible(false);
+//   };
+
+//   return (
+//     <View style={{width:'100%', height: 100, backgroundColor:'red'}}>
+//     {item === undefined ? (<View>
+//       <Text>No Deliveries</Text>
+//     </View>): (
+//     <View style={styles.deliveryItem}>
+//       <Text style={styles.deliveryNumber}>
+//         <Text style={{ fontSize: 14 }}>Delivery No:</Text> {item.deliveryNumber}
+//       </Text>
+//       <Text style={{ fontSize: 14, marginBottom: 20 }}>
+//         <Text>Vehicle No:</Text> {vehicleNo}
+//       </Text>
+//       <StepIndicator
+//         customStyles={customStyles}
+//         currentPosition={item.statusId}
+//         labels={labels}
+//         stepCount={4}
+//       />
+//       {isPending && (
+//         <TouchableOpacity
+//           style={[styles.button, item.statusId < 3 && styles.disabledButton]}
+//           onPress={() => handlePress(item)}
+//           disabled={item.statusId < 3}
+//         >
+//           <Text style={styles.buttonText}>Delivered</Text>
+//         </TouchableOpacity>
+//       )}
+
+//       {/* Confirmation Modal */}
+//       <Modal
+//         transparent={true}
+//         animationType="slide"
+//         visible={modalVisible}
+//         onRequestClose={() => setModalVisible(false)}
+//       >
+//         <View style={styles.modalContainer}>
+//           <View style={styles.modalContent}>
+//             <Text style={styles.modalText}>
+//               Are you sure you want to mark this delivery as received?
+//             </Text>
+//             <View style={styles.modalButtons}>
+//               <TouchableOpacity
+//                 style={styles.cancelButton}
+//                 onPress={() => setModalVisible(false)}
+//               >
+//                 <Text style={styles.buttonText}>Cancel</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity style={styles.confirmButton} onPress={confirmDelivery}>
+//                 <Text style={styles.buttonText}>Confirm</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         </View>
+//       </Modal>
+//     </View>
+//     )}
+//     </View>
+//   );
+  
+// };
+
+const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
+
+  const handlePress = (deliveryItem: any) => {
+    setSelectedItem(deliveryItem);
+    setModalVisible(true);
+  };
+
+  const confirmDelivery = () => {
+    if (selectedItem) {
+      markAsReceived(selectedItem);
+    }
+    setModalVisible(false);
+  };
+
+  // Check if item is null, undefined, or an empty object
+  if (!item || Object.keys(item).length === 0) {
+    return (
+      <View style={styles.noDeliveriesContainer}>
+        <Text style={styles.noDeliveriesText}>No Deliveries</Text>
+      </View>
+    );
+  }
+
+  return (
     <View style={styles.deliveryItem}>
-      <Text style={styles.deliveryNumber}>{item.deliveryNumber}</Text>
+      <Text style={styles.deliveryNumber}>
+        <Text style={{ fontSize: 14 }}>Delivery No:</Text> {item.deliveryNumber}
+      </Text>
+      <Text style={{ fontSize: 14, marginBottom: 20 }}>
+        <Text>Vehicle No:</Text> {vehicleNo}
+      </Text>
       <StepIndicator
         customStyles={customStyles}
         currentPosition={item.statusId}
@@ -196,26 +306,54 @@ export default function Dashboard() {
       />
       {isPending && (
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => markAsReceived(item)}
+          style={[styles.button, item.statusId < 3 && styles.disabledButton]}
+          onPress={() => handlePress(item)}
+          disabled={item.statusId < 3}
         >
           <Text style={styles.buttonText}>Delivered</Text>
         </TouchableOpacity>
       )}
+
+      {/* Confirmation Modal */}
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>
+              Are you sure you want to mark this delivery as received?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={confirmDelivery}>
+                <Text style={styles.buttonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
+};
+
 
   const renderCompletedItem = ({ item }: { item: any }, isPending: boolean) => (
-    <View style={styles.deliveryItem}>
-      <Text style={styles.deliveryNumber}>{item.deliveryNumber}</Text>
-      {/* {isPending && (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => markAsReceived(item)}
-        >
-          <Text style={styles.buttonText}>Received</Text>
-        </TouchableOpacity>
-      )} */}
+    <View style={styles.deliveryItem1}>
+     <View style={{flexDirection:'column', width:'70%', height:"100%"}}>
+     <Text style={styles.deliveryNumber}>{item.deliveryNumber}</Text>
+     <Text>Confirmed on: {item.deliveredAt}</Text>
+     </View>
+      <View style={{width:100, height:40, backgroundColor:'green', borderRadius:10, alignItems:'center', justifyContent:'center'}}>
+        <Text style={{color: '#fff'}}>Successful</Text>
+      </View>
     </View>
   );
 
@@ -398,7 +536,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { 
     fontSize: 25,
-    fontWeight: "bold",
+    fontWeight: "500",
     marginBottom: 10,
     marginTop:10
     },
@@ -416,13 +554,76 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     width:'100%',
     height: 200,
+    
+  },
+  deliveryItem1: {
+    flexDirection: "row",
+    alignItems:'center',
+    padding: 10,
+    backgroundColor: "#Adebb3",
+    borderRadius: 10,
+    width:'100%',
+    height: 80,
+    marginBottom:15
   },
   button: {
     backgroundColor: "#F6984C",
     padding: 10,
     borderRadius: 5,
-    marginTop:30
+    marginTop:10,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  
+  buttonText: { color: "#fff", fontWeight: "600" },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  cancelButton: {
+    backgroundColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 10,
+    alignItems: "center",
+  },
+  confirmButton: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
+    opacity: 0.5,
+  },
+  noDeliveriesContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 100,
+  },
+  noDeliveriesText: {
+    fontSize: 16,
+    color: 'gray',
+  },
 });

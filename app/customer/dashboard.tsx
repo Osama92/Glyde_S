@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import StepIndicator from "react-native-step-indicator";
 import { app } from "../firebase";
+import {router} from 'expo-router';
 
 const db = getFirestore(app);
 
@@ -34,6 +35,9 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
+   const [profileImage, setProfileImage] = useState<string | null>(null);
+   const [collectionName, setCollectionName] = useState<string | null>(null);
+   const [id, setId] = useState<string | null>(null);
 
   const customStyles = {
   stepIndicatorSize: 30,
@@ -78,6 +82,10 @@ export default function Dashboard() {
           
           const userDoc = querySnapshot.docs[0].data();
           setDisplayName(userDoc.name || "Unknown User");
+          setProfileImage(userDoc.imageUrl || null);
+          setCollectionName(colName);
+            const encodedID = encodeURIComponent(userDoc.uid);
+            setId(encodedID)
           break;
         }
       }
@@ -121,7 +129,7 @@ export default function Dashboard() {
 
         deliveriesSnapshot.forEach((doc) => {
           const delivery:any = { id: doc.id, ...doc.data(), shipmentId: shipmentDoc.id };
-          if (delivery.statusId === 2) {
+          if (delivery.statusId === 1||delivery.statusId === 2||delivery.statusId === 3) {
             pending.push(delivery);
           } else if (delivery.statusId === 4) {
             completed.push(delivery);
@@ -161,7 +169,6 @@ export default function Dashboard() {
     await fetchUserDetails();
     await fetchDeliveryDetails();
     setLoading(false);
-    //console.log(displayName)
   };
 
   useEffect(() => {
@@ -192,7 +199,7 @@ export default function Dashboard() {
           style={styles.button}
           onPress={() => markAsReceived(item)}
         >
-          <Text style={styles.buttonText}>Received</Text>
+          <Text style={styles.buttonText}>Delivered</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -222,19 +229,104 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
+      
       <View style={styles.TopNav}>
-        <View style={styles.leftNav}>
-          <Image
-            source={require("../../assets/images/Aisha5.jpeg")}
-            resizeMode="cover"
-            style={{ width: 40, height: 40, borderRadius: 20, margin: 5 }}
-          />
-          <Text style={{ fontWeight: "600" }}>Hi, {displayName}</Text>
-        </View>
-      </View>
-
+              <View style={styles.leftNav}>
+                <View style={{flexDirection: "row",width: "100%",height: "50%",alignItems: "center"}}>
+                  <Image source={profileImage ? { uri: profileImage } : require('../../assets/images/icon.png')} resizeMode="cover" style={{ width: 40, height: 40, borderRadius: 20, margin: 5 }}/>
+                  <View style={{ flexDirection: "column" }}>
+                    <Text style={{ fontWeight: "600", marginBottom: 3 }}>Hi, {displayName}</Text>
+                    <TouchableOpacity onPress={()=>router.push(`/customer/editProfile?collectionName=${collectionName}&id=${id}`)}>
+                      <Text>Edit my Profile</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={{width: "100%",height: "50%",flexDirection: "row",alignItems: "center"}}>
+                  <View style={{ width: 40, height: 40, backgroundColor: "#EDEBEB", borderRadius: 20, margin: 5, alignItems: "center", justifyContent: "center" }}>
+                    <Image source={require("../../assets/images/Pin.png")} resizeMode="cover" style={{ width: 20, height: 20 }}/>
+                  </View>
+                  <View style={{ flexDirection: "column" }}>
+                  <Text>location</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.rightNav}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    width: "100%",
+                    height: "46%",
+                    alignItems: "center",
+                    backgroundColor: "#f4f4f4",
+                    borderRadius: 30,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: "#EDEBEB",
+                      borderRadius: 20,
+                      margin: 5,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Image
+                      source={require("../../assets/images/Trackk.png")}
+                      resizeMode="cover"
+                      style={{ width: 20, height: 20 }}
+                    />
+                  </View>
+                  <View style={{ flexDirection: "column" }}>
+                    <Text style={{ fontWeight: "600", marginBottom: 3 }}>
+                      Track Shipment
+                    </Text>
+                    <TouchableOpacity onPress={()=>router.push('/agent/trackShipment')}>
+                      <Text>Track by ID</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                
+                <View
+                  style={{
+                    width: "100%",
+                    height: "46%",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#f4f4f4",
+                    borderRadius: 30,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: "#F6984C",
+                      borderRadius: 20,
+                      margin: 5,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Image
+                      source={require("../../assets/images/Support.png")}
+                      resizeMode="cover"
+                      style={{ width: 20, height: 20}}
+                    />
+                  </View>
+                  <View style={{ flexDirection: "column" }}>
+                    <TouchableOpacity>
+                      <Text>Support Desk</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+              
+    </View>
+    <View style={{width:'100%'}}>
       <Text style={styles.sectionTitle}>Incoming Deliveries</Text>
-      <FlatList
+    <FlatList
        data={pendingDeliveries}
        keyExtractor={(item) => `${item.shipmentId}-${item.id}`}
        renderItem={(item) => renderDeliveryItem(item, true)}
@@ -242,7 +334,6 @@ export default function Dashboard() {
          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
        }
       />
-
       <Text style={styles.sectionTitle}>Completed Transactions</Text>
       <FlatList
         data={completedDeliveries}
@@ -250,30 +341,88 @@ export default function Dashboard() {
         renderItem={(item) => renderCompletedItem(item, false)}
       />
     </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  TopNav: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  leftNav: { flexDirection: "row", alignItems: "center" },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
-    deliveryItem: {
+  container: {
+    flex: 1,
+    //justifyContent: "center",
+    alignItems: "center",
+    padding:10,
+    backgroundColor:'#fff',
+    width:'100%',
+    height:'100%'
+
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  info: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  label: {
+    fontWeight: "bold",
+  },
+  TopNav: {
+    flexDirection: "row",
+    width: "100%",
+    height: 130,
+    justifyContent: "space-between",
+    alignItems: 'flex-end',
+    marginTop:10
+  },
+  leftNav: {
+    backgroundColor: "#f4f4f4",
+    width: "48%",
+    height: "80%",
+    borderRadius: 30,
+    marginBottom:10
+  },
+  rightNav: {
+    //backgroundColor:'#f4f4f4',
+    width: "48%",
+    height: "80%",
+    borderRadius: 30,
+    justifyContent: "space-between",
+    marginBottom:10
+  },
+  sectionTitle: { 
+    fontSize: 25,
+    fontWeight: "bold",
+    marginBottom: 10,
+    marginTop:10
+    },
+  deliveryNumber: { 
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 10,
+  },
+  deliveryItem: {
     flexDirection: "column",
     padding: 10,
-    marginVertical: 5,
     backgroundColor: "#f9f9f9",
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "#ddd",
-    flexGrow: 1,
+    width:'100%',
+    height: 200,
   },
-  deliveryNumber: { fontSize: 16, fontWeight: "600" },
   button: {
     backgroundColor: "#F6984C",
     padding: 10,
     borderRadius: 5,
+    marginTop:30
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
+  
 });

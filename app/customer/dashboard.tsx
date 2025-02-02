@@ -191,83 +191,8 @@ export default function Dashboard() {
     await fetchDeliveryDetails();
   }, []);
 
-// const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
- 
-
-//   const handlePress = (deliveryItem: any) => {
-//     setSelectedItem(deliveryItem);
-//     setModalVisible(true);
-//   };
-
-//   const confirmDelivery = () => {
-//     if (selectedItem) {
-//       markAsReceived(selectedItem);
-//     }
-//     setModalVisible(false);
-//   };
-
-//   return (
-//     <View style={{width:'100%', height: 100, backgroundColor:'red'}}>
-//     {item === undefined ? (<View>
-//       <Text>No Deliveries</Text>
-//     </View>): (
-//     <View style={styles.deliveryItem}>
-//       <Text style={styles.deliveryNumber}>
-//         <Text style={{ fontSize: 14 }}>Delivery No:</Text> {item.deliveryNumber}
-//       </Text>
-//       <Text style={{ fontSize: 14, marginBottom: 20 }}>
-//         <Text>Vehicle No:</Text> {vehicleNo}
-//       </Text>
-//       <StepIndicator
-//         customStyles={customStyles}
-//         currentPosition={item.statusId}
-//         labels={labels}
-//         stepCount={4}
-//       />
-//       {isPending && (
-//         <TouchableOpacity
-//           style={[styles.button, item.statusId < 3 && styles.disabledButton]}
-//           onPress={() => handlePress(item)}
-//           disabled={item.statusId < 3}
-//         >
-//           <Text style={styles.buttonText}>Delivered</Text>
-//         </TouchableOpacity>
-//       )}
-
-//       {/* Confirmation Modal */}
-//       <Modal
-//         transparent={true}
-//         animationType="slide"
-//         visible={modalVisible}
-//         onRequestClose={() => setModalVisible(false)}
-//       >
-//         <View style={styles.modalContainer}>
-//           <View style={styles.modalContent}>
-//             <Text style={styles.modalText}>
-//               Are you sure you want to mark this delivery as received?
-//             </Text>
-//             <View style={styles.modalButtons}>
-//               <TouchableOpacity
-//                 style={styles.cancelButton}
-//                 onPress={() => setModalVisible(false)}
-//               >
-//                 <Text style={styles.buttonText}>Cancel</Text>
-//               </TouchableOpacity>
-//               <TouchableOpacity style={styles.confirmButton} onPress={confirmDelivery}>
-//                 <Text style={styles.buttonText}>Confirm</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-//     </View>
-//     )}
-//     </View>
-//   );
-  
-// };
-
 const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
+ 
 
   const handlePress = (deliveryItem: any) => {
     setSelectedItem(deliveryItem);
@@ -281,16 +206,8 @@ const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
     setModalVisible(false);
   };
 
-  // Check if item is null, undefined, or an empty object
-  if (!item || Object.keys(item).length === 0) {
-    return (
-      <View style={styles.noDeliveriesContainer}>
-        <Text style={styles.noDeliveriesText}>No Deliveries</Text>
-      </View>
-    );
-  }
-
   return (
+    
     <View style={styles.deliveryItem}>
       <Text style={styles.deliveryNumber}>
         <Text style={{ fontSize: 14 }}>Delivery No:</Text> {item.deliveryNumber}
@@ -341,8 +258,11 @@ const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
         </View>
       </Modal>
     </View>
+    
   );
+  
 };
+
 
 
   const renderCompletedItem = ({ item }: { item: any }, isPending: boolean) => (

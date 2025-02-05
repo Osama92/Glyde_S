@@ -152,7 +152,8 @@ import {
   FlatList,
   Alert,
   StatusBar,
-  ScrollView
+  ScrollView,
+  Image
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -163,6 +164,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { app } from "../firebase";
+import { router } from "expo-router";
 
 const db = getFirestore(app);
 
@@ -333,12 +335,24 @@ const TransporterScreen = () => {
                 <View style={{width:'100%', height:60, flexDirection:'row'}}>
                     <View style={{width:'80%', height:'100%'}}>
                         <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Delivery Vans</Text>
-                        <Text style={{fontSize: 14, marginLeft: 10, marginTop: 5}}>Vehicles operating in your fleet</Text>
+                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Vehicles operating in your fleet</Text>
                     </View>
                     <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <View style={{width: 50, height:50, borderRadius:25, backgroundColor:'lightgreen'}}></View>
+                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/addNew')}}>
+                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
+                        </TouchableOpacity>
                     </View>
                 </View>
+                <View style={{width:'100%', height: 160,flexDirection:'row'}}>
+                    <View style={{width:'40%', height:'100%', justifyContent:'center'}}>
+                        <Text style={{paddingLeft:20, fontSize: 70, fontWeight:'bold', marginTop:10}}>{vehicles.length}</Text>
+                        <Text style={{paddingLeft:20, fontSize: 14}}>Vans</Text>
+                    </View>
+                    <Image source={require('../../assets/images/Van01.png')} style={{width:190, height:190}} resizeMode="contain"/>
+                </View>
+                <TouchableOpacity style={{padding:8}}>
+                    <Text style={{color:'green'}}>View vehicle position</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     </View>

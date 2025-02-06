@@ -1,147 +1,4 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   StyleSheet,
-//   ActivityIndicator,
-//   FlatList,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import {
-//   getFirestore,
-//   collection,
-//   getDocs,
-// } from "firebase/firestore";
-// import { app } from "../firebase";
-
-// const db = getFirestore(app);
-
-// const TransporterScreen = () => {
-//   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-//   const [transporterName, setTransporterName] = useState<string | null>(null);
-//   const [vehicles, setVehicles] = useState<string[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   // Fetch phone number from AsyncStorage
-//   useEffect(() => {
-//     const fetchPhoneNumber = async () => {
-//       try {
-//         const storedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
-//         if (!storedPhoneNumber) {
-//           console.error("No phone number found");
-//           return;
-//         }
-//         setPhoneNumber(storedPhoneNumber);
-//       } catch (error) {
-//         console.error("Error fetching phone number:", error);
-//       }
-//     };
-
-//     fetchPhoneNumber();
-//   }, []);
-
-//   // Fetch Transporter Data
-//   useEffect(() => {
-//     if (!phoneNumber) return;
-
-//     const fetchTransporterData = async () => {
-//       try {
-//         const transporterRef = collection(db, "transporter");
-//         const transporterSnapshot = await getDocs(transporterRef);
-//         let foundTransporter: any = null;
-
-//         transporterSnapshot.forEach((doc) => {
-//           if (doc.id.startsWith(`${phoneNumber}_`)) {
-//             foundTransporter = doc.id;
-//           }
-//         });
-
-//         if (!foundTransporter) {
-//           console.error("Transporter not found");
-//           setLoading(false);
-//           return;
-//         }
-
-//         setTransporterName(foundTransporter);
-
-//         // Fetch Vehicles inside transporter
-//         const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
-//         const vehicleSnapshot = await getDocs(vehicleRef);
-//         const vehicleList = vehicleSnapshot.docs.map((doc) => doc.id);
-
-//         setVehicles(vehicleList);
-//       } catch (error) {
-//         console.error("Error fetching transporter data:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchTransporterData();
-//   }, [phoneNumber]);
-
-//   if (loading) {
-//     return (
-//       <View style={styles.container}>
-//         <ActivityIndicator size="large" color="orange" />
-//         <Text>Loading...</Text>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.header}>Transporter Details</Text>
-//       {transporterName ? <Text>🚛 {transporterName}</Text> : <Text>No transporter found</Text>}
-
-//       <TouchableOpacity style={styles.button}>
-//         <Text style={styles.buttonText}>
-//           Vehicles Count: {vehicles.length}
-//         </Text>
-//       </TouchableOpacity>
-
-//       <FlatList
-//         data={vehicles}
-//         keyExtractor={(item) => item}
-//         renderItem={({ item }) => <Text style={styles.vehicleItem}>🔹 {item}</Text>}
-//       />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//     alignItems: "center",
-//     padding: 20,
-//   },
-//   header: {
-//     fontSize: 20,
-//     fontWeight: "bold",
-//     marginBottom: 10,
-//   },
-//   button: {
-//     backgroundColor: "orange",
-//     padding: 10,
-//     borderRadius: 5,
-//     marginVertical: 10,
-//   },
-//   buttonText: {
-//     color: "white",
-//     fontWeight: "bold",
-//   },
-//   vehicleItem: {
-//     fontSize: 16,
-//     marginVertical: 5,
-//   },
-// });
-
-// export default TransporterScreen;
-
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -153,7 +10,8 @@ import {
   Alert,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -162,6 +20,8 @@ import {
   getDocs,
   doc,
   setDoc,
+  query,
+  where
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router } from "expo-router";
@@ -176,6 +36,10 @@ const TransporterScreen = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [totalTrips, setTotalTrips] = useState<number>(0);
+
+  
 
   // Fetch phone number from AsyncStorage
   useEffect(() => {
@@ -235,30 +99,115 @@ const TransporterScreen = () => {
     fetchTransporterData();
   }, [phoneNumber]);
 
-  // Add a new vehicle
-  const addVehicle = async () => {
-    if (!transporterName || !vehicleInput.trim()) {
-      Alert.alert("Error", "Please enter a valid vehicle number.");
-      return;
-    }
+//   const onRefresh = useCallback(() => {
+//     setRefreshing(true);
+//     fetchTransporterData().finally(() => setRefreshing(false));
+//   }, []);
 
-    setAdding(true);
+  const fetchTransporterData = async () => {
+    if (!phoneNumber) return;
 
     try {
-      const vehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", vehicleInput);
-      await setDoc(vehicleDocRef, { createdAt: new Date() });
+      setLoading(true);
+      const transporterRef = collection(db, "transporter");
+      const transporterSnapshot = await getDocs(transporterRef);
+      let foundTransporter: any = null;
 
-      setVehicles((prev) => [...prev, vehicleInput]);
-      setVehicleInput(""); // Clear input field
-      Alert.alert("Success", "Vehicle added successfully!");
+      transporterSnapshot.forEach((doc) => {
+        if (doc.id.startsWith(`${phoneNumber}_`)) {
+          foundTransporter = doc.id;
+        }
+      });
+
+      if (!foundTransporter) {
+        console.error("Transporter not found");
+        setLoading(false);
+        return;
+      }
+
+      setTransporterName(foundTransporter);
+
+      // Fetch Vehicles inside transporter
+      const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
+      const vehicleSnapshot = await getDocs(vehicleRef);
+      const vehicleList = vehicleSnapshot.docs.map((doc) => doc.id);
+
+      setVehicles(vehicleList);
     } catch (error) {
-      console.error("Error adding vehicle:", error);
-      Alert.alert("Error", "Failed to add vehicle.");
+      console.error("Error fetching transporter data:", error);
     } finally {
-      setAdding(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (phoneNumber) {
+      fetchTransporterData();
+    }
+  }, [phoneNumber]);
+
+  useEffect(() => {
+    if (!vehicles.length) return;
+  
+    const fetchTotalTrips = async () => {
+      try {
+        let tripSum = 0;
+        for (const vehicle of vehicles) {
+          const shipmentRef = collection(db, "Shipment");
+          const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicle));
+          const snapshot = await getDocs(shipmentQuery);
+          tripSum += snapshot.size;
+        }
+        setTotalTrips(tripSum);
+      } catch (error) {
+        console.error("Error fetching total trips:", error);
+      }
+    };
+  
+    fetchTotalTrips();
+  }, [vehicles]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTransporterData().finally(() => setRefreshing(false));
+  }, []);
+
+  const useShipmentCount = (vehicleNo: string) => {
+    const [shipmentCount, setShipmentCount] = useState<number | null>(null);
+
+    useEffect(() => {
+      if (!vehicleNo) return;
+
+      const fetchShipmentCount = async () => {
+        try {
+          const shipmentRef = collection(db, "Shipment");
+          const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicleNo));
+          const snapshot = await getDocs(shipmentQuery);
+
+          setShipmentCount(snapshot.size);
+        } catch (error) {
+          console.error("Error fetching shipment count:", error);
+        }
+      };
+
+      fetchShipmentCount();
+    }, [vehicleNo]);
+
+    return shipmentCount;
+  };
+
+  const TripCount = ({ vehicleNo }: { vehicleNo: string }) => {
+    const shipmentCount = useShipmentCount(vehicleNo);
+
+    return (
+      <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 5 }}>
+        Trips: {shipmentCount ?? "Loading..."}
+      </Text>
+    );
+  };
+
+
+  
   const handlePressIn = (button: string) => {
     setPressedButton(button);
   };
@@ -266,6 +215,40 @@ const TransporterScreen = () => {
   const handlePressOut = () => {
     setPressedButton(null);
   };
+
+
+//   const useShipmentCount = (vehicleNo: string) => {
+//     const [shipmentCount, setShipmentCount] = useState<number | null>(null);
+//     useEffect(() => {
+//         if (!vehicleNo) return;
+    
+//         const fetchShipmentCount = async () => {
+//           try {
+//             const shipmentRef = collection(db, "Shipment");
+//             const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicleNo));
+//             const snapshot = await getDocs(shipmentQuery);
+    
+//             setShipmentCount(snapshot.size);
+//           } catch (error) {
+//             console.error("Error fetching shipment count:", error);
+//           }
+//         };
+    
+//         fetchShipmentCount();
+//       }, [vehicleNo]);
+    
+//       return shipmentCount;
+//     };
+
+//     const ShipmentCountText = ({ vehicleNo }: { vehicleNo: string }) => {
+//         const shipmentCount = useShipmentCount(vehicleNo);
+      
+//         return (
+//           <Text style={{ fontSize: 16, fontWeight: "bold", marginVertical: 5 }}>
+//             Shipments using {vehicleNo}: {shipmentCount ?? "Loading..."}
+//           </Text>
+//         );
+//       };
 
   if (loading) {
     return (
@@ -279,31 +262,7 @@ const TransporterScreen = () => {
   
 
   return (
-    // <View style={styles.container}>
-    // <StatusBar barStyle="dark-content" />
-    //   <Text style={styles.header}>Transporter Details</Text>
-    //   {transporterName ? <Text>🚛 {transporterName}</Text> : <Text>No transporter found</Text>}
 
-    //   <TextInput
-    //     style={styles.input}
-    //     placeholder="Enter Vehicle No."
-    //     value={vehicleInput}
-    //     onChangeText={setVehicleInput}
-    //   />
-    //   <TouchableOpacity style={styles.addButton} onPress={addVehicle} disabled={adding}>
-    //     <Text style={styles.buttonText}>{adding ? "Adding..." : "Add Vehicle"}</Text>
-    //   </TouchableOpacity>
-
-    //   <TouchableOpacity style={styles.button}>
-    //     <Text style={styles.buttonText}>Vehicles Count: {vehicles.length}</Text>
-    //   </TouchableOpacity>
-
-    //   <FlatList
-    //     data={vehicles}
-    //     keyExtractor={(item) => item}
-    //     renderItem={({ item }) => <Text style={styles.vehicleItem}>🔹 {item}</Text>}
-    //   />
-    // </View>
     <View style={styles.container}>
         <StatusBar barStyle="dark-content" />
         <View style={{width:'100%', height: 90, flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginTop: 20}}>
@@ -330,7 +289,7 @@ const TransporterScreen = () => {
       ))}
 
         </View>
-        <ScrollView style={{width:'100%', marginTop: 5}}>
+        <ScrollView style={{width:'100%', marginTop: 5}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
             <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
                 <View style={{width:'100%', height:60, flexDirection:'row'}}>
                     <View style={{width:'80%', height:'100%'}}>
@@ -354,10 +313,210 @@ const TransporterScreen = () => {
                     <Text style={{color:'green'}}>View vehicle position</Text>
                 </TouchableOpacity>
             </View>
+            
         </ScrollView>
+        <Text>{totalTrips}</Text>
     </View>
   );
 };
+
+
+// import React, { useEffect, useState, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   TouchableOpacity,
+//   ScrollView,
+//   Image,
+//   ActivityIndicator,
+//   RefreshControl,
+//   FlatList,
+//   StyleSheet
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import {
+//   getFirestore,
+//   collection,
+//   getDocs,
+//   query,
+//   where,
+// } from "firebase/firestore";
+// import { app } from "../firebase";
+// import { router } from "expo-router";
+
+// const db = getFirestore(app);
+
+// const TransporterScreen = () => {
+//   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+//   const [transporterName, setTransporterName] = useState<string | null>(null);
+//   const [vehicles, setVehicles] = useState<string[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [totalTrips, setTotalTrips] = useState<number>(0);
+
+//   useEffect(() => {
+//     const fetchPhoneNumber = async () => {
+//       try {
+//         const storedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
+//         if (!storedPhoneNumber) {
+//           console.error("No phone number found");
+//           return;
+//         }
+//         setPhoneNumber(storedPhoneNumber);
+//       } catch (error) {
+//         console.error("Error fetching phone number:", error);
+//       }
+//     };
+
+//     fetchPhoneNumber();
+//   }, []);
+
+//   const fetchTransporterData = async () => {
+//     if (!phoneNumber) return;
+
+//     try {
+//       setLoading(true);
+//       const transporterRef = collection(db, "transporter");
+//       const transporterSnapshot = await getDocs(transporterRef);
+//       let foundTransporter: any = null;
+
+//       transporterSnapshot.forEach((doc) => {
+//         if (doc.id.startsWith(`${phoneNumber}_`)) {
+//           foundTransporter = doc.id;
+//         }
+//       });
+
+//       if (!foundTransporter) {
+//         console.error("Transporter not found");
+//         setLoading(false);
+//         return;
+//       }
+
+//       setTransporterName(foundTransporter);
+
+//       // Fetch Vehicles inside transporter
+//       const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
+//       const vehicleSnapshot = await getDocs(vehicleRef);
+//       const vehicleList = vehicleSnapshot.docs.map((doc) => doc.id);
+
+//       setVehicles(vehicleList);
+//     } catch (error) {
+//       console.error("Error fetching transporter data:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (phoneNumber) {
+//       fetchTransporterData();
+//     }
+//   }, [phoneNumber]);
+
+//   useEffect(() => {
+//     if (!vehicles.length) return;
+  
+//     const fetchTotalTrips = async () => {
+//       try {
+//         let tripSum = 0;
+//         for (const vehicle of vehicles) {
+//           const shipmentRef = collection(db, "Shipment");
+//           const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicle));
+//           const snapshot = await getDocs(shipmentQuery);
+//           tripSum += snapshot.size;
+//         }
+//         setTotalTrips(tripSum);
+//       } catch (error) {
+//         console.error("Error fetching total trips:", error);
+//       }
+//     };
+  
+//     fetchTotalTrips();
+//   }, [vehicles]);
+
+//   const onRefresh = useCallback(() => {
+//     setRefreshing(true);
+//     fetchTransporterData().finally(() => setRefreshing(false));
+//   }, []);
+
+//   const useShipmentCount = (vehicleNo: string) => {
+//     const [shipmentCount, setShipmentCount] = useState<number | null>(null);
+
+//     useEffect(() => {
+//       if (!vehicleNo) return;
+
+//       const fetchShipmentCount = async () => {
+//         try {
+//           const shipmentRef = collection(db, "Shipment");
+//           const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicleNo));
+//           const snapshot = await getDocs(shipmentQuery);
+
+//           setShipmentCount(snapshot.size);
+//         } catch (error) {
+//           console.error("Error fetching shipment count:", error);
+//         }
+//       };
+
+//       fetchShipmentCount();
+//     }, [vehicleNo]);
+
+//     return shipmentCount;
+//   };
+
+//   const TripCount = ({ vehicleNo }: { vehicleNo: string }) => {
+//     const shipmentCount = useShipmentCount(vehicleNo);
+
+//     return (
+//       <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 5 }}>
+//         Trips: {shipmentCount ?? "Loading..."}
+//       </Text>
+//     );
+//   };
+
+//   if (loading) {
+//     return (
+//       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+//         <ActivityIndicator size="large" color="orange" />
+//         <Text>Loading...</Text>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <View style={{ flex: 1, backgroundColor: "#fff", padding: 20 }}>
+//       <ScrollView
+//         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+//       >
+//         <View style={{ width: "100%", height: 90, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20 }}>
+//           <View style={{ width: "70%", height: "100%", flexDirection: "column", justifyContent: "center" }}>
+//             {transporterName ? <Text style={{ fontSize: 14, fontWeight: "500" }}>Hello {transporterName},</Text> : <Text>No transporter found</Text>}
+//             <Text style={{ fontWeight: "bold", fontSize: 23, marginTop: 10 }}>Good Afternoon</Text>
+//           </View>
+//           <View style={{ width: 70, height: 70, backgroundColor: "lightgreen", borderRadius: 35 }}></View>
+//         </View>
+
+//         <View style={{ width: "100%", height: 250, backgroundColor: "#f5f5f5", marginTop: 20, borderRadius: 10, padding: 10 }}>
+//           <Text style={{ fontSize: 20, fontWeight: "bold" }}>Delivery Vans</Text>
+//           <Text style={{ fontSize: 13, marginBottom: 10 }}>Vehicles operating in your fleet</Text>
+
+//           <FlatList
+//             data={vehicles}
+//             keyExtractor={(item) => item}
+//             renderItem={({ item }) => (
+//               <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: "#ddd" }}>
+//                 <Text style={{ fontSize: 16 }}>{item}</Text>
+//                 <TripCount vehicleNo={item} />
+//               </View>
+//             )}
+//           />
+//         </View>
+//         <Text>{totalTrips}</Text>
+//       </ScrollView>
+//     </View>
+//   );
+// };
+
+
 
 const styles = StyleSheet.create({
   container: {

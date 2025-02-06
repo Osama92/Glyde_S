@@ -25,6 +25,7 @@ import {
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router } from "expo-router";
+import { BarChart, LineChart, PieChart, PopulationPyramid, RadarChart } from "react-native-gifted-charts";
 
 const db = getFirestore(app);
 
@@ -38,6 +39,9 @@ const TransporterScreen = () => {
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [totalTrips, setTotalTrips] = useState<number>(0);
+
+  const data=[ {value:50}, {value:80}, {value:90}, {value:70} ]
+  const data2 = [ {value:30}, {value:60}, {value:70}, {value:50} ]
 
   
 
@@ -289,11 +293,11 @@ const TransporterScreen = () => {
       ))}
 
         </View>
-        <ScrollView style={{width:'100%', marginTop: 5}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{width:'100%', marginTop: 5}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
             <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
                 <View style={{width:'100%', height:60, flexDirection:'row'}}>
                     <View style={{width:'80%', height:'100%'}}>
-                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Delivery Vans</Text>
+                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Delivery Fleets</Text>
                         <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Vehicles operating in your fleet</Text>
                     </View>
                     <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
@@ -305,7 +309,7 @@ const TransporterScreen = () => {
                 <View style={{width:'100%', height: 160,flexDirection:'row'}}>
                     <View style={{width:'40%', height:'100%', justifyContent:'center'}}>
                         <Text style={{paddingLeft:20, fontSize: 70, fontWeight:'bold', marginTop:10}}>{vehicles.length}</Text>
-                        <Text style={{paddingLeft:20, fontSize: 14}}>Vans</Text>
+                        <Text style={{paddingLeft:20, fontSize: 14}}>Fleets</Text>
                     </View>
                     <Image source={require('../../assets/images/Van01.png')} style={{width:190, height:190}} resizeMode="contain"/>
                 </View>
@@ -313,9 +317,30 @@ const TransporterScreen = () => {
                     <Text style={{color:'green'}}>View vehicle position</Text>
                 </TouchableOpacity>
             </View>
+
+            <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
+                <View style={{width:'100%', height:60, flexDirection:'row'}}>
+                    <View style={{width:'80%', height:'100%'}}>
+                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Total Shipments</Text>
+                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Summary of completed shipments</Text>
+                    </View>
+                    <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
+                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}}>
+                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={{width:'100%', height: 160,flexDirection:'row'}}>
+                    <View style={{width:'40%', height:'100%', justifyContent:'center'}}>
+                        <Text style={{paddingLeft:20, fontSize: 70, fontWeight:'bold', marginTop:10}}>{totalTrips}</Text>
+                        <Text style={{paddingLeft:20, fontSize: 14}}>Shipments</Text>
+                    </View>
+                    <Image source={require('../../assets/images/trips.png')} style={{width:190, height:190}} resizeMode="contain"/>
+                </View>
+            </View>
             
         </ScrollView>
-        <Text>{totalTrips}</Text>
+        
     </View>
   );
 };

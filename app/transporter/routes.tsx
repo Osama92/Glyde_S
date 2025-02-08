@@ -520,7 +520,7 @@ export default function Details() {
             ListEmptyComponent={<Text style={styles.noResults}>No routes found.</Text>}
             renderItem={({ item }) => (
               <View style={styles.routeContainer}>
-                <Text style={styles.routeName}>{item.routeName}</Text>
+                {/* <Text style={styles.routeName}>{item.routeName}</Text> */}
                 <ScrollView horizontal>
                   <View>
                     {/* Render headers */}
@@ -587,12 +587,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
+    justifyContent:'space-between',
+    width:'100%'
   },
   headerText: {
     flex: 1,
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
     textAlign: "center",
   },
   row: {

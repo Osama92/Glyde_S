@@ -278,10 +278,10 @@ const TransporterScreen = () => {
                 <View style={{width:'100%', height:60, flexDirection:'row'}}>
                     <View style={{width:'80%', height:'100%'}}>
                         <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Total Shipments</Text>
-                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Summary of completed shipments</Text>
+                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Summary of shipments</Text>
                     </View>
                     <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/routes')}}>
+                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/analytics')}}>
                             <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
                         </TouchableOpacity>
                     </View>
@@ -292,6 +292,23 @@ const TransporterScreen = () => {
                         <Text style={{paddingLeft:20, fontSize: 14}}>Shipments</Text>
                     </View>
                     <Image source={require('../../assets/images/trips.png')} style={{width:190, height:190}} resizeMode="contain"/>
+                </View>
+            </View>
+
+            <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
+                <View style={{width:'100%', height:60, flexDirection:'row'}}>
+                    <View style={{width:'80%', height:'100%'}}>
+                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Analytics</Text>
+                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>View delivery and truck performance</Text>
+                    </View>
+                    <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
+                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/analytics')}}>
+                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={{width:'100%', height: 160,justifyContent:'center',alignItems:'center'}}>
+                    <Image source={require('../../assets/images/analytics.png')} style={{width:190, height:190}} resizeMode="contain"/>
                 </View>
             </View>
             

@@ -189,15 +189,15 @@ const TransporterScreen = () => {
     return shipmentCount;
   };
 
-  const TripCount = ({ vehicleNo }: { vehicleNo: string }) => {
-    const shipmentCount = useShipmentCount(vehicleNo);
+//   const TripCount = ({ vehicleNo }: { vehicleNo: string }) => {
+//     const shipmentCount = useShipmentCount(vehicleNo);
 
-    return (
-      <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 5 }}>
-        Trips: {shipmentCount ?? "Loading..."}
-      </Text>
-    );
-  };
+//     return (
+//       <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 5 }}>
+//         Trips: {shipmentCount ?? "Loading..."}
+//       </Text>
+//     );
+//   };
 
 
   
@@ -227,7 +227,7 @@ const TransporterScreen = () => {
         <StatusBar barStyle="dark-content" />
         <View style={{width:'100%', height: 90, flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginTop: 20}}>
             <View style={{width:'70%', height:'100%', flexDirection:'column', justifyContent:'center'}}>
-                {transporterName ? <Text style={{fontSize:14, fontWeight:'500'}}>Hello {transporterName},</Text> : <Text>No transporter found</Text>
+                {transporterName ? <Text style={{fontSize:14, fontWeight:'500'}}>Hello {transporterName.split("_")[1]},</Text> : <Text>No transporter found</Text>
                 }
                 <Text style={{fontWeight:'bold', fontSize: 23,marginTop:10}}>Good Afternoon</Text>
             </View>

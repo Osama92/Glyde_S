@@ -156,15 +156,9 @@ export default function Dashboard() {
               />
             </View>
             <View style={{ flexDirection: "column" }}>
-            {loading ? (
-        <ActivityIndicator size="small" color="#0000ff" />
-      ) : location ? (
-        <View>
-          <Text>location</Text>
-        </View>
-      ) : (
+            
         <Text>Not available</Text>
-      )}
+      
             </View>
           </View>
         </View>

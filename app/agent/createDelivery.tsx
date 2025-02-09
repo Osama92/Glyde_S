@@ -49,20 +49,16 @@ export default function CreateDelivery() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(
-    null
-  );
-  const [deliveryMaterials, setDeliveryMaterials] = useState<
-    DeliveryMaterial[]
-  >([]);
-  const [originPoint, setOriginPoint] = useState<string>("");
-  const [materialInput, setMaterialInput] = useState<string>("");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [deliveryMaterials, setDeliveryMaterials] = useState<DeliveryMaterial[]>([]);
+  const [originPoint, setOriginPoint] = useState<string | null>(null);
   const [statusID, setStatusID] = useState<number>(1);
 
-  const {shippingPoint} = useLocalSearchParams();
+  const  {shippingPoint}  = useLocalSearchParams();
+
+  // Ensure shippingPoint is treated as a string
+  const resolvedShippingPoint = Array.isArray(shippingPoint) ? shippingPoint[0] : shippingPoint;
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -70,29 +66,35 @@ export default function CreateDelivery() {
       const snapshot = await getDocs(collection(db, "customer"));
       snapshot.forEach((doc) => {
         customerData.push({ id: doc.id, name: doc.data().name });
+        
       });
       setCustomers(customerData);
+      setOriginPoint(shippingPoint as string)
     };
 
     const fetchShipments = async () => {
       const shipmentData: Shipment[] = [];
       const snapshot = await getDocs(collection(db, "Shipment"));
       snapshot.forEach((doc) => {
-        shipmentData.push({ id: doc.id, name: doc.id});
+        shipmentData.push({ id: doc.id, name: doc.id });
       });
       setShipments(shipmentData);
-      
     };
 
     fetchCustomers();
     fetchShipments();
   }, []);
 
+  useEffect(() => {
+    if (resolvedShippingPoint) {
+      fetchMaterials(resolvedShippingPoint);
+    }
+  }, [resolvedShippingPoint]);
+
   const fetchMaterials = async (origin: string) => {
     const materialData: Material[] = [];
     const snapshot = await getDocs(
-      collection(db, `originPoint/${shippingPoint}/materials`)
-      //collection(db, 'originPoint/Agbara/materials')
+      collection(db, `originPoint/${resolvedShippingPoint}/materials`)
     );
     snapshot.forEach((doc) => {
       materialData.push({ id: doc.id, name: doc.data().name });
@@ -100,25 +102,30 @@ export default function CreateDelivery() {
     setMaterials(materialData);
   };
 
-  const handleAddMaterial = () => {
-    if (!materialInput) {
-      Alert.alert("Error", "Please select a material.");
+  const handleAddMaterial = (materialName: string) => {
+    if (!materialName) {
+      Alert.alert("Error", "Please select material.");
+      return;
+    }
+
+    // Check if the material is already added
+    const isMaterialAlreadyAdded = deliveryMaterials.some(
+      (mat) => mat.name === materialName
+    );
+
+    if (isMaterialAlreadyAdded) {
+      Alert.alert("Error", "This material is already added.");
       return;
     }
 
     setDeliveryMaterials((prev) => [
       ...prev,
-      { name: materialInput, quantity: 0 },
+      { name: materialName, quantity: 0 },
     ]);
-    setMaterialInput("");
   };
 
   const handleSaveDelivery = async () => {
-    if (
-      !selectedCustomer ||
-      !selectedShipment ||
-      deliveryMaterials.length === 0
-    ) {
+    if (!selectedCustomer || !selectedShipment || deliveryMaterials.length === 0) {
       Alert.alert("Error", "Please fill all fields.");
       return;
     }
@@ -147,13 +154,7 @@ export default function CreateDelivery() {
     }
   };
 
-  const renderMaterialItem = ({
-    item,
-    index,
-  }: {
-    item: DeliveryMaterial;
-    index: number;
-  }) => (
+  const renderMaterialItem = ({ item, index }: { item: DeliveryMaterial; index: number }) => (
     <View style={styles.materialRow}>
       <Text style={styles.materialName}>{item.name}</Text>
       <TextInput
@@ -185,23 +186,22 @@ export default function CreateDelivery() {
       behavior="padding"
       enabled
     >
-      
-        <View style={styles.container}>
-          <View style={styles.topSection}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-                Create Delivery
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.back()}>
+      <View style={styles.container}>
+        <View style={styles.topSection}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+              Create Delivery
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()}>
             <Image
               source={require("../../assets/images/Back.png")}
               style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
             />
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+        </View>
 
-          <ScrollView  keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardShouldPersistTaps="handled">
           {/* Customer Section */}
           <View
             style={{
@@ -213,7 +213,7 @@ export default function CreateDelivery() {
             }}
           >
             <Text style={styles.label}>Current Shipping Point</Text>
-            <Text style={{ color: "orange" }}>{shippingPoint}</Text>
+            <Text style={{ color: "orange" , fontWeight:'bold'}}>{resolvedShippingPoint}</Text>
           </View>
 
           <View
@@ -232,7 +232,7 @@ export default function CreateDelivery() {
           <SearchableDropdown
             items={customers.map((c) => ({ id: c.id, name: c.name }))}
             onItemSelect={(item: Customer) => setSelectedCustomer(item)}
-            placeholder="Select a Customer"
+            placeholder="Select Customer"
             itemStyle={styles.dropdownItem}
             itemsContainerStyle={{ maxHeight: 140 }}
             itemTextStyle={styles.dropdownItemText}
@@ -271,18 +271,11 @@ export default function CreateDelivery() {
             <Text style={{ fontSize: 28, marginBottom: 10, fontWeight: '500' }}>
               Item(s) to deliver
             </Text>
-            <TouchableOpacity onPress={handleAddMaterial}>
-              <Text
-                style={{ fontSize: 15, color: "orange", fontWeight: "500" }}
-              >
-                + Add item
-              </Text>
-            </TouchableOpacity>
           </View>
           <SearchableDropdown
             items={materials.map((m) => ({ id: m.id, name: m.name }))}
-            onItemSelect={(item: Material) => setMaterialInput(item.name)}
-            placeholder="Select a Item"
+            onItemSelect={(item: Material) => handleAddMaterial(item.name)}
+            placeholder="Select a Material"
             itemStyle={styles.dropdownItem}
             itemTextStyle={styles.dropdownItemText}
             textInputProps={{
@@ -293,12 +286,7 @@ export default function CreateDelivery() {
                 borderColor: "#ccc",
                 borderRadius: 5,
               },
-              onPressIn: (text) => {
-                if (typeof shippingPoint === 'string') {
-                  fetchMaterials(shippingPoint);
-                }
-              },
-              
+              onTextChange: (text) => null,
             }}
           />
 
@@ -311,7 +299,7 @@ export default function CreateDelivery() {
           />
 
           {/* Shipment Section */}
-          <Text style={{fontSize:20, marginBottom:10, fontWeight: '400'}}>Assign to Shipment</Text>
+          <Text style={{ fontSize: 20, marginBottom: 10, fontWeight: '400' }}>Assign to Shipment</Text>
           <SearchableDropdown
             items={shipments.map((s) => ({ id: s.id, name: s.name }))}
             onItemSelect={(item: Shipment) => setSelectedShipment(item)}
@@ -320,7 +308,7 @@ export default function CreateDelivery() {
             itemTextStyle={styles.dropdownItemText}
             itemsContainerStyle={{ maxHeight: 140 }}
             textInputProps={{
-              placeholder: "Search Shipping Point",
+              placeholder: "Search Shipment Number",
               underlineColorAndroid: "transparent",
               style: {
                 padding: 12,
@@ -339,9 +327,8 @@ export default function CreateDelivery() {
           >
             <Text style={styles.saveButtonText}>Save Delivery</Text>
           </TouchableOpacity>
-          </ScrollView>
-        </View>
-      
+        </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -352,7 +339,6 @@ const styles = StyleSheet.create({
     width: "100%",
     padding: 15,
     backgroundColor: "#fff",
-    //flex: 1,
   },
   header: {
     fontSize: 24,
@@ -426,7 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     padding: 15,
     borderRadius: 5,
-    marginTop:10
+    marginTop: 10
   },
   saveButtonText: {
     color: "#fff",

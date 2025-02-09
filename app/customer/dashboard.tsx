@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     width:'100%',
-    height: 200,
+    height: 220,
     
   },
   deliveryItem1: {

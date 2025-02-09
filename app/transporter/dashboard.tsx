@@ -348,8 +348,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    //backgroundColor: "orange",
-    //height: '100%',
     justifyContent: 'center',
    
   },

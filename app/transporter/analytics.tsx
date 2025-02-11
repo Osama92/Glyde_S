@@ -4,6 +4,7 @@ import { BarChart, PieChart, LineChart } from 'react-native-gifted-charts';
 import { collection, getDocs, query, where, getFirestore } from 'firebase/firestore';
 import { app } from "../firebase";
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 
 const db = getFirestore(app);
 
@@ -28,6 +29,18 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('all');
 
+  const sampleTrendData = [
+    { value: 120000, label: 'Mon' },
+    { value: 150000, label: 'Tue' },
+    { value: 100000, label: 'Wed' },
+    { value: 180000, label: 'Thu' },
+    { value: 220000, label: 'Fri' },
+    { value: 170000, label: 'Sat' },
+    { value: 90000, label: 'Sun' },
+  ];
+
+  const {transporterName} = useLocalSearchParams();
+
   useFocusEffect(
     useCallback(() => {
       fetchAnalyticsData();
@@ -36,7 +49,8 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
 
   const fetchAnalyticsData = async () => {
     setRefreshing(true);
-    const shipmentRef = query(collection(db, 'Shipment'), where('transporter', '==', "Bukky Vent"));
+    console.log(transporterName)
+    const shipmentRef = query(collection(db, 'Shipment'), where('transporter', '==', transporterName));
     const snapshot = await getDocs(shipmentRef);
     const data = snapshot.docs.map(doc => doc.data() as Shipment);
     setShipments(data);
@@ -50,7 +64,7 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
     data.forEach(({ route }) => {
       routeCounts[route] = (routeCounts[route] || 0) + 1;
     });
-    // setRouteFrequency(Object.keys(routeCounts).map(route => ({ value: routeCounts[route], label: route })));
+    
     setRouteFrequency(
       Object.keys(routeCounts).map(route => ({
         value: Number(routeCounts[route]) || 0,
@@ -64,7 +78,7 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
     data.forEach(({ vehicleNo }) => {
       vehicleCounts[vehicleNo] = (vehicleCounts[vehicleNo] || 0) + 1;
     });
-    //setVehicleUsage(Object.keys(vehicleCounts).map(vehicle => ({ value: vehicleCounts[vehicle], label: vehicle })));
+    
     setVehicleUsage(
       Object.keys(vehicleCounts).map(vehicle => ({
         value: Number(vehicleCounts[vehicle]) || 0,
@@ -101,7 +115,7 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
       const dateLabel = new Date(createdAt).toLocaleDateString();
       revenueTrend[dateLabel] = (revenueTrend[dateLabel] || 0) + freightCost;
     });
-    //setTrendData(Object.keys(revenueTrend).map(date => ({ value: revenueTrend[date], label: date })));
+    
     setTrendData(
       Object.keys(revenueTrend).map(date => ({
         value: Number(revenueTrend[date]) || 0,
@@ -137,7 +151,23 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
       <PieChart data={statusData} showValuesAsLabels showText textColor='white' textSize={20} fontWeight='bold' showExternalLabels donut radius={130} onPress={(item) => alert(`${item.label}: ${item.value}`)} />
       
       <Text style={{ marginTop: 20 }}>Revenue Trend</Text>
-      <LineChart data={trendData} color='#2196F3' thickness={3} isAnimated hideDataPoints onPress={(item) => alert(`Revenue on ${item.label}: ₦${item.value}`)} />
+      <LineChart data={trendData} color='#2196F3' curved thickness={3} isAnimated hideDataPoints onPress={(item) => alert(`Revenue on ${item.label}: ₦${item.value}`)} adjustToWidth/>
+      {/* <LineChart
+        data={sampleTrendData}
+        color='#FF6B6B'
+        thickness={3}
+        isAnimated
+        hideDataPoints
+        areaChart
+        startFillColor='rgba(255, 107, 107, 0.3)'
+        endFillColor='rgba(255, 107, 107, 0)'
+        startOpacity={0.8}
+        endOpacity={0.2}
+        curved
+        xAxisLabelTexts={sampleTrendData.map(item => item.label)}
+        yAxisOffset={5}
+        onPress={(item) => alert(`Revenue on ${item.label}: ₦${item.value}`)}
+      /> */}
     </ScrollView>
   );
 };

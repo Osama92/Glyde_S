@@ -32,10 +32,9 @@ const TransporterScreen = () => {
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [totalTrips, setTotalTrips] = useState<number>(0);
+  const [movedName, setMovedName] = useState<string | null>(null);
 
-  const data=[ {value:50}, {value:80}, {value:90}, {value:70} ]
-  const data2 = [ {value:30}, {value:60}, {value:70}, {value:50} ]
-
+ 
   
 
   // Fetch phone number from AsyncStorage
@@ -79,6 +78,7 @@ const TransporterScreen = () => {
         }
 
         setTransporterName(foundTransporter);
+        
 
         // Fetch Vehicles inside transporter
         const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
@@ -189,16 +189,6 @@ const TransporterScreen = () => {
     return shipmentCount;
   };
 
-//   const TripCount = ({ vehicleNo }: { vehicleNo: string }) => {
-//     const shipmentCount = useShipmentCount(vehicleNo);
-
-//     return (
-//       <Text style={{ fontSize: 16, fontWeight: "bold", marginTop: 5 }}>
-//         Trips: {shipmentCount ?? "Loading..."}
-//       </Text>
-//     );
-//   };
-
 
   
   const handlePressIn = (button: string) => {
@@ -302,7 +292,7 @@ const TransporterScreen = () => {
                         <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>View delivery and truck performance</Text>
                     </View>
                     <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/analytics')}}>
+                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push(`/transporter/analytics?transporterName=${transporterName?.split("_")[1]}`)}}>
                             <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
                         </TouchableOpacity>
                     </View>

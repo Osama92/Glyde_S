@@ -40,6 +40,9 @@ export default function Dashboard() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [vehicleNo, setVehicleNo] = useState<string | null>(null);
+  const [loadingPending, setLoadingPending] = useState<boolean>(true);
+  const [loadingCompleted, setLoadingCompleted] = useState<boolean>(true);
+
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -111,6 +114,9 @@ export default function Dashboard() {
   const fetchDeliveryDetails = async () => {
     if (!displayName) return;
 
+    setLoadingPending(true);
+    setLoadingCompleted(true);
+
     try {
       const shipmentQuery = query(collection(db, "Shipment"));
       const shipmentSnapshot = await getDocs(shipmentQuery);
@@ -147,6 +153,9 @@ export default function Dashboard() {
       setCompletedDeliveries(completed);
     } catch (error: any) {
       Alert.alert("Error", `Failed to fetch delivery details: ${error.message}`);
+    } finally {
+      setLoadingPending(false);
+      setLoadingCompleted(false);
     }
   };
 
@@ -384,20 +393,34 @@ const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
     </View>
     <View style={{width:'100%'}}>
       <Text style={styles.sectionTitle}>Incoming Deliveries</Text>
-    <FlatList
-       data={pendingDeliveries}
-       keyExtractor={(item) => `${item.shipmentId}-${item.id}`}
-       renderItem={(item) => renderDeliveryItem(item, true)}
-       refreshControl={
-         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-       }
+
+      {loadingPending ? (
+      <ActivityIndicator size="small" color="orange" style={{marginTop:15}} />
+    ) : pendingDeliveries.length === 0 ? (
+      <Text style={styles.emptyText}>No pending deliveries.</Text>
+    ) : (
+      <FlatList
+        data={pendingDeliveries}
+        keyExtractor={(item) => item.id}
+        renderItem={(item) => renderDeliveryItem(item, true)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
-      <Text style={styles.sectionTitle}>Completed Transactions</Text>
+    )}
+
+    {/* Completed Deliveries Section */}
+    <Text style={styles.sectionTitle}>Completed Transactions</Text>
+    {loadingCompleted ? (
+      <ActivityIndicator size="small" color="orange" style={{marginTop:15}}/>
+    ) : completedDeliveries.length === 0 ? (
+      <Text style={styles.emptyText}>No completed transactions.</Text>
+    ) : (
       <FlatList
         data={completedDeliveries}
-        keyExtractor={(item) => `${item.shipmentId}-${item.id}`}
+        keyExtractor={(item) => item.id}
         renderItem={(item) => renderCompletedItem(item, false)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
+    )}
     </View>
     </View>
   );
@@ -546,4 +569,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'gray',
   },
+  emptyText: {
+    color:'lightgrey',
+    alignSelf:'center',
+    fontSize: 20,
+    marginTop:15
+  }
 });

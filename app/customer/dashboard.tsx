@@ -313,7 +313,7 @@ const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
                     <Image source={require("../../assets/images/Pin.png")} resizeMode="cover" style={{ width: 20, height: 20 }}/>
                   </View>
                   <View style={{ flexDirection: "column" }}>
-                  <Text>location</Text>
+                  <Text>Kings Landing</Text>
                   </View>
                 </View>
               </View>

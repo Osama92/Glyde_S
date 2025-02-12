@@ -257,42 +257,49 @@ const NotificationScreen = () => {
         }
       } catch (error: any) {
         Alert.alert("Error", `Failed to fetch deliverDriver: ${error.message}`);
+      } finally {
+        setLoading(false)
       }
     };
 
     fetchDeliverDriver();
   }, [phoneNumber]);
 
-  // Listen for real-time shipment updates
   useEffect(() => {
-    if (!deliverDriver || !vehicleNo) return;
-
+    if (!deliverDriver || !assignedVanNo) return; // Ensure dependencies exist before setting the listener
+  
+    console.log("Listening for shipments:", { deliverDriver, assignedVanNo });
+  
     const shipmentsQuery = query(
       collection(db, "Shipment"),
       where("mobileNumber", "==", deliverDriver),
-      where("vehicleNo", "==", assignedVanNo),
-      where("statusId", "==", 2)
+      where("vehicleNo", "==", assignedVanNo)
     );
-
+  
     const unsubscribe = onSnapshot(shipmentsQuery, (querySnapshot) => {
-      if (!querySnapshot.empty) {
-        const shipment = querySnapshot.docs[0]; // Assuming one shipment per user
-        setShipmentId(shipment.id);
-        setShipmentDisplayName(shipment.data().mobileNumber);
-        setDriverName(shipment.data().driverName);
-        setAssignedVanNo(shipment.data().assignedVanNo);
-        setShowRedDot(true);
-        console.log("Shipment found:", shipment.id, shipment.data());
-      } else {
-        setShowRedDot(false);
-        setShipmentId("");
-        console.log("No shipments found for deliverDriver:", deliverDriver);
-      }
-      setLoading(false);
+      console.log("Snapshot triggered:", querySnapshot.size);
+  
+      let foundActiveShipment = false;
+  
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.statusId === 2) {
+          foundActiveShipment = true;
+          setShipmentId(doc.id);
+          setShipmentDisplayName(data.mobileNumber);
+          setDriverName(data.driverName);
+          setAssignedVanNo(data.assignedVanNo);
+          console.log("Active shipment found:", doc.id, data);
+        }
+      });
+  
+      setShowRedDot(foundActiveShipment);
+      setLoading(false); // Ensure loading state is updated
     });
-
-    return () => unsubscribe();
-  }, [deliverDriver, vehicleNo]);
+  
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, [deliverDriver, assignedVanNo]); // Depend on deliverDriver and assignedVanNo
+  
 
   const handleAccept = async () => {
     try {

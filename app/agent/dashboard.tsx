@@ -20,6 +20,7 @@ import {
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router, useLocalSearchParams, useGlobalSearchParams, } from "expo-router";
+import CheckValueInCollection from "../../app/count"
 
 
 
@@ -86,7 +87,7 @@ export default function Dashboard() {
 
     fetchUserDetails();
     
-    console.log(id)
+    //console.log(id)
   }, []);
 
   
@@ -157,7 +158,7 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "column" }}>
             
-        <Text>Not available</Text>
+        <Text>Winter is coming</Text>
       
             </View>
           </View>
@@ -240,7 +241,7 @@ export default function Dashboard() {
         <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20}}>Fleet Size</Text>
-                <Text style={{fontSize: 20}}>130</Text>
+                <CheckValueInCollection searchValue={shippingPoint} />
             </View>
             <View style={{width:'40%',height:'100%'}}>
                 <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>

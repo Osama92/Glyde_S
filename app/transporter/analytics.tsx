@@ -29,15 +29,6 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'all'>('all');
 
-  const sampleTrendData = [
-    { value: 120000, label: 'Mon' },
-    { value: 150000, label: 'Tue' },
-    { value: 100000, label: 'Wed' },
-    { value: 180000, label: 'Thu' },
-    { value: 220000, label: 'Fri' },
-    { value: 170000, label: 'Sat' },
-    { value: 90000, label: 'Sun' },
-  ];
 
   const {transporterName} = useLocalSearchParams();
 
@@ -49,7 +40,6 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
 
   const fetchAnalyticsData = async () => {
     setRefreshing(true);
-    console.log(transporterName)
     const shipmentRef = query(collection(db, 'Shipment'), where('transporter', '==', transporterName));
     const snapshot = await getDocs(shipmentRef);
     const data = snapshot.docs.map(doc => doc.data() as Shipment);
@@ -128,7 +118,12 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
 
   return (
     <ScrollView style={{ padding: 20 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchAnalyticsData} />}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Analytics</Text>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginTop:20 }}>Analytics</Text>
+
+      <View style={{width:'100%', height: 130, backgroundColor:'lightgrey', borderRadius:15, marginTop:10}}>
+      <Text style={{ marginTop: 20, fontWeight: '600', marginLeft:15 }}>Total Freight Revenue</Text>
+      <Text style={{ marginTop: 10, fontWeight: '600', marginLeft:15, fontSize: 50 }}>₦{totalFreightRevenue.toLocaleString()}.00</Text>
+      </View>
       
       {/* Filter Options */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
@@ -139,7 +134,7 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
         ))}
       </View>
       
-      <Text style={{ marginTop: 20, fontWeight: '600' }}>Total Freight Revenue: ₦{totalFreightRevenue.toLocaleString()}</Text>
+     
 
       <Text style={{ marginTop: 20 }}>Route Frequency</Text>
       <BarChart data={routeFrequency} barWidth={100} spacing={15} showValuesAsTopLabel isAnimated onPress={(item) => alert(`${item.label}: ${item.value} trips`)} />
@@ -152,22 +147,7 @@ const AnalyticsScreen: React.FC<{ transporter: string }> = ({ transporter }) => 
       
       <Text style={{ marginTop: 20 }}>Revenue Trend</Text>
       <LineChart data={trendData} color='#2196F3' curved thickness={3} isAnimated hideDataPoints onPress={(item) => alert(`Revenue on ${item.label}: ₦${item.value}`)} adjustToWidth/>
-      {/* <LineChart
-        data={sampleTrendData}
-        color='#FF6B6B'
-        thickness={3}
-        isAnimated
-        hideDataPoints
-        areaChart
-        startFillColor='rgba(255, 107, 107, 0.3)'
-        endFillColor='rgba(255, 107, 107, 0)'
-        startOpacity={0.8}
-        endOpacity={0.2}
-        curved
-        xAxisLabelTexts={sampleTrendData.map(item => item.label)}
-        yAxisOffset={5}
-        onPress={(item) => alert(`Revenue on ${item.label}: ₦${item.value}`)}
-      /> */}
+     
     </ScrollView>
   );
 };

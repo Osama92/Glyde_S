@@ -349,18 +349,21 @@ export default function ManageDriver() {
         value={vehicleNo}
         onChangeText={setVehicleNo}
         style={styles.input}
+        placeholderTextColor='#000'
       />
       <TextInput
         placeholder="Transporter"
         value={transporter}
         onChangeText={setTransporter}
         style={styles.input}
+        placeholderTextColor='#000'
       />
       <TextInput
         placeholder="Driver Name"
         value={driverName}
         onChangeText={setDriverName}
         style={styles.input}
+        placeholderTextColor='#000'
       />
       <TextInput
         placeholder="Mobile Number"
@@ -368,6 +371,7 @@ export default function ManageDriver() {
         onChangeText={setMobileNumber}
         keyboardType="phone-pad"
         style={styles.input}
+        placeholderTextColor='#000'
       />
 
       {loading ? (

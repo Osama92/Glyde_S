@@ -24,11 +24,14 @@ import {
 import StepIndicator from "react-native-step-indicator";
 import { app } from "../firebase";
 import {router} from 'expo-router';
+import axios from "axios";
 
 const db = getFirestore(app);
 
 const collections = ["deliveryDriver", "customer", "fieldAgent", "transporter"];
 const labels = ["Loaded", "Dispatched", "In-Transit", "Delivered"];
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
 
 export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -42,6 +45,7 @@ export default function Dashboard() {
   const [vehicleNo, setVehicleNo] = useState<string | null>(null);
   const [loadingPending, setLoadingPending] = useState<boolean>(true);
   const [loadingCompleted, setLoadingCompleted] = useState<boolean>(true);
+  const [locationLabel,setLocationLabel] = useState<string | null>(null)
 
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -71,6 +75,24 @@ export default function Dashboard() {
   currentStepLabelColor: "#fe7013",
 };
 
+const reverseGeocode = async (latitude: number, longitude: number) => {
+  try {
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+    );
+
+    if (response.data.status === "OK") {
+      return response.data.results[0].formatted_address; // First result is usually the most relevant
+    } else {
+      throw new Error("Geocoding failed.");
+    }
+  } catch (error) {
+    console.error("Error in reverse geocoding:", error);
+    return "Address not found";
+  }
+};
+
+
   const fetchUserDetails = async () => {
     try {
       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
@@ -92,8 +114,22 @@ export default function Dashboard() {
           setDisplayName(userDoc.name || "Unknown User");
           setProfileImage(userDoc.imageUrl || null);
           setCollectionName(colName);
-            const encodedID = encodeURIComponent(userDoc.uid);
-            setId(encodedID)
+          const encodedID = encodeURIComponent(userDoc.uid);
+          setId(encodedID)
+          const { latitude, longitude } = userDoc.location || {};
+
+          const getAddress = async () => {
+            const address = await reverseGeocode(latitude, longitude);
+            if (address.empty) {
+              setLocationLabel("Location Set")}
+              else {
+                setLocationLabel("Set Location")
+              
+            }
+          };
+          
+          getAddress();
+
           break;
         }
       }
@@ -313,7 +349,7 @@ const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
                     <Image source={require("../../assets/images/Pin.png")} resizeMode="cover" style={{ width: 20, height: 20 }}/>
                   </View>
                   <View style={{ flexDirection: "column" }}>
-                  <Text>Kings Landing</Text>
+                  <Text>{locationLabel}</Text>
                   </View>
                 </View>
               </View>

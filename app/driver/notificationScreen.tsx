@@ -219,6 +219,8 @@
 
 // export default NotificationScreen;
 
+
+
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -263,6 +265,7 @@ const NotificationScreen = () => {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [tracking, setTracking] = useState<boolean>(false);
+  const [deliveryOrder, setDeliveryOrder] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchPhoneNumber = async () => {
@@ -323,6 +326,7 @@ const NotificationScreen = () => {
         setShipmentId(activeShipment.id);
         setShipmentData(activeShipment);
         setShowRedDot(true);
+        fetchDeliveryOrder(activeShipment.id);
       } else {
         setShowRedDot(false);
       }
@@ -330,6 +334,28 @@ const NotificationScreen = () => {
 
     return () => unsubscribe();
   }, [deliverDriver]);
+
+  const fetchDeliveryOrder = async (shipmentId: string) => {
+    try {
+      const deliveriesQuery = query(collection(db, "deliveries"), where("shipmentId", "==", shipmentId));
+      const querySnapshot = await getDocs(deliveriesQuery);
+      let deliveries: any = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      if (location) {
+        deliveries.sort((a, b) => {
+          const distanceA = Math.sqrt(
+            Math.pow(a.latitude - location.latitude, 2) + Math.pow(a.longitude - location.longitude, 2)
+          );
+          const distanceB = Math.sqrt(
+            Math.pow(b.latitude - location.latitude, 2) + Math.pow(b.longitude - location.longitude, 2)
+          );
+          return distanceA - distanceB;
+        });
+      }
+      setDeliveryOrder(deliveries);
+    } catch (error: any) {
+      Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
+    }
+  };
 
   useEffect(() => {
     const fetchLocation = async () => {
@@ -348,7 +374,7 @@ const NotificationScreen = () => {
           );
         } else {
           let { status } = await Location.requestForegroundPermissionsAsync();
-          console.log("Mobile Location Permission:", status);
+          //console.log("Mobile Location Permission:", status);
           if (status !== "granted") {
             setErrorMsg("Location permission denied.");
             Alert.alert("Error", "Permission to access location was denied.");
@@ -425,6 +451,10 @@ const NotificationScreen = () => {
   return (
     <View style={styles.container}>
       {/* Full-Screen Map */}
+      <Text>Optimized Delivery Order:</Text>
+      {deliveryOrder.map((delivery, index) => (
+        <Text key={delivery.id}>{index + 1}. {delivery.customerName} ({delivery.latitude}, {delivery.longitude})</Text>
+      ))}
       {Platform.OS === "web" ? (
         <LoadScript googleMapsApiKey={MAPS_API_KEY}>
           <GoogleMap

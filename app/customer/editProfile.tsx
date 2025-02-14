@@ -18,15 +18,18 @@ import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";
 import { app } from "../firebase";
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Location from "expo-location";
+import axios from "axios";
 
 const db = getFirestore(app);
 const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
+const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "", email:"", password:"" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [locationUpdating, setLocationUpdating] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
 
   const { collectionName, id } = useLocalSearchParams();
 
@@ -120,6 +123,23 @@ const handleImageUpload = async () => {
       setUploading(false);
     }
   };
+
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+  
+      if (response.data.status === "OK") {
+        return response.data.results[0].formatted_address; // First result is usually the most relevant
+      } else {
+        throw new Error("Geocoding failed.");
+      }
+    } catch (error) {
+      console.error("Error in reverse geocoding:", error);
+      return "Address not found";
+    }
+  };
   
   // Save profile to Firestore
   const saveProfileToFirestore = async () => {
@@ -135,6 +155,7 @@ const handleImageUpload = async () => {
       setLoading(false);
     }
   };
+
 
     // Fetch and update the user's current location in Firestore
   const updateLocation = async () => {
@@ -152,10 +173,16 @@ const handleImageUpload = async () => {
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
+      const getAddress = async () => {
+        const address = await reverseGeocode(latitude, longitude);
+        setAddress(address)
+      };
+      
+      getAddress();
+
       // Save location to Firestore
       const docRef = doc(db, collectionName as string, id as string);
-      await setDoc(docRef, { location: { latitude, longitude } }, { merge: true });
-
+      await setDoc(docRef, { location: { latitude, longitude, address } }, { merge: true });
       Alert.alert("Success", "Location updated successfully!");
     } catch (error) {
       Alert.alert("Error", "Failed to update location!");

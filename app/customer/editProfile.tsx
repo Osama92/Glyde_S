@@ -17,6 +17,7 @@ import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";
 import { app } from "../firebase";
 import { useLocalSearchParams, router } from 'expo-router';
+import * as Location from "expo-location";
 
 const db = getFirestore(app);
 const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
@@ -25,6 +26,7 @@ const ProfileScreen = () => {
   const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "", email:"", password:"" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [locationUpdating, setLocationUpdating] = useState(false);
 
   const { collectionName, id } = useLocalSearchParams();
 
@@ -134,10 +136,40 @@ const handleImageUpload = async () => {
     }
   };
 
+    // Fetch and update the user's current location in Firestore
+  const updateLocation = async () => {
+    try {
+      setLocationUpdating(true);
+
+      // Request location permissions
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Denied", "Allow location access to update your location.");
+        return;
+      }
+
+      // Get current location
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Save location to Firestore
+      const docRef = doc(db, collectionName as string, id as string);
+      await setDoc(docRef, { location: { latitude, longitude } }, { merge: true });
+
+      Alert.alert("Success", "Location updated successfully!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to update location!");
+      console.error(error);
+    } finally {
+      setLocationUpdating(false);
+    }
+  };
+
+
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color="orange" />
       </View>
     );
   }
@@ -166,7 +198,7 @@ const handleImageUpload = async () => {
             <Text style={styles.placeholderText}>Upload</Text>
           </View>
         )}
-        {uploading && <ActivityIndicator style={styles.imageLoader} size="small" color="#000" />}
+        {uploading && <ActivityIndicator style={styles.imageLoader} size="small" color="orange" />}
       </TouchableOpacity>
 
       {/* Display Name */}
@@ -197,6 +229,11 @@ const handleImageUpload = async () => {
       <TouchableOpacity onPress={saveProfileToFirestore} style={[styles.button, styles.saveButton]}>
         <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
+
+          {/*Update Location button */}
+          <TouchableOpacity onPress={updateLocation} style={[styles.button, styles.locationButton]} disabled={locationUpdating}>
+          {locationUpdating ? <ActivityIndicator color="#fff" /> : <Text style={styles.locationButtonText}>Update Location</Text>}
+        </TouchableOpacity>
 
       {/* Logout Button */}
       <TouchableOpacity style={styles.logoutButton}>
@@ -293,5 +330,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'flex-end',
+  },
+    locationButton: {
+    backgroundColor: "#007AFF",
+  },
+  locationButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });

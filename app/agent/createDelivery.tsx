@@ -28,6 +28,7 @@ const db = getFirestore(app);
 type Customer = {
   id: string;
   name: string;
+  location?: { latitude: number; longitude: number; address: string };
 };
 
 type Material = {
@@ -38,6 +39,7 @@ type Material = {
 type Shipment = {
   id: string;
   name: string;
+  location?: { latitude: number; longitude: number; address: string };
 };
 
 type DeliveryMaterial = {
@@ -54,6 +56,7 @@ export default function CreateDelivery() {
   const [deliveryMaterials, setDeliveryMaterials] = useState<DeliveryMaterial[]>([]);
   const [originPoint, setOriginPoint] = useState<string | null>(null);
   const [statusID, setStatusID] = useState<number>(1);
+  const [address, setAddress] = useState<string | null>(null);
 
   const  {shippingPoint}  = useLocalSearchParams();
 
@@ -61,15 +64,35 @@ export default function CreateDelivery() {
   const resolvedShippingPoint = Array.isArray(shippingPoint) ? shippingPoint[0] : shippingPoint;
 
   useEffect(() => {
+    // const fetchCustomers = async () => {
+    //   const customerData: Customer[] = [];
+    //   const snapshot = await getDocs(collection(db, "customer"));
+    //   snapshot.forEach((doc) => {
+    //     customerData.push({ id: doc.id, name: doc.data().name, location:doc.data().location });
+        
+    //   });
+      
+    //   setCustomers(customerData);
+      
+    //   setOriginPoint(shippingPoint as string)
+    // };
     const fetchCustomers = async () => {
       const customerData: Customer[] = [];
       const snapshot = await getDocs(collection(db, "customer"));
       snapshot.forEach((doc) => {
-        customerData.push({ id: doc.id, name: doc.data().name });
-        
+        const data = doc.data();
+        customerData.push({
+          id: doc.id,
+          name: data.name,
+          location: data.location ? {
+            latitude: data.location.latitude,
+            longitude: data.location.longitude,
+            address: data.location.address
+          } : undefined
+        });
       });
       setCustomers(customerData);
-      setOriginPoint(shippingPoint as string)
+      setOriginPoint(shippingPoint as string);
     };
 
     const fetchShipments = async () => {
@@ -122,6 +145,8 @@ export default function CreateDelivery() {
       ...prev,
       { name: materialName, quantity: 0 },
     ]);
+
+    
   };
 
   const handleSaveDelivery = async () => {
@@ -137,6 +162,9 @@ export default function CreateDelivery() {
       shipment: selectedShipment.name,
       materials: deliveryMaterials,
       deliveryNumber,
+      address: selectedCustomer.location?.address,
+      latitude: selectedCustomer.location?.latitude,
+      longitude: selectedCustomer.location?.longitude,
       createdAt: new Date().toISOString(),
       statusId: 1,
     };
@@ -231,7 +259,11 @@ export default function CreateDelivery() {
           </View>
           <SearchableDropdown
             items={customers.map((c) => ({ id: c.id, name: c.name }))}
-            onItemSelect={(item: Customer) => setSelectedCustomer(item)}
+            // onItemSelect={(item: Customer) => setSelectedCustomer(item)}
+            onItemSelect={(item: { id: string, name: string }) => {
+              const selected = customers.find(c => c.id === item.id);
+              setSelectedCustomer(selected || null);
+            }}
             placeholder="Select Customer"
             itemStyle={styles.dropdownItem}
             itemsContainerStyle={{ maxHeight: 140 }}

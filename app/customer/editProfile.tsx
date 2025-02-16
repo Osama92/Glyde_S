@@ -360,6 +360,7 @@ const styles = StyleSheet.create({
   },
     locationButton: {
     backgroundColor: "#007AFF",
+    alignItems:'center'
   },
   locationButtonText: {
     color: "#fff",

@@ -460,6 +460,7 @@ import { router } from "expo-router";
 import MapView, { Marker, Polyline } from "react-native-maps"; // Native Maps
 import { GoogleMap, LoadScript, Marker as WebMarker, Polyline as WebPolyline } from "@react-google-maps/api"; // Web Maps
 import * as Location from "expo-location";
+import NetInfo from "@react-native-community/netinfo";
 
 const db = getFirestore(app);
 const MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w"; // Replace with your Google Maps API key
@@ -494,6 +495,7 @@ const NotificationScreen = () => {
   const [travelTime, setTravelTime] = useState<string | null>(null); // Travel time to destination
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null); // Selected delivery for polyline
   const [loadingDirections, setLoadingDirections] = useState(false); // Loading state for directions
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Haversine formula to calculate distance between two coordinates
   const haversineDistance = (coord1: Coordinate, coord2: Coordinate) => {
@@ -624,40 +626,99 @@ const NotificationScreen = () => {
   }, [location]);
 
   const fetchTravelTimes = async (origin: Coordinate, destinations: Delivery[]) => {
-    const travelTimes: { [key: string]: number } = {};
+    const travelTimes: { [key: string]: { [key: string]: number } } = {};
   
-    for (const destination of destinations) {
-      const originStr = `${origin.latitude},${origin.longitude}`;
-      const destinationStr = `${destination.latitude},${destination.longitude}`;
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${MAPS_API_KEY}`;
+    // Add the current location as the starting point
+    const allPoints = [{ id: "current", latitude: origin.latitude, longitude: origin.longitude }, ...destinations];
   
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
+    for (const pointA of allPoints) {
+      travelTimes[pointA.id] = {};
   
-        if (data.status === "OK") {
-          const duration = data.routes[0].legs[0].duration.value; // Duration in seconds
-          travelTimes[destination.id] = duration;
-        } else {
-          console.error("Directions API Error:", data);
+      for (const pointB of allPoints) {
+        if (pointA.id === pointB.id) continue; // Skip if it's the same point
+  
+        const originStr = `${pointA.latitude},${pointA.longitude}`;
+        const destinationStr = `${pointB.latitude},${pointB.longitude}`;
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${MAPS_API_KEY}`;
+  
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+  
+          if (data.status === "OK") {
+            const duration = data.routes[0].legs[0].duration.value; // Duration in seconds
+            travelTimes[pointA.id][pointB.id] = duration;
+          } else {
+            console.error("Directions API Error:", data);
+            travelTimes[pointA.id][pointB.id] = Infinity; // Use Infinity for unreachable points
+          }
+        } catch (error) {
+          console.error("Fetch Travel Times Error:", error);
+          travelTimes[pointA.id][pointB.id] = Infinity; // Use Infinity for errors
         }
-      } catch (error) {
-        console.error("Fetch Travel Times Error:", error);
       }
     }
   
     return travelTimes;
   };
 
+  const solveTSP = (travelTimes: { [key: string]: { [key: string]: number } }, startId: string) => {
+    const visited = new Set<string>();
+    const route: string[] = [startId];
+    let currentId = startId;
+  
+    while (visited.size < Object.keys(travelTimes).length - 1) {
+      visited.add(currentId);
+  
+      let nextId: string | null = null;
+      let minTime = Infinity;
+  
+      for (const pointId in travelTimes[currentId]) {
+        if (!visited.has(pointId) && travelTimes[currentId][pointId] < minTime) {
+          minTime = travelTimes[currentId][pointId];
+          nextId = pointId;
+        }
+      }
+  
+      if (nextId) {
+        route.push(nextId);
+        currentId = nextId;
+      } else {
+        break; // No more points to visit
+      }
+    }
+  
+    return route;
+  };
+
   const optimizeDeliveryOrder = async (deliveries: Delivery[], currentLocation: Coordinate) => {
-    const travelTimes = await fetchTravelTimes(currentLocation, deliveries);
+    let optimizedDeliveries: Delivery[] = [];
   
-    // Sort deliveries based on travel time from current location
-    const sortedDeliveries = deliveries.sort((a, b) => {
-      return travelTimes[a.id] - travelTimes[b.id];
-    });
+    try {
+      const travelTimes = await fetchTravelTimes(currentLocation, deliveries);
+      if (Object.keys(travelTimes).length > 0) {
+        const optimalRoute = solveTSP(travelTimes, "current");
   
-    return sortedDeliveries;
+        // Remove the "current" point from the route
+        const deliveryIds = optimalRoute.slice(1);
+  
+        // Sort deliveries based on the optimal route
+        optimizedDeliveries = deliveryIds.map((id) =>
+          deliveries.find((delivery) => delivery.id === id)
+        ).filter((delivery) => delivery !== undefined) as Delivery[];
+      } else {
+        // Fallback to Haversine distance if travel times are not available
+        Alert.alert("Info", "No internet connection. Using approximate distance for optimization.");
+        optimizedDeliveries = sortDeliveriesByDistance(deliveries, currentLocation);
+      }
+    } catch (error) {
+      console.error("Optimization Error:", error);
+      // Fallback to Haversine distance if an error occurs
+      Alert.alert("Info", "Failed to fetch optimized route. Using approximate distance for optimization.");
+      optimizedDeliveries = sortDeliveriesByDistance(deliveries, currentLocation);
+    }
+  
+    return optimizedDeliveries;
   };
 
   const fetchDeliveryOrder = async (shipmentId: string) => {
@@ -929,20 +990,11 @@ const NotificationScreen = () => {
                   </TouchableOpacity>
                 ))}
               </ScrollView> */}
-              {showDeliveries && (
+     {showDeliveries && (
   <View style={styles.deliveryListContainer}>
-    {/* Refresh Button */}
-    <TouchableOpacity
-  style={styles.refreshButton}
-  onPress={async () => {
-    if (location) {
-      const optimizedDeliveries = await optimizeDeliveryOrder(deliveryOrder, location);
-      setDeliveryOrder(optimizedDeliveries);
-    }
-  }}
->
-  <Text style={styles.refreshButtonText}>Refresh</Text>
-</TouchableOpacity>
+    {isRefreshing && (
+      <ActivityIndicator size="large" color="orange" style={styles.refreshIndicator} />
+    )}
 
     <Text style={styles.deliveryListHeader}>Optimized Delivery Order:</Text>
     <ScrollView style={styles.deliveryList}>
@@ -961,7 +1013,6 @@ const NotificationScreen = () => {
     </ScrollView>
   </View>
 )}
-            {/* </View> */}
          
 
           {/* Show/Hide Deliveries Button */}
@@ -1050,6 +1101,10 @@ const styles = StyleSheet.create({
     left: "50%",
     transform: [{ translateX: -50 }, { translateY: -50 }],
     alignItems: "center",
+  },
+  refreshIndicator: {
+    alignSelf: "center",
+    marginVertical: 10,
   },
   // deliveryListContainer: {
   //   position: "absolute",

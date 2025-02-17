@@ -20,6 +20,7 @@ import {
   getDocs,
   doc,
   updateDoc,
+  onSnapshot
 } from "firebase/firestore";
 import StepIndicator from "react-native-step-indicator";
 import { app } from "../firebase";
@@ -91,6 +92,7 @@ export default function Dashboard() {
     }
   };
 
+  // useEffect(() => {
   const fetchUserDetails = async () => {
     try {
       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
@@ -133,21 +135,15 @@ export default function Dashboard() {
       Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
     }
   };
-  useEffect(() => {
-    fetchUserDetails();
-  }, []);
+//   fetchUserDetails()
+// }, []);
 
-  useEffect(() => {
-    if (displayName) {
-      fetchDeliveryDetails();
-    }
-  }, [displayName]);
-
+// useEffect(() => {
   const fetchDeliveryDetails = async () => {
     if (!displayName) return;
 
-    setLoadingPending(true);
-    setLoadingCompleted(true);
+     setLoadingPending(true);
+     setLoadingCompleted(true);
 
     try {
       const shipmentQuery = query(collection(db, "Shipment"));
@@ -172,6 +168,7 @@ export default function Dashboard() {
 
         const deliveriesSnapshot = await getDocs(deliveriesQuery);
 
+
         deliveriesSnapshot.forEach((doc) => {
           const delivery: any = {
             id: doc.id,
@@ -193,6 +190,8 @@ export default function Dashboard() {
 
       setPendingDeliveries(pending);
       setCompletedDeliveries(completed);
+     
+      
     } catch (error: any) {
       Alert.alert(
         "Error",
@@ -201,8 +200,16 @@ export default function Dashboard() {
     } finally {
       setLoadingPending(false);
       setLoadingCompleted(false);
+      //setLoading(false)
     }
   };
+
+
+
+
+
+  
+  
 
   const markAsReceived = async (delivery: any) => {
     try {
@@ -218,6 +225,8 @@ export default function Dashboard() {
         deliveredAt: new Date().toDateString(),
       });
 
+      
+
       setPendingDeliveries((prev) =>
         prev.filter((item) => item.id !== delivery.id)
       );
@@ -228,23 +237,35 @@ export default function Dashboard() {
   };
 
   const fetchAllData = async () => {
-    setLoading(true);
+    //setLoading(true);
     await fetchUserDetails();
     await fetchDeliveryDetails();
     setLoading(false);
   };
 
+  // useEffect(() => {
+  //   fetchAllData()
+  //   setLoading(false)
+    
+  // }, []);
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    const fetchData = async () => {
+      await fetchDeliveryDetails();
+    };
+    fetchData();
+  }, [displayName]);
+
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchAllData();
-    setRefreshing(false);
-    await fetchUserDetails();
-    await fetchDeliveryDetails();
+    //setRefreshing(true);
+    //fetchAllData();
+    //console.log("Here")
+    // setRefreshing(false);
+    //fetchUserDetails();
+    fetchDeliveryDetails();
+    // console.log("Here")
   }, []);
+
 
   const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
     const handlePress = (deliveryItem: any) => {
@@ -577,7 +598,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   rightNav: {
-    //backgroundColor:'#f4f4f4',
     width: "48%",
     height: "80%",
     borderRadius: 30,
@@ -682,3 +702,207 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
 });
+
+// import React, { useEffect, useState, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   ActivityIndicator,
+//   Alert,
+//   TouchableOpacity,
+//   FlatList,
+//   RefreshControl,
+//   Modal,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import {
+//   getFirestore,
+//   collection,
+//   query,
+//   where,
+//   getDocs,
+//   doc,
+//   updateDoc,
+//   onSnapshot
+// } from "firebase/firestore";
+// import StepIndicator from "react-native-step-indicator";
+// import { app } from "../firebase";
+// import { router } from "expo-router";
+
+// const db = getFirestore(app);
+
+// const labels = ["Loaded", "Dispatched", "In-Transit", "Delivered"];
+
+// export default function Dashboard() {
+//   const [displayName, setDisplayName] = useState<string | null>(null);
+//   const [loading, setLoading] = useState<boolean>(true);
+//   const [refreshing, setRefreshing] = useState<boolean>(false);
+//   const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
+//   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
+//   const [vehicleNo, setVehicleNo] = useState<string | null>(null);
+//   const [modalVisible, setModalVisible] = useState(false);
+//   const [selectedItem, setSelectedItem] = useState<any>(null);
+
+//   // Fetch User Details
+//   const fetchUserDetails = async () => {
+//     try {
+//       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
+//       if (!phoneNumber) {
+//         Alert.alert("Error", "No phone number found. Please log in again.");
+//         return;
+//       }
+
+//       const userQuery = query(
+//         collection(db, "customer"),
+//         where("phoneNumber", "==", phoneNumber)
+//       );
+//       const querySnapshot = await getDocs(userQuery);
+
+//       if (!querySnapshot.empty) {
+//         const userDoc = querySnapshot.docs[0].data();
+//         setDisplayName(userDoc.name || "Unknown User");
+//       }
+//     } catch (error: any) {
+//       Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
+//     }
+//   };
+
+//   // Fetch Delivery Details using onSnapshot (Real-time updates)
+//   const fetchDeliveryDetails = useCallback(() => {
+//     if (!displayName) return;
+
+//     setLoading(true);
+    
+//     const shipmentQuery = query(collection(db, "Shipment"));
+    
+//     const unsubscribe = onSnapshot(shipmentQuery, async (shipmentSnapshot) => {
+//       const pending: any[] = [];
+//       const completed: any[] = [];
+
+//       for (const shipmentDoc of shipmentSnapshot.docs) {
+//         const shipmentData = shipmentDoc.data();
+//         const deliveriesRef = collection(db, "Shipment", shipmentDoc.id, "deliveries");
+//         const deliveriesQuery = query(deliveriesRef, where("customer", "==", displayName));
+
+//         const deliveriesSnapshot = await getDocs(deliveriesQuery);
+
+//         deliveriesSnapshot.forEach((doc) => {
+//           const delivery = { id: doc.id, ...doc.data(), shipmentId: shipmentDoc.id };
+//           if (delivery.statusId < 4) {
+//             pending.push(delivery);
+//             setVehicleNo(shipmentData.vehicleNo);
+//           } else {
+//             completed.push(delivery);
+//           }
+//         });
+//       }
+
+//       setPendingDeliveries(pending);
+//       setCompletedDeliveries(completed);
+//       setLoading(false);
+//     });
+
+//     return () => unsubscribe(); // Cleanup function
+//   }, [displayName]);
+
+//   useEffect(() => {
+//     fetchUserDetails();
+//   }, []);
+
+//   useEffect(() => {
+//     if (displayName) {
+//       const unsubscribe = fetchDeliveryDetails();
+//       return () => unsubscribe?.();
+//     }
+//   }, [displayName]);
+
+//   // Handle Pull to Refresh
+//   const onRefresh = useCallback(async () => {
+//     setRefreshing(true);
+//     await fetchUserDetails();
+//     fetchDeliveryDetails();
+//     setRefreshing(false);
+//   }, []);
+
+//   // Mark Delivery as Received
+//   const markAsReceived = async (delivery: any) => {
+//     try {
+//       const deliveryRef = doc(db, "Shipment", delivery.shipmentId, "deliveries", delivery.id);
+//       await updateDoc(deliveryRef, { statusId: 4, deliveredAt: new Date().toDateString() });
+
+//       setPendingDeliveries((prev) => prev.filter((item) => item.id !== delivery.id));
+//       setCompletedDeliveries((prev) => [delivery, ...prev]);
+//     } catch (error: any) {
+//       Alert.alert("Error", `Failed to update delivery: ${error.message}`);
+//     }
+//   };
+
+//   const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
+//     return (
+//       <View style={styles.deliveryItem}>
+//         <Text style={styles.deliveryNumber}>Delivery No: {item.deliveryNumber}</Text>
+//         <Text>Vehicle No: {vehicleNo}</Text>
+//         <StepIndicator currentPosition={item.statusId} labels={labels} stepCount={4} />
+
+//         {isPending && (
+//           <TouchableOpacity
+//             style={[styles.button, item.statusId < 3 && styles.disabledButton]}
+//             onPress={() => {
+//               setSelectedItem(item);
+//               setModalVisible(true);
+//             }}
+//             disabled={item.statusId < 3}
+//           >
+//             <Text style={styles.buttonText}>Delivered</Text>
+//           </TouchableOpacity>
+//         )}
+//       </View>
+//     );
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       {loading ? <ActivityIndicator size="large" color="#F6984C" /> : null}
+
+//       <FlatList
+//         data={[...pendingDeliveries, ...completedDeliveries]}
+//         keyExtractor={(item) => item.id}
+//         renderItem={({ item }) => renderDeliveryItem({ item }, item.statusId < 4)}
+//         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+//         contentContainerStyle={{ paddingBottom: 20 }}
+//       />
+
+//       {/* Confirmation Modal */}
+//       <Modal transparent={true} animationType="slide" visible={modalVisible}>
+//         <View style={styles.modalContainer}>
+//           <View style={styles.modalContent}>
+//             <Text>Mark this delivery as received?</Text>
+//             <View style={styles.modalButtons}>
+//               <TouchableOpacity onPress={() => setModalVisible(false)}>
+//                 <Text>Cancel</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity onPress={() => { markAsReceived(selectedItem); setModalVisible(false); }}>
+//                 <Text>Confirm</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         </View>
+//       </Modal>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, padding: 10 },
+//   deliveryItem: { marginBottom: 15, padding: 10, backgroundColor: "#FFF", borderRadius: 10 },
+//   deliveryNumber: { fontSize: 16, fontWeight: "bold" },
+//   button: { backgroundColor: "#F6984C", padding: 10, borderRadius: 5, alignItems: "center" },
+//   disabledButton: { backgroundColor: "#ccc" },
+//   buttonText: { color: "#FFF" },
+//   modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
+//   modalContent: { backgroundColor: "#FFF", padding: 20, borderRadius: 10 },
+//   modalButtons: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+// });
+
+

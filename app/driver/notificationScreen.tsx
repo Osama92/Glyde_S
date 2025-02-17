@@ -594,6 +594,72 @@ const NotificationScreen = () => {
     return () => unsubscribe();
   }, [deliverDriver]);
 
+  // const fetchDeliveryOrder = async (shipmentId: string) => {
+  //   try {
+  //     const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
+  //     const querySnapshot = await getDocs(deliveriesQuery);
+  //     const deliveries: Delivery[] = querySnapshot.docs.map((doc) => ({
+  //       id: doc.id,
+  //       customer: doc.data().customer,
+  //       address: doc.data().address,
+  //       latitude: doc.data().latitude,
+  //       longitude: doc.data().longitude,
+  //     }));
+  //     setDeliveryOrder(deliveries);
+  //     if (location) {
+  //       const sortedDeliveries = sortDeliveriesByDistance(deliveries, location);
+  //       setDeliveryOrder(sortedDeliveries);
+  //     }
+  //   } catch (error: any) {
+  //     Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
+  //   }
+  // };
+
+  // Re-sort deliveries whenever location changes
+  useEffect(() => {
+    if (location && deliveryOrder.length > 0) {
+      const sortedDeliveries = sortDeliveriesByDistance(deliveryOrder, location);
+      setDeliveryOrder(sortedDeliveries);
+    }
+  }, [location]);
+
+  const fetchTravelTimes = async (origin: Coordinate, destinations: Delivery[]) => {
+    const travelTimes: { [key: string]: number } = {};
+  
+    for (const destination of destinations) {
+      const originStr = `${origin.latitude},${origin.longitude}`;
+      const destinationStr = `${destination.latitude},${destination.longitude}`;
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${MAPS_API_KEY}`;
+  
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+  
+        if (data.status === "OK") {
+          const duration = data.routes[0].legs[0].duration.value; // Duration in seconds
+          travelTimes[destination.id] = duration;
+        } else {
+          console.error("Directions API Error:", data);
+        }
+      } catch (error) {
+        console.error("Fetch Travel Times Error:", error);
+      }
+    }
+  
+    return travelTimes;
+  };
+
+  const optimizeDeliveryOrder = async (deliveries: Delivery[], currentLocation: Coordinate) => {
+    const travelTimes = await fetchTravelTimes(currentLocation, deliveries);
+  
+    // Sort deliveries based on travel time from current location
+    const sortedDeliveries = deliveries.sort((a, b) => {
+      return travelTimes[a.id] - travelTimes[b.id];
+    });
+  
+    return sortedDeliveries;
+  };
+
   const fetchDeliveryOrder = async (shipmentId: string) => {
     try {
       const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
@@ -605,23 +671,15 @@ const NotificationScreen = () => {
         latitude: doc.data().latitude,
         longitude: doc.data().longitude,
       }));
-      setDeliveryOrder(deliveries);
+  
       if (location) {
-        const sortedDeliveries = sortDeliveriesByDistance(deliveries, location);
-        setDeliveryOrder(sortedDeliveries);
+        const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
+        setDeliveryOrder(optimizedDeliveries);
       }
     } catch (error: any) {
       Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
     }
   };
-
-  // Re-sort deliveries whenever location changes
-  useEffect(() => {
-    if (location && deliveryOrder.length > 0) {
-      const sortedDeliveries = sortDeliveriesByDistance(deliveryOrder, location);
-      setDeliveryOrder(sortedDeliveries);
-    }
-  }, [location]);
 
   const fetchDirections = async (origin: Coordinate, destination: Delivery) => {
     setLoadingDirections(true); // Start loading
@@ -854,7 +912,7 @@ const NotificationScreen = () => {
       {shipmentData?.statusId === 3 && (
         <>
           {/* Optimized Delivery Order View at the Bottom */}
-          {showDeliveries && (
+          {/* {showDeliveries && (
             <View style={styles.deliveryListContainer}>
               <Text style={styles.deliveryListHeader}>Optimized Delivery Order:</Text>
               <ScrollView style={styles.deliveryList}>
@@ -870,9 +928,41 @@ const NotificationScreen = () => {
                     )}
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            </View>
+              </ScrollView> */}
+              {showDeliveries && (
+  <View style={styles.deliveryListContainer}>
+    {/* Refresh Button */}
+    <TouchableOpacity
+  style={styles.refreshButton}
+  onPress={async () => {
+    if (location) {
+      const optimizedDeliveries = await optimizeDeliveryOrder(deliveryOrder, location);
+      setDeliveryOrder(optimizedDeliveries);
+    }
+  }}
+>
+  <Text style={styles.refreshButtonText}>Refresh</Text>
+</TouchableOpacity>
+
+    <Text style={styles.deliveryListHeader}>Optimized Delivery Order:</Text>
+    <ScrollView style={styles.deliveryList}>
+      {deliveryOrder.map((delivery, index) => (
+        <TouchableOpacity
+          key={delivery.id}
+          style={styles.deliveryItem}
+          onPress={() => handleDeliveryTap(delivery)}
+        >
+          <Text>{index + 1}. {delivery.customer} - {delivery.address}</Text>
+          {selectedDelivery?.id === delivery.id && travelTime && (
+            <Text style={styles.travelTimeText}>Travel Time: {travelTime}</Text>
           )}
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+)}
+            {/* </View> */}
+         
 
           {/* Show/Hide Deliveries Button */}
           <TouchableOpacity
@@ -889,7 +979,7 @@ const NotificationScreen = () => {
       {/* Loading Indicator for Directions */}
       {loadingDirections && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="orange" />
           <Text>Loading directions...</Text>
         </View>
       )}
@@ -941,10 +1031,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 10,
     elevation: 5,
   },
-  deliveryListHeader: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-  deliveryList: { maxHeight: 150 },
-  deliveryItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#ccc" },
-  travelTimeText: { fontSize: 14, color: "gray", marginTop: 5 },
+  //deliveryListHeader: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  //deliveryList: { maxHeight: 150 },
+  //deliveryItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#ccc" },
+  //travelTimeText: { fontSize: 14, color: "gray", marginTop: 5 },
   showDeliveriesButton: {
     position: "absolute",
     bottom: 200,
@@ -960,7 +1050,38 @@ const styles = StyleSheet.create({
     left: "50%",
     transform: [{ translateX: -50 }, { translateY: -50 }],
     alignItems: "center",
-  }
+  },
+  // deliveryListContainer: {
+  //   position: "absolute",
+  //   bottom: 0,
+  //   left: 0,
+  //   right: 0,
+  //   backgroundColor: "#fff",
+  //   padding: 10,
+  //   borderTopLeftRadius: 10,
+  //   borderTopRightRadius: 10,
+  //   elevation: 5,
+  // },
+  deliveryListHeader: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  deliveryList: { maxHeight: 150 },
+  deliveryItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#ccc" },
+  travelTimeText: { fontSize: 14, color: "gray", marginTop: 5 },
+ 
+ 
+  refreshButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "orange",
+    padding: 10,
+    borderRadius: 5,
+    zIndex: 1,
+  },
+  refreshButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+
 
     })
 

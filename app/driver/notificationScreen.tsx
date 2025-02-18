@@ -399,7 +399,6 @@ const NotificationScreen = () => {
     try {
       const deliveryRef = doc(db, "Shipment", shipmentId, "deliveries", deliveryId);
       await updateDoc(deliveryRef, { eta });
-      console.log("ETA updated successfully");
     } catch (error) {
       console.error("Update ETA Error:", error);
       Alert.alert("Error", "Failed to update ETA in Firebase.");
@@ -497,7 +496,7 @@ const NotificationScreen = () => {
     try {
       const response = await fetch(url);
       const data = await response.json();
-      console.log("Directions API Response:", data);
+      
 
       if (data.status === "OK") {
         const points = data.routes[0].overview_polyline.points;

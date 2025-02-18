@@ -31,9 +31,7 @@ const ProfileScreen = () => {
 
   const { collectionName, id } = useLocalSearchParams();
 
-  useEffect(() => {
-    fetchPhoneNumberAndProfile();
-  }, []);
+ 
 
   // Fetch phoneNumber from AsyncStorage and existing profile from Firestore
   const fetchPhoneNumberAndProfile = async () => {
@@ -49,6 +47,10 @@ const ProfileScreen = () => {
       Alert.alert("Error", "Failed to fetch phone number from AsyncStorage!");
     }
   };
+
+  useEffect(() => {
+    fetchPhoneNumberAndProfile();
+  }, []);
 
   const fetchProfileFromFirestore = async (phoneNumber) => {
     try {

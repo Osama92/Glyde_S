@@ -10,6 +10,7 @@ import {
   FlatList,
   RefreshControl,
   Modal,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -92,7 +93,6 @@ export default function Dashboard() {
     }
   };
 
-  // useEffect(() => {
   const fetchUserDetails = async () => {
     try {
       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
@@ -135,26 +135,23 @@ export default function Dashboard() {
       Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
     }
   };
-//   fetchUserDetails()
-// }, []);
 
-// useEffect(() => {
   const fetchDeliveryDetails = async () => {
     if (!displayName) return;
-
-     setLoadingPending(true);
-     setLoadingCompleted(true);
-
+  
+    setLoadingPending(true);
+    setLoadingCompleted(true);
+  
     try {
       const shipmentQuery = query(collection(db, "Shipment"));
       const shipmentSnapshot = await getDocs(shipmentQuery);
-
+  
       const pending: any[] = [];
       const completed: any[] = [];
-
+  
       for (const shipmentDoc of shipmentSnapshot.docs) {
         const shipmentData = shipmentDoc.data();
-
+  
         const deliveriesRef = collection(
           db,
           "Shipment",
@@ -165,10 +162,9 @@ export default function Dashboard() {
           deliveriesRef,
           where("customer", "==", displayName)
         );
-
+  
         const deliveriesSnapshot = await getDocs(deliveriesQuery);
-
-
+  
         deliveriesSnapshot.forEach((doc) => {
           const delivery: any = {
             id: doc.id,
@@ -187,11 +183,9 @@ export default function Dashboard() {
           }
         });
       }
-
+  
       setPendingDeliveries(pending);
       setCompletedDeliveries(completed);
-     
-      
     } catch (error: any) {
       Alert.alert(
         "Error",
@@ -200,16 +194,18 @@ export default function Dashboard() {
     } finally {
       setLoadingPending(false);
       setLoadingCompleted(false);
-      //setLoading(false)
     }
   };
 
+  useEffect(() => {
+    fetchUserDetails();
+  }, []);
 
-
-
-
-  
-  
+  useEffect(() => {
+    if (displayName) {
+      fetchDeliveryDetails();
+    }
+  }, [displayName]);
 
   const markAsReceived = async (delivery: any) => {
     try {
@@ -225,8 +221,6 @@ export default function Dashboard() {
         deliveredAt: new Date().toDateString(),
       });
 
-      
-
       setPendingDeliveries((prev) =>
         prev.filter((item) => item.id !== delivery.id)
       );
@@ -240,32 +234,18 @@ export default function Dashboard() {
     //setLoading(true);
     await fetchUserDetails();
     await fetchDeliveryDetails();
-    setLoading(false);
+    // setLoading(false);
   };
 
-  // useEffect(() => {
-  //   fetchAllData()
-  //   setLoading(false)
-    
-  // }, []);
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchDeliveryDetails();
-    };
-    fetchData();
-  }, [displayName]);
-
-
-  const onRefresh = useCallback(async () => {
-    //setRefreshing(true);
-    //fetchAllData();
-    //console.log("Here")
-    // setRefreshing(false);
-    //fetchUserDetails();
-    fetchDeliveryDetails();
-    // console.log("Here")
+    fetchAllData();
   }, []);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAllData();
+    setRefreshing(false);
+  }, []);
 
   const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
     const handlePress = (deliveryItem: any) => {
@@ -289,6 +269,7 @@ export default function Dashboard() {
         <Text style={{ fontSize: 14, marginBottom: 20 }}>
           <Text>Vehicle No:</Text> {vehicleNo}
         </Text>
+        {(item.eta) && (<Text> Your delivery will be delivered in: {item.eta} (ETA)</Text>)}
         <StepIndicator
           customStyles={customStyles}
           currentPosition={item.statusId}
@@ -354,7 +335,7 @@ export default function Dashboard() {
           justifyContent: "center",
         }}
       >
-        <Text style={{ color: "#fff" }}>Successful</Text>
+        <Text style={{ color: "#ffff" }}>Successful</Text>
       </View>
     </View>
   );
@@ -508,7 +489,10 @@ export default function Dashboard() {
           </View>
         </View>
       </View>
-      <View style={{ width: "100%" }}>
+      <ScrollView style={{ width: "100%" }}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }>
         <Text style={styles.sectionTitle}>Incoming Deliveries</Text>
 
         {loadingPending ? (
@@ -550,7 +534,7 @@ export default function Dashboard() {
             }
           />
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -558,7 +542,6 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //justifyContent: "center",
     alignItems: "center",
     padding: 10,
     backgroundColor: "#fff",

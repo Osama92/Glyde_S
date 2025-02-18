@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -68,6 +68,14 @@ const NotificationScreen = () => {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
+  const mapRef = useRef<MapView>(null);
+ 
+
+
+
+
+
+
 
   // Haversine formula to calculate distance between two coordinates
   const haversineDistance = (coord1: Coordinate, coord2: Coordinate) => {
@@ -301,6 +309,100 @@ const NotificationScreen = () => {
     }
   };
 
+  const fetchETA = async (origin: Coordinate, destination: Delivery) => {
+    const originStr = `${origin.latitude},${origin.longitude}`;
+    const destinationStr = `${destination.latitude},${destination.longitude}`;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${MAPS_API_KEY}`;
+  
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+  
+      if (data.status === "OK") {
+        const duration = data.routes[0].legs[0].duration.text; // ETA in human-readable format
+        return duration;
+      } else {
+        console.error("Directions API Error:", data);
+        Alert.alert("Error", "Failed to fetch ETA. Please check your API key and coordinates.");
+      }
+    } catch (error) {
+      console.error("Fetch ETA Error:", error);
+      Alert.alert("Error", "Failed to fetch ETA. Please check your internet connection.");
+    }
+  
+    return null;
+  };
+  
+  const updateDeliveryETA = async (deliveryId: string, eta: string) => {
+    try {
+      const deliveryRef = doc(db, "Shipment", shipmentId, "deliveries", deliveryId);
+      await updateDoc(deliveryRef, { eta });
+      console.log("ETA updated successfully");
+    } catch (error) {
+      console.error("Update ETA Error:", error);
+      Alert.alert("Error", "Failed to update ETA in Firebase.");
+    }
+  };
+
+  const zoomToMarker = (delivery: Delivery) => {
+    if (mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: delivery.latitude,
+        longitude: delivery.longitude,
+        latitudeDelta: 0.01, // Zoom level
+        longitudeDelta: 0.01,
+      }, 1000); // Animation duration in milliseconds
+    }
+  };
+
+  const handleDeliveryTap = async (delivery: Delivery) => {
+    setSelectedDelivery(delivery);
+  
+    // Show confirmation dialog
+    Alert.alert(
+      "Confirm Delivery",
+      `Do you want to deliver to ${delivery.customer}?`,
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            if (location) {
+              // Fetch ETA
+              const eta = await fetchETA(location, delivery);
+              if (eta) {
+                // Update Firebase with ETA
+                await updateDeliveryETA(delivery.id, eta);
+  
+                // Zoom in on the selected marker
+                zoomToMarker(delivery);
+  
+                // Start periodic ETA updates
+                startPeriodicETAUpdates(delivery);
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+  const startPeriodicETAUpdates = (delivery: Delivery) => {
+    const interval = setInterval(async () => {
+      if (location) {
+        const eta = await fetchETA(location, delivery);
+        if (eta) {
+          await updateDeliveryETA(delivery.id, eta);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+  
+    // Clear interval when the component unmounts or a new delivery is selected
+    return () => clearInterval(interval);
+  };
+
   const fetchDirections = async (origin: Coordinate, destination: Delivery) => {
     setLoadingDirections(true); // Start loading
     const originStr = `${origin.latitude},${origin.longitude}`;
@@ -417,7 +519,7 @@ const NotificationScreen = () => {
   };
 
   const handleDecline = () => {
-    Alert.alert("Declined", "You have declined the shipment.");
+    Alert.alert("Declined", "You have declined the shipment. Please meet the field agent for clarifications.");
     setIsModalVisible(false);
   };
 
@@ -448,12 +550,12 @@ const NotificationScreen = () => {
     }
   };
 
-  const handleDeliveryTap = (delivery: Delivery) => {
-    setSelectedDelivery(delivery);
-    if (location) {
-      fetchDirections(location, delivery); // Fetch directions to the selected delivery
-    }
-  };
+  // const handleDeliveryTap = (delivery: Delivery) => {
+  //   setSelectedDelivery(delivery);
+  //   if (location) {
+  //     fetchDirections(location, delivery); // Fetch directions to the selected delivery
+  //   }
+  // };
 
   if (loading || !location) {
     return (
@@ -566,6 +668,28 @@ const NotificationScreen = () => {
               {showDeliveries ? "Hide Deliveries" : "Show Deliveries"}
             </Text>
           </TouchableOpacity>
+          
+          {/* show location */}
+          <TouchableOpacity
+  style={styles.currentLocationButton}
+  onPress={() => {
+    if (location && mapRef.current) {
+      if (Platform.OS === "web") {
+        mapRef.current.panTo({ lat: location.latitude, lng: location.longitude });
+        mapRef.current.setZoom(15);
+      } else {
+        mapRef.current.animateToRegion({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
+      }
+    }
+  }}
+>
+  <Image source={require("../../assets/images/Pin.png")} style={styles.currentLocationIcon} />
+</TouchableOpacity>
         </>
       )}
 
@@ -624,15 +748,14 @@ const NotificationScreen = () => {
       {/* Modal for Shipment Details */}
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
-          <Text>Shipment Number: <Text style={{ fontWeight: "bold" }}>{shipmentData?.id}</Text></Text>
-          <Text>Pick-up point: {shipmentData?.route1}</Text>
-          <Text>Destination: {shipmentData?.route2}</Text>
+          <Text style={{marginBottom:30, fontSize: 25, textAlign:'center'}}>Shipment Number: <Text style={{ fontWeight: "bold" }}>{shipmentData?.id}</Text> has been assigned to you!</Text>
+          <Text style={{marginBottom:30, fontSize: 20, textAlign:'center'}}>Route Assigned: {shipmentData?.route}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.rejectButton} onPress={handleDecline}>
-              <Text style={styles.buttonText}>Reject</Text>
+              <Text style={styles.buttonText}>Decline</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
-              <Text style={styles.buttonText}>Accept</Text>
+              <Text style={styles.buttonText}>Begin Trip</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -649,9 +772,9 @@ const styles = StyleSheet.create({
   redDot: { width: 10, height: 10, backgroundColor: "red", borderRadius: 5, position: "absolute", top: 0, right: 0 },
   modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
   buttonContainer: { flexDirection: "row", gap: 20 },
-  rejectButton: { backgroundColor: "red", padding: 15, borderRadius: 10 },
-  acceptButton: { backgroundColor: "green", padding: 15, borderRadius: 10 },
-  buttonText: { color: "white", fontWeight: "bold" },
+  rejectButton: { backgroundColor: "red", width:150, height: 60, borderRadius:10, alignItems:'center', justifyContent:'center' },
+  acceptButton: { backgroundColor: "green", width:150, height: 60, borderRadius:10, alignItems:'center', justifyContent:'center' },
+  buttonText: { color: "white", fontWeight: "bold", fontSize: 18 },
   deliveryListContainer: {
     position: "absolute",
     bottom: 0,
@@ -704,6 +827,19 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  currentLocationButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 50,
+    elevation: 5,
+  },
+  currentLocationIcon: {
+    width: 24,
+    height: 24,
   },
 
     })

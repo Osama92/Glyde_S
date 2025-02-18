@@ -234,7 +234,8 @@ export default function Dashboard() {
     //setLoading(true);
     await fetchUserDetails();
     await fetchDeliveryDetails();
-    // setLoading(false);
+    setLoading(false);
+    setRefreshing(false)
   };
 
   useEffect(() => {
@@ -244,7 +245,7 @@ export default function Dashboard() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchAllData();
-    setRefreshing(false);
+    //setRefreshing(false);
   }, []);
 
   const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
@@ -269,7 +270,7 @@ export default function Dashboard() {
         <Text style={{ fontSize: 14, marginBottom: 20 }}>
           <Text>Vehicle No:</Text> {vehicleNo}
         </Text>
-        {(item.eta) && (<Text> Your delivery will be delivered in: {item.eta} (ETA)</Text>)}
+        {(item.eta) && (<Text> Your delivery is arriving in: {item.eta}</Text>)}
         <StepIndicator
           customStyles={customStyles}
           currentPosition={item.statusId}

@@ -22,6 +22,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  writeBatch
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router } from "expo-router";
@@ -39,6 +40,7 @@ type Delivery = {
   address: string;
   latitude: number;
   longitude: number;
+  statusId: number;
 };
 
 type Coordinate = {
@@ -174,7 +176,7 @@ const NotificationScreen = () => {
         setShipmentId(activeShipment.id);
         setShipmentData(activeShipment);
         setShowRedDot(true);
-        fetchDeliveryOrder(activeShipment.id); // Fetch deliveries when shipment is found
+        //fetchDeliveryOrder(activeShipment.id); // Fetch deliveries when shipment is found
       } else {
         setShowRedDot(false);
       }
@@ -288,26 +290,86 @@ const NotificationScreen = () => {
     return optimizedDeliveries;
   };
 
-  const fetchDeliveryOrder = async (shipmentId: string) => {
-    try {
-      const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
-      const querySnapshot = await getDocs(deliveriesQuery);
-      const deliveries: Delivery[] = querySnapshot.docs.map((doc) => ({
+  // const fetchDeliveryOrder = async (shipmentId: string) => {
+  //   try {
+  //     const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
+  //     const querySnapshot = await getDocs(deliveriesQuery);
+  //     const deliveries: Delivery[] = querySnapshot.docs.map((doc) => ({
+  //       id: doc.id,
+  //       customer: doc.data().customer,
+  //       address: doc.data().address,
+  //       latitude: doc.data().latitude,
+  //       longitude: doc.data().longitude,
+  //     }));
+  
+  //     if (location) {
+  //       const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
+  //       setDeliveryOrder(optimizedDeliveries);
+  //     }
+  //   } catch (error: any) {
+  //     Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
+  //   }
+  // };
+
+
+  // const fetchDeliveryOrder = async (shipmentId: string) => {
+  //   try {
+  //     const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
+  //     const querySnapshot = await getDocs(deliveriesQuery);
+  //     const deliveries: Delivery[] = querySnapshot.docs
+  //       .map((doc) => ({
+  //         id: doc.id,
+  //         customer: doc.data().customer,
+  //         address: doc.data().address,
+  //         latitude: doc.data().latitude,
+  //         longitude: doc.data().longitude,
+  //         statusId: doc.data().statusId, // Add statusId to Delivery type
+  //       }))
+  //       .filter((delivery) => delivery.statusId !== 4); // Filter out completed deliveries
+  
+  //     if (location) {
+  //       const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
+  //       setDeliveryOrder(optimizedDeliveries);
+  //     }
+  
+  //     // If all deliveries are completed, update shipment statusId to 4
+  //     if (deliveries.length === 0) {
+  //       await updateDoc(doc(db, "Shipment", shipmentId), { statusId: 4 });
+  //     }
+  //   } catch (error: any) {
+  //     Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
+  //   }
+  // };
+
+  useEffect(() => {
+  if (!shipmentId) return;
+
+  const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
+  const unsubscribeDeliveries = onSnapshot(deliveriesQuery, (querySnapshot) => {
+    const deliveries: Delivery[] = querySnapshot.docs
+      .map((doc) => ({
         id: doc.id,
         customer: doc.data().customer,
         address: doc.data().address,
         latitude: doc.data().latitude,
         longitude: doc.data().longitude,
-      }));
-  
-      if (location) {
-        const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
-        setDeliveryOrder(optimizedDeliveries);
-      }
-    } catch (error: any) {
-      Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
+        statusId: doc.data().statusId,
+      }))
+      .filter((delivery) => delivery.statusId !== 4); // Filter out completed deliveries
+
+    if (location) {
+      const optimizedDeliveries = sortDeliveriesByDistance(deliveries, location);
+      setDeliveryOrder(optimizedDeliveries);
     }
-  };
+
+    // If all deliveries are completed, update shipment statusId to 4
+    if (deliveries.length === 0) {
+      updateDoc(doc(db, "Shipment", shipmentId), { statusId: 4 });
+    }
+  });
+
+  return () => unsubscribeDeliveries();
+}, [shipmentId, location]);
 
   const fetchETA = async (origin: Coordinate, destination: Delivery) => {
     const originStr = `${origin.latitude},${origin.longitude}`;
@@ -355,6 +417,28 @@ const NotificationScreen = () => {
     }
   };
 
+  const zoomToPolyline = (coordinates: Coordinate[]) => {
+    if (mapRef.current && coordinates.length > 0) {
+      const latitudes = coordinates.map((coord) => coord.latitude);
+      const longitudes = coordinates.map((coord) => coord.longitude);
+  
+      const minLat = Math.min(...latitudes);
+      const maxLat = Math.max(...latitudes);
+      const minLng = Math.min(...longitudes);
+      const maxLng = Math.max(...longitudes);
+  
+      mapRef.current.animateToRegion(
+        {
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: maxLat - minLat + 0.1, // Add padding
+          longitudeDelta: maxLng - minLng + 0.1,
+        },
+        1000 // Animation duration
+      );
+    }
+  };
+
   const handleDeliveryTap = async (delivery: Delivery) => {
     setSelectedDelivery(delivery);
   
@@ -379,6 +463,7 @@ const NotificationScreen = () => {
   
                 // Zoom in on the selected marker
                 zoomToMarker(delivery);
+                fetchDirections(location,delivery)
   
                 // Start periodic ETA updates
                 startPeriodicETAUpdates(delivery);
@@ -412,14 +497,17 @@ const NotificationScreen = () => {
     try {
       const response = await fetch(url);
       const data = await response.json();
+      console.log("Directions API Response:", data);
 
       if (data.status === "OK") {
         const points = data.routes[0].overview_polyline.points;
         const decodedPoints = decodePolyline(points); // Decode polyline points
         setRouteCoordinates(decodedPoints);
+        
 
         const duration = data.routes[0].legs[0].duration.text;
         setTravelTime(duration);
+        zoomToPolyline(decodedPoints);
       } else {
         console.error("Directions API Error:", data);
         Alert.alert("Error", "Failed to fetch directions. Please check your API key and coordinates.");
@@ -467,6 +555,42 @@ const NotificationScreen = () => {
     return points;
   };
 
+  // useEffect(() => {
+  //   const fetchLocation = async () => {
+  //     try {
+  //       if (Platform.OS === "web") {
+  //         navigator.geolocation.getCurrentPosition(
+  //           (position) => {
+  //             setLocation({
+  //               latitude: position.coords.latitude,
+  //               longitude: position.coords.longitude,
+  //             });
+  //           },
+  //           (error) => {
+  //             Alert.alert("Error", `Failed to get location: ${error.message}`);
+  //           }
+  //         );
+  //       } else {
+  //         let { status } = await Location.requestForegroundPermissionsAsync();
+  //         if (status !== "granted") {
+  //           setErrorMsg("Location permission denied.");
+  //           Alert.alert("Error", "Permission to access location was denied.");
+  //           return;
+  //         }
+
+  //         let currentLocation = await Location.getCurrentPositionAsync({});
+  //         setLocation({
+  //           latitude: currentLocation.coords.latitude,
+  //           longitude: currentLocation.coords.longitude,
+  //         });
+  //       }
+  //     } catch (error: any) {
+  //       Alert.alert("Error", `Failed to fetch location: ${error.message}`);
+  //     }
+  //   };
+  //   fetchLocation();
+  // }, []);
+
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -489,7 +613,7 @@ const NotificationScreen = () => {
             Alert.alert("Error", "Permission to access location was denied.");
             return;
           }
-
+  
           let currentLocation = await Location.getCurrentPositionAsync({});
           setLocation({
             latitude: currentLocation.coords.latitude,
@@ -503,20 +627,49 @@ const NotificationScreen = () => {
     fetchLocation();
   }, []);
 
+  // const handleAccept = async () => {
+  //   if (!shipmentId) return;
+  //   try {
+  //     const shipmentDocRef = doc(db, "Shipment", shipmentId);
+  //     await updateDoc(shipmentDocRef, { statusId: 3 });
+  //     Alert.alert("Success", "Shipment accepted.");
+  //     setIsModalVisible(false);
+  //     setShowRedDot(false);
+  //     startTracking();
+  //     fetchDeliveryOrder(shipmentId); // Refresh deliveries after accepting shipment
+  //   } catch (error: any) {
+  //     Alert.alert("Error", `Failed to update shipment: ${error.message}`);
+  //   }
+  // };
   const handleAccept = async () => {
     if (!shipmentId) return;
     try {
       const shipmentDocRef = doc(db, "Shipment", shipmentId);
+  
+      // Update shipment statusId to 3
       await updateDoc(shipmentDocRef, { statusId: 3 });
-      Alert.alert("Success", "Shipment accepted.");
+  
+      // Fetch all deliveries in the subcollection
+      const deliveriesCollectionRef = collection(shipmentDocRef, "deliveries");
+      const deliveriesSnapshot = await getDocs(deliveriesCollectionRef);
+  
+      // Update statusId of each delivery to 3
+      const batch = writeBatch(db);
+      deliveriesSnapshot.forEach((doc) => {
+        batch.update(doc.ref, { statusId: 3 });
+      });
+      await batch.commit();
+  
+      Alert.alert("Success", "Shipment and deliveries accepted.");
       setIsModalVisible(false);
       setShowRedDot(false);
       startTracking();
-      fetchDeliveryOrder(shipmentId); // Refresh deliveries after accepting shipment
+      //fetchDeliveryOrder(shipmentId); // Refresh deliveries after accepting shipment
     } catch (error: any) {
       Alert.alert("Error", `Failed to update shipment: ${error.message}`);
     }
   };
+  
 
   const handleDecline = () => {
     Alert.alert("Declined", "You have declined the shipment. Please meet the field agent for clarifications.");
@@ -609,6 +762,7 @@ const NotificationScreen = () => {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           }}
+          ref={mapRef}
         >
           <Marker coordinate={location} />
           {showDeliveries && deliveryOrder.map((delivery) => (
@@ -674,17 +828,15 @@ const NotificationScreen = () => {
   style={styles.currentLocationButton}
   onPress={() => {
     if (location && mapRef.current) {
-      if (Platform.OS === "web") {
-        mapRef.current.panTo({ lat: location.latitude, lng: location.longitude });
-        mapRef.current.setZoom(15);
-      } else {
-        mapRef.current.animateToRegion({
+      mapRef.current.animateToRegion(
+        {
           latitude: location.latitude,
           longitude: location.longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
-        }, 1000);
-      }
+        },
+        1000 // Animation duration in milliseconds
+      );
     }
   }}
 >

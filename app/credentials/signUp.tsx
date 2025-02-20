@@ -15,7 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+//import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { getAuth, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential} from 'firebase/auth';
 import { app } from '../firebase';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
@@ -110,11 +110,11 @@ export default function SignUp({}: SignUpProps) {
         
 
           {/* Add reCAPTCHA modal */}
-      <FirebaseRecaptchaVerifierModal
+      {/* <FirebaseRecaptchaVerifierModal
         ref={recaptchaVerifier}
         firebaseConfig={app.options}
         attemptInvisibleVerification={true}
-      />
+      /> */}
 
         <Animated.View style={[styles.heroSection, animatedContainerStyle]}>
         <View style={styles.topSection}>

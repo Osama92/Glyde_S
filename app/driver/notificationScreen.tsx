@@ -28,7 +28,7 @@ import { app } from "../firebase";
 import { router } from "expo-router";
 import MapView, { Marker, Polyline } from "react-native-maps"; // Native Maps
 import { GoogleMap, LoadScript, Marker as WebMarker, Polyline as WebPolyline } from "@react-google-maps/api"; // Web Maps
-import * as Location from "expo-location";
+import * as Location from 'expo-location';
 
 
 const db = getFirestore(app);

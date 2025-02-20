@@ -4,7 +4,7 @@
     "slug": "Glyde_S",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/Glyde.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,10 +14,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/Glyde.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.osama92.Glyde_S"
+      "package": "com.osama92.Glyde_S",
+      "config": {
+        "googleMaps": {
+          "apiKey" : "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +38,12 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location."
         }
       ]
     ],

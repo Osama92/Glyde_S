@@ -199,6 +199,7 @@ export default function SignIn() {
             keyboardType="phone-pad"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
+            clearButtonMode= 'while-editing'
           />
 
           <TextInput
@@ -208,10 +209,12 @@ export default function SignIn() {
             value={password}
             onChangeText={setPassword}
             placeholderTextColor={"grey"}
+            autoCapitalize="none"
+            clearButtonMode= 'while-editing'
           />
 
           {loading ? (
-            <ActivityIndicator size="large" color="#000" />
+            <ActivityIndicator size="large" color="orange" />
           ) : (
             <TouchableOpacity style={styles.button} onPress={handleLogin}>
               <Text style={styles.buttonText}>Log In</Text>

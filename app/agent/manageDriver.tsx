@@ -1,214 +1,259 @@
-// import React, { useState } from "react";
-// import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ScrollView } from "react-native";
-// import * as ImagePicker from "expo-image-picker";
-// import { app } from "../firebase";
-// import { getFirestore, collection, addDoc } from "firebase/firestore";
-// import * as Font from "expo-font";
-
-
-
+// import React, { useState } from 'react';
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   Image,
+//   ActivityIndicator,
+//   StyleSheet,
+//   ScrollView,
+//   KeyboardAvoidingView
+// } from 'react-native';
+// import * as ImagePicker from 'expo-image-picker';
+// import { doc, setDoc,getFirestore } from 'firebase/firestore';
+// import { app } from "../firebase"; // Update this path based on your project structure
+// import { useFonts } from 'expo-font';
+// import { router } from 'expo-router';
 
 // const db = getFirestore(app);
 
-// export default function DriverOnboarding() {
-//   const [fontsLoaded, setFontsLoaded] = useState(false);
-//   const [vehicleNo, setVehicleNo] = useState("");
-//   const [transporter, setTransporter] = useState("");
-//   const [driver, setDriver] = useState("");
-//   const [mobileNumber, setMobileNumber] = useState("");
-//   const [driverImage, setDriverImage] = useState(null);
-//   const [licenseImage, setLicenseImage] = useState(null);
+// export default function ManageDriver() {
+//   const [vehicleNo, setVehicleNo] = useState('');
+//   const [transporter, setTransporter] = useState('');
+//   const [driverName, setDriverName] = useState('');
+//   const [mobileNumber, setMobileNumber] = useState('');
+//   const [driverPhoto, setDriverPhoto] = useState<string | null>(null);
+//   const [licencePhoto, setLicencePhoto] = useState<string | null>(null);
+//   const [loading, setLoading] = useState(false);
 
-//   const loadFonts = () => {
-//     return Font.loadAsync({
+//   const [fontsLoaded] = useFonts({
 //       Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
 //       Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
+//   });
+
+//   const pickImage = async (setImage: React.Dispatch<React.SetStateAction<string | null>>) => {
+//     const result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//       allowsEditing: true,
+//       quality: 1,
 //     });
-//   };
 
-//   const pickImage = async (setImage) => {
-//     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-//     if (!permissionResult.granted) {
-//       Alert.alert("Permission required", "Camera roll access is required to select images.");
-//       return;
-//     }
-
-//     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
 //     if (!result.canceled) {
-//       setImage(result.uri);
+//       setImage(result.assets[0].uri); // Fix for accessing the `uri` property
 //     }
 //   };
 
-//   const takePicture = async (setImage) => {
-//     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-//     if (!permissionResult.granted) {
-//       Alert.alert("Permission required", "Camera access is required to take pictures.");
-//       return;
-//     }
+//   const takePhoto = async (setImage: React.Dispatch<React.SetStateAction<string | null>>) => {
+//     const result = await ImagePicker.launchCameraAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//       allowsEditing: true,
+//       quality: 1,
+//     });
 
-//     const result = await ImagePicker.launchCameraAsync();
 //     if (!result.canceled) {
-//       setImage(result.uri);
+//       setImage(result.assets[0].uri); // Fix for accessing the `uri` property
 //     }
 //   };
 
-//   const saveData = async () => {
-//     if (!vehicleNo || !transporter || !driver || !mobileNumber || !driverImage || !licenseImage) {
-//       Alert.alert("Error", "All fields and images are required.");
+//   const saveToFirestore = async () => {
+//     if (!vehicleNo || !transporter || !driverName || !mobileNumber || !driverPhoto || !licencePhoto) {
+//       alert('Please fill all fields and upload all photos');
 //       return;
 //     }
+
+//     setLoading(true);
 
 //     try {
-//       await addDoc(collection(db, "DriverOnBoarding"), {
+//       const docId = `${transporter}-${vehicleNo}`; // Customize document ID logic if needed
+//       await setDoc(doc(db, 'DriverOnBoarding', docId), {
 //         vehicleNo,
 //         transporter,
-//         driver,
+//         driverName,
 //         mobileNumber,
-//         driverImage,
-//         licenseImage,
-//         createdAt: new Date(),
+//         driverPhoto,
+//         licencePhoto,
 //       });
-//       Alert.alert("Success", "Driver onboarded successfully!");
-//       setVehicleNo("");
-//       setTransporter("");
-//       setDriver("");
-//       setMobileNumber("");
-//       setDriverImage(null);
-//       setLicenseImage(null);
+//       alert('Data saved successfully!');
+//       //router.back();
+//       setVehicleNo('');
+//       setTransporter('');
+//       setDriverName('');
+//       setMobileNumber('');
+//       setDriverPhoto(null);
+//       setLicencePhoto(null);
 //     } catch (error) {
-//       console.error("Error saving to Firestore:", error);
-//       Alert.alert("Error", "Failed to onboard driver.");
+//       console.error('Error saving data to Firestore:', error);
+//       alert('Failed to save data.');
+//     } finally {
+//       setLoading(false);
 //     }
 //   };
 
 //   if (!fontsLoaded) {
-//     return <AppLoading startAsync={loadFonts} onFinish={() => setFontsLoaded(true)} onError={console.warn} />;
+//     return <ActivityIndicator size="large" color="orange" style={styles.loading} />;
 //   }
 
 //   return (
-//     <ScrollView style={styles.container}>
-//       <Text style={styles.header}>Driver Onboarding</Text>
+//     <KeyboardAvoidingView behavior="height" style={{flex:1}}>
+//     <ScrollView contentContainerStyle={styles.container}>
+        
+//        <View style={styles.topSection}>
+//                   <TouchableOpacity onPress={() => router.back()}>
+//                     <Text style={{ fontSize: 20, fontWeight: "bold" }}>Capture</Text>
+//                   </TouchableOpacity>
+//                   <Image
+//                     source={require("../../assets/images/Back.png")}
+//                     style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+//                   />
+//                 </View>
+
+//     {/* Image Upload here */}
+//         <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
+//             <Text style={{fontFamily:'Poppins', color:'grey'}}>Insert Driver Photo here</Text>
+//             <View style={styles.imageActions}>
+//           <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
+//             <Text style={styles.buttonText}>Take Photo</Text>
+//           </TouchableOpacity>
+//           <TouchableOpacity onPress={() => pickImage(setDriverPhoto)} style={styles.button}>
+//             <Text style={styles.buttonText}>Upload Photo</Text>
+//           </TouchableOpacity>
+//         </View>
+//         {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
+//         </View>
+//         <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
+//             <Text style={{fontFamily:'Poppins',color:'grey'}}>Insert Licence here</Text>
+//             <View style={styles.imageActions}>
+//           <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
+//             <Text style={styles.buttonText}>Take Photo</Text>
+//           </TouchableOpacity>
+//           <TouchableOpacity onPress={() => pickImage(setLicencePhoto)} style={styles.button}>
+//             <Text style={styles.buttonText}>Upload Photo</Text>
+//           </TouchableOpacity>
+//         </View>
+//         {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
+//         </View>
 
 //       <TextInput
-//         style={styles.input}
 //         placeholder="Vehicle No"
 //         value={vehicleNo}
 //         onChangeText={setVehicleNo}
-//       />
-
-//       <TextInput
 //         style={styles.input}
+//         placeholderTextColor='#000'
+//       />
+//       <TextInput
 //         placeholder="Transporter"
 //         value={transporter}
 //         onChangeText={setTransporter}
-//       />
-
-//       <TextInput
 //         style={styles.input}
-//         placeholder="Driver"
-//         value={driver}
-//         onChangeText={setDriver}
+//         placeholderTextColor='#000'
 //       />
-
 //       <TextInput
+//         placeholder="Driver Name"
+//         value={driverName}
+//         onChangeText={setDriverName}
 //         style={styles.input}
+//         placeholderTextColor='#000'
+//       />
+//       <TextInput
 //         placeholder="Mobile Number"
-//         keyboardType="phone-pad"
 //         value={mobileNumber}
 //         onChangeText={setMobileNumber}
+//         keyboardType="phone-pad"
+//         style={styles.input}
+//         placeholderTextColor='#000'
 //       />
 
-//       <Text style={styles.label}>Driver's Picture:</Text>
-//       {driverImage && <Image source={{ uri: driverImage }} style={styles.image} />}
-//       <View style={styles.buttonRow}>
-//         <TouchableOpacity style={styles.button} onPress={() => takePicture(setDriverImage)}>
-//           <Text style={styles.buttonText}>Take Picture</Text>
+//       {loading ? (
+//         <ActivityIndicator size="large" color="orange" />
+//       ) : (
+//         <TouchableOpacity onPress={saveToFirestore} style={styles.saveButton}>
+//           <Text style={styles.saveButtonText}>Save</Text>
 //         </TouchableOpacity>
-//         <TouchableOpacity style={styles.button} onPress={() => pickImage(setDriverImage)}>
-//           <Text style={styles.buttonText}>Upload Picture</Text>
-//         </TouchableOpacity>
-//       </View>
-
-//       <Text style={styles.label}>Driver's License:</Text>
-//       {licenseImage && <Image source={{ uri: licenseImage }} style={styles.image} />}
-//       <View style={styles.buttonRow}>
-//         <TouchableOpacity style={styles.button} onPress={() => takePicture(setLicenseImage)}>
-//           <Text style={styles.buttonText}>Take Picture</Text>
-//         </TouchableOpacity>
-//         <TouchableOpacity style={styles.button} onPress={() => pickImage(setLicenseImage)}>
-//           <Text style={styles.buttonText}>Upload Picture</Text>
-//         </TouchableOpacity>
-//       </View>
-
-//       <TouchableOpacity style={styles.saveButton} onPress={saveData}>
-//         <Text style={styles.saveButtonText}>Save</Text>
-//       </TouchableOpacity>
+//       )}
+      
 //     </ScrollView>
+//     </KeyboardAvoidingView>
 //   );
 // }
 
 // const styles = StyleSheet.create({
 //   container: {
-//     flex: 1,
-//     padding: 16,
-//     backgroundColor: "#fff",
+//     flexGrow: 1,
+//     padding: 20,
+//     backgroundColor: '#fff',
 //   },
-//   header: {
-//     fontFamily: "MontserratBold",
+//   title: {
 //     fontSize: 24,
+//     fontFamily: 'Poppins',
 //     marginBottom: 20,
-//     textAlign: "center",
+//     textAlign: 'center',
 //   },
 //   input: {
-//     fontFamily: "Montserrat",
 //     borderWidth: 1,
-//     borderColor: "#ccc",
+//     borderColor: '#ccc',
 //     borderRadius: 8,
-//     padding: 12,
-//     marginBottom: 16,
+//     padding: 10,
+//     marginBottom: 10,
+//     fontFamily: 'Nunito',
+//     height: 50,
+//   },
+//   imageSection: {
+//     marginBottom: 20,
 //   },
 //   label: {
-//     fontFamily: "Montserrat",
 //     fontSize: 16,
-//     marginBottom: 8,
+//     fontFamily: 'Poppins',
+//     marginBottom: 10,
+   
 //   },
-//   image: {
-//     width: "100%",
-//     height: 200,
-//     borderRadius: 8,
-//     marginBottom: 16,
-//   },
-//   buttonRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 16,
+//   imageActions: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     marginBottom: 10,
 //   },
 //   button: {
-//     flex: 1,
-//     backgroundColor: "#007BFF",
-//     padding: 12,
+//     backgroundColor: 'black',
+//     padding: 5,
+//     margin:5,
 //     borderRadius: 8,
-//     marginHorizontal: 4,
 //   },
 //   buttonText: {
-//     fontFamily: "Montserrat",
-//     color: "#fff",
-//     textAlign: "center",
+//     color: '#fff',
+//     fontFamily: 'Nunito',
+//     fontSize: 10
+//   },
+//   image: {
+//     width: 60,
+//     height: 60,
+//     borderRadius: 8,
 //   },
 //   saveButton: {
-//     backgroundColor: "#28A745",
-//     padding: 16,
+//     backgroundColor: 'black',
+//     padding: 15,
 //     borderRadius: 8,
-//     marginTop: 16,
+//     alignItems: 'center',
 //   },
 //   saveButtonText: {
-//     fontFamily: "MontserratBold",
-//     color: "#fff",
-//     textAlign: "center",
-//     fontSize: 18,
+//     color: '#fff',
+//     fontFamily: 'Poppins',
+//     fontSize: 16,
+//   },
+//   loading: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   topSection: {
+//     width: '100%',
+//     height: '10%',
+//     flexDirection: 'row-reverse',
+//     alignItems: 'center',
+//     justifyContent: 'flex-end',
 //   },
 // });
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -218,13 +263,14 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { doc, setDoc,getFirestore } from 'firebase/firestore';
+import { doc, setDoc, getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { app } from "../firebase"; // Update this path based on your project structure
 import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
+import SearchableDropdown from "react-native-searchable-dropdown"; // Import the dropdown component
 
 const db = getFirestore(app);
 
@@ -236,11 +282,39 @@ export default function ManageDriver() {
   const [driverPhoto, setDriverPhoto] = useState<string | null>(null);
   const [licencePhoto, setLicencePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [transporters, setTransporters] = useState<any[]>([]); // State to store transporters
+  const [loadingTransporters, setLoadingTransporters] = useState(false); // Loading state for transporters
 
   const [fontsLoaded] = useFonts({
-      Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
-      Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
+    Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
+    Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
+
+  // Fetch transporters from Firestore
+  useEffect(() => {
+    const fetchTransporters = async () => {
+      setLoadingTransporters(true);
+      try {
+        const transportersQuery = query(
+          collection(db, 'transporter'),
+          where('loadingPoint', '==', 'Agbara') // Filter transporters with loadingPoint = 'agbara'
+        );
+        const querySnapshot = await getDocs(transportersQuery);
+        const transportersList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTransporters(transportersList);
+      } catch (error) {
+        console.error('Error fetching transporters:', error);
+        alert('Failed to fetch transporters.');
+      } finally {
+        setLoadingTransporters(false);
+      }
+    };
+
+    fetchTransporters();
+  }, []);
 
   const pickImage = async (setImage: React.Dispatch<React.SetStateAction<string | null>>) => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -305,84 +379,96 @@ export default function ManageDriver() {
   }
 
   return (
-    <KeyboardAvoidingView behavior="height" style={{flex:1}}>
-    <ScrollView contentContainerStyle={styles.container}>
-        
-       <View style={styles.topSection}>
-                  <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={{ fontSize: 20, fontWeight: "bold" }}>Capture</Text>
-                  </TouchableOpacity>
-                  <Image
-                    source={require("../../assets/images/Back.png")}
-                    style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-                  />
-                </View>
-
-    {/* Image Upload here */}
-        <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
-            <Text style={{fontFamily:'Poppins', color:'grey'}}>Insert Driver Photo here</Text>
-            <View style={styles.imageActions}>
-          <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Take Photo</Text>
+    <KeyboardAvoidingView behavior="height" style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.topSection}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>Capture</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => pickImage(setDriverPhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Upload Photo</Text>
-          </TouchableOpacity>
-        </View>
-        {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
-        </View>
-        <View style={{borderStyle:'dashed', borderColor:'lightgrey',width:'100%', height:150, borderRadius: 5, borderWidth: 1.5, marginBottom:10, justifyContent:'center', alignItems:'center'}}>
-            <Text style={{fontFamily:'Poppins',color:'grey'}}>Insert Licence here</Text>
-            <View style={styles.imageActions}>
-          <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => pickImage(setLicencePhoto)} style={styles.button}>
-            <Text style={styles.buttonText}>Upload Photo</Text>
-          </TouchableOpacity>
-        </View>
-        {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
+          <Image
+            source={require("../../assets/images/Back.png")}
+            style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+          />
         </View>
 
-      <TextInput
-        placeholder="Vehicle No"
-        value={vehicleNo}
-        onChangeText={setVehicleNo}
-        style={styles.input}
-        placeholderTextColor='#000'
-      />
-      <TextInput
-        placeholder="Transporter"
-        value={transporter}
-        onChangeText={setTransporter}
-        style={styles.input}
-        placeholderTextColor='#000'
-      />
-      <TextInput
-        placeholder="Driver Name"
-        value={driverName}
-        onChangeText={setDriverName}
-        style={styles.input}
-        placeholderTextColor='#000'
-      />
-      <TextInput
-        placeholder="Mobile Number"
-        value={mobileNumber}
-        onChangeText={setMobileNumber}
-        keyboardType="phone-pad"
-        style={styles.input}
-        placeholderTextColor='#000'
-      />
+        {/* Image Upload here */}
+        <View style={styles.imageUploadContainer}>
+          <Text style={styles.imageUploadText}>Insert Driver Photo here</Text>
+          <View style={styles.imageActions}>
+            <TouchableOpacity onPress={() => takePhoto(setDriverPhoto)} style={styles.button}>
+              <Text style={styles.buttonText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => pickImage(setDriverPhoto)} style={styles.button}>
+              <Text style={styles.buttonText}>Upload Photo</Text>
+            </TouchableOpacity>
+          </View>
+          {driverPhoto && <Image source={{ uri: driverPhoto }} style={styles.image} />}
+        </View>
+        <View style={styles.imageUploadContainer}>
+          <Text style={styles.imageUploadText}>Insert Licence here</Text>
+          <View style={styles.imageActions}>
+            <TouchableOpacity onPress={() => takePhoto(setLicencePhoto)} style={styles.button}>
+              <Text style={styles.buttonText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => pickImage(setLicencePhoto)} style={styles.button}>
+              <Text style={styles.buttonText}>Upload Photo</Text>
+            </TouchableOpacity>
+          </View>
+          {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
+        </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="orange" />
-      ) : (
-        <TouchableOpacity onPress={saveToFirestore} style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
-      )}
-      
-    </ScrollView>
+        <TextInput
+          placeholder="Vehicle No"
+          value={vehicleNo}
+          onChangeText={setVehicleNo}
+          style={styles.input}
+          placeholderTextColor='#000'
+        />
+
+        {/* Searchable Dropdown for Transporter */}
+        {loadingTransporters ? (
+          <ActivityIndicator size="small" color="orange" />
+        ) : (
+          <SearchableDropdown
+            onTextChange={(text: string) => setTransporter(text)}
+            onItemSelect={(item: any) => setTransporter(item.name)} // Update transporter state with selected item
+            containerStyle={styles.dropdownContainer}
+            textInputStyle={styles.dropdownInput}
+            items={transporters.map((transporter) => ({
+              id: transporter.id,
+              name: transporter.name,
+            }))}
+            placeholder={transporter ? transporter : 'Select Transporter'}
+            placeholderTextColor="#000"
+            resetValue={false}
+            itemStyle={styles.item}
+            underlineColorAndroid="transparent"
+          />
+        )}
+        <TextInput
+          placeholder="Driver Name"
+          value={driverName}
+          onChangeText={setDriverName}
+          style={styles.input}
+          placeholderTextColor='#000'
+        />
+        <TextInput
+          placeholder="Mobile Number"
+          value={mobileNumber}
+          onChangeText={setMobileNumber}
+          keyboardType="phone-pad"
+          style={styles.input}
+          placeholderTextColor='#000'
+        />
+
+        {loading ? (
+          <ActivityIndicator size="large" color="orange" />
+        ) : (
+          <TouchableOpacity onPress={saveToFirestore} style={styles.saveButton}>
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -408,14 +494,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
     height: 50,
   },
-  imageSection: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: 'Poppins',
+  imageUploadContainer: {
+    borderStyle: 'dashed',
+    borderColor: 'lightgrey',
+    width: '100%',
+    height: 150,
+    borderRadius: 5,
+    borderWidth: 1.5,
     marginBottom: 10,
-   
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageUploadText: {
+    fontFamily: 'Poppins',
+    color: 'grey',
   },
   imageActions: {
     flexDirection: 'row',
@@ -425,13 +517,13 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: 'black',
     padding: 5,
-    margin:5,
+    margin: 5,
     borderRadius: 8,
   },
   buttonText: {
     color: '#fff',
     fontFamily: 'Nunito',
-    fontSize: 10
+    fontSize: 10,
   },
   image: {
     width: 60,
@@ -461,4 +553,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  dropdownContainer: {
+    
+    marginBottom: 20,
+  },
+  dropdownInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 5,
+    fontFamily: 'Nunito',
+    height: 50,
+    //backgroundColor: "#f9f9f9",
+  },
+  item: {
+    padding: 10,
+    marginTop: 2,
+    backgroundColor: "#f9f9f9",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+  }
 });

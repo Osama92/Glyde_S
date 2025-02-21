@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, setDoc, getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { app } from "../firebase"; // Update this path based on your project structure
+import { app } from "../firebase"; 
 import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
-import SearchableDropdown from "react-native-searchable-dropdown"; // Import the dropdown component
+import SearchableDropdown from "react-native-searchable-dropdown"; 
 
 const db = getFirestore(app);
 

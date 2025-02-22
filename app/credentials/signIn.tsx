@@ -100,7 +100,8 @@ export default function SignIn() {
               } else if (collectionName === "transporter") {
                 screen = "/transporter/dashboard";
               }else if (collectionName === "Admin") {
-                screen = "/admin/approve_onboard";
+                // screen = "/admin/approve_onboard";
+                screen = "/admin/addUser";
               }
   
               setLoading(false);

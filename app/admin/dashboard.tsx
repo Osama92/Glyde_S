@@ -30,7 +30,7 @@ interface ShippingPointCounterProps {
   shippingPoint: string;
 }
 
-const collections = ["deliverydriver", "customer", "fieldagent", "transporter"];
+const collections = ["deliverydriver", "customer", "fieldagent", "transporter", "Admin"];
 
 export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -238,23 +238,11 @@ export default function Dashboard() {
       </View>
       {/*Scroll View will live here */}
       <ScrollView style={{ width: "100%", height: "70%"}}>
-        <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
-            <View style={{width:'40%',height:'100%'}}>
-                <Text style={{fontSize: 20}}>Fleet Size</Text>
-                <CheckValueInCollection searchValue={shippingPoint} />
-            </View>
-            <View style={{width:'40%',height:'100%'}}>
-                <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
-                <Text>{shippingPoint}</Text>
-            </View>
-            <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push(`/agent/manage?shippingPoint=${shippingPoint}`)}>
-                <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
-            </TouchableOpacity>
-        </View>
-        {/* <View
+
+        <View
           style={{
             width: "100%",
-            height: 200,
+            height: 130,
             backgroundColor: "#f4f4f4",
             borderRadius: 20,
             flexDirection: 'row',
@@ -262,49 +250,30 @@ export default function Dashboard() {
           }}
         >
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
-            <Image source={require('../../assets/images/Shipment.png')} style={{width: 30, height:30}}/>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push("/admin/addUser")}>
+            <Image source={require('../../assets/images/userIcon.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Shipment</Text>
+          <Text style={{textAlign:'center'}}>Create User</Text>
           </View>
           
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createDelivery')}>
-            <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/approve_onboard')}>
+            <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Delivery</Text>
+          <Text style={{textAlign:'center'}}>Vehicle Approval</Text>
           </View>
 
          
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipmentStatus')}>
-            <Image source={require('../../assets/images/View.png')} style={{width: 30, height:30}}/>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/createMaterial')}>
+            <Image source={require('../../assets/images/material.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Shipment Status</Text>
+          <Text style={{textAlign:'center'}}>Create Material</Text>
           </View>
 
-          
-          <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-            <Text>create Material</Text>
-          </TouchableOpacity>
         
-        </View> */}
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '50%'}}>Create a Shipment</Text>
-          <Image source={require('../../assets/images/CreateShipment.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
-        </TouchableOpacity>
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row-reverse', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Create Delivery</Text>
-          <Image source={require('../../assets/images/CreateDelivery.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
-        </TouchableOpacity>
-
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/shipmentStatus')}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Shipment Status</Text>
-          <Image source={require('../../assets/images/ShipmentStatus.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
-        </TouchableOpacity>
+        </View>
+       
       </ScrollView>
     </View>
   );

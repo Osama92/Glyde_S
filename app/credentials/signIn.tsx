@@ -101,7 +101,7 @@ export default function SignIn() {
                 screen = "/transporter/dashboard";
               }else if (collectionName === "Admin") {
                 // screen = "/admin/approve_onboard";
-                screen = "/admin/addUser";
+                screen = "/admin/dashboard";
               }
   
               setLoading(false);

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, StyleSheet, ActivityIndicator, Image } from "react-native";
 import { collection, query, where, getDocs, updateDoc, doc, getFirestore } from "firebase/firestore";
-import { app } from "../firebase"; // Adjust the import path to your Firebase configuration
+import { app } from "../firebase";
+import {router} from 'expo-router'
 
 const db = getFirestore(app);
 
@@ -73,6 +74,17 @@ const MissingLoadingPointScreen = () => {
 
   return (
     <View style={styles.container}>
+       <View style={styles.topSection}>
+                      
+                        <Text style={{ fontSize: 20, fontWeight: "bold", marginTop:20 }}>Back</Text>
+                      
+                      <TouchableOpacity onPress={() => router.back()} style={{marginLeft:20, marginTop:20}}>
+                      <Image
+                        source={require("../../assets/images/Back.png")}
+                        style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+                      />
+                      </TouchableOpacity>
+                    </View>
       <Text style={styles.title}>Pending Loading Points</Text>
 
       {/* List of documents with missing LoadingPoint */}
@@ -119,8 +131,7 @@ export default MissingLoadingPointScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#fff",
   },
   loaderContainer: {
     flex: 1,
@@ -190,5 +201,13 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  topSection: {
+    width: '100%',
+    height: '10%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom:15
   },
 });

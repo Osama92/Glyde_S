@@ -246,7 +246,8 @@ export default function Dashboard() {
             backgroundColor: "#f4f4f4",
             borderRadius: 20,
             flexDirection: 'row',
-            alignItems:'flex-start'
+            alignItems:'flex-start',
+            justifyContent: 'center'
           }}
         >
           <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>

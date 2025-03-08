@@ -94,7 +94,7 @@ const MissingLoadingPointScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleDocumentPress(item)} style={styles.documentItem}>
             <Text style={styles.documentText}>Document ID: {item.id}</Text>
-            <Text style={styles.documentText}>Driver Name: {item.DriverName || "N/A"}</Text>
+            <Text style={styles.documentText}>Driver Name: {item.driverName || "N/A"}</Text>
           </TouchableOpacity>
         )}
         ListEmptyComponent={

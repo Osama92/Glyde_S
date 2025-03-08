@@ -113,6 +113,8 @@ export default function ManageDriver() {
       const docId = `${transporter}-${vehicleNo}`;
       await setDoc(doc(db, 'DriverOnBoarding', docId), {
         vehicleNo,
+        tonnage: selectedVehicle.tonnage,
+        tons: selectedVehicle.tons,
         transporter,
         driverName,
         mobileNumber,
@@ -126,6 +128,7 @@ export default function ManageDriver() {
       setMobileNumber('');
       setDriverPhoto(null);
       setLicencePhoto(null);
+      setSelectedVehicle(null);
     } catch (error) {
       console.error('Error saving data to Firestore:', error);
       alert('Failed to save data.');

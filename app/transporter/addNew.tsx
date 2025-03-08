@@ -271,6 +271,7 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -280,11 +281,12 @@ import {
   doc,
   setDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 import { router } from "expo-router";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+import DateTimePicker from "@react-native-community/datetimepicker"; // Use Expo's DateTimePicker
 import SearchableDropdown from "react-native-searchable-dropdown";
 
 const db = getFirestore(app);
@@ -310,8 +312,8 @@ export default function Details() {
   const [insuranceExpiry, setInsuranceExpiry] = useState<Date>(new Date());
   const [roadWorthinessExpiry, setRoadWorthinessExpiry] = useState<Date>(new Date());
   const [hackneyPermitExpiry, setHackneyPermitExpiry] = useState<Date>(new Date());
-  const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
-  const [currentDateType, setCurrentDateType] = useState<string | null>(null);
+  const [_showDatePicker, setShowDatePicker] = useState<boolean>(false); // Control date picker visibility
+  const [currentDateType, setCurrentDateType] = useState<string | null>(null); // Track which date is being picked
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -424,22 +426,28 @@ export default function Details() {
 
   const showDatePicker = (type: string) => {
     setCurrentDateType(type);
-    setDatePickerVisibility(true);
+    setShowDatePicker(true); // Show the date picker
   };
 
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
-  };
-
-  const handleConfirm = (date: Date) => {
-    if (currentDateType === 'insurance') {
-      setInsuranceExpiry(date);
-    } else if (currentDateType === 'roadWorthiness') {
-      setRoadWorthinessExpiry(date);
-    } else if (currentDateType === 'hackneyPermit') {
-      setHackneyPermitExpiry(date);
+  const handleDateChange = (event: any, date?: Date) => {
+    if (date) {
+      if (currentDateType === 'insurance') {
+        setInsuranceExpiry(date);
+      } else if (currentDateType === 'roadWorthiness') {
+        setRoadWorthinessExpiry(date);
+      } else if (currentDateType === 'hackneyPermit') {
+        setHackneyPermitExpiry(date);
+      }
     }
-    hideDatePicker();
+    
+    if (Platform.OS === 'ios') {
+      return; // Don't hide the picker yet
+    }
+    setShowDatePicker(false); // Hide the picker on Android
+  };
+
+  const dismissDatePicker = () => {
+    setShowDatePicker(false); // Manually dismiss the picker
   };
 
   const handleVehiclePress = (vehicle: Vehicle) => {
@@ -471,23 +479,40 @@ export default function Details() {
               setIsSaving(true);
               if (!selectedVehicle || !transporterName) return;
 
-              // Update the existing document
-              const vehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", selectedVehicle.vehicleNo);
-              await updateDoc(vehicleDocRef, {
-                tonnage: tonnageInput,
-                brand: vehicleBrand,
-                color: vehicleColor,
-                insuranceExpiry,
-                roadWorthinessExpiry,
-                hackneyPermitExpiry,
-              });
+              // If the vehicle number is changed, delete the old document and create a new one
+              if (vehicleInput !== selectedVehicle.vehicleNo) {
+                const oldVehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", selectedVehicle.vehicleNo);
+                await deleteDoc(oldVehicleDocRef);
+
+                const newVehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", vehicleInput);
+                await setDoc(newVehicleDocRef, {
+                  tonnage: tonnageInput,
+                  brand: vehicleBrand,
+                  color: vehicleColor,
+                  insuranceExpiry,
+                  roadWorthinessExpiry,
+                  hackneyPermitExpiry,
+                  createdAt: new Date(),
+                });
+              } else {
+                // Update the existing document
+                const vehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", selectedVehicle.vehicleNo);
+                await updateDoc(vehicleDocRef, {
+                  tonnage: tonnageInput,
+                  brand: vehicleBrand,
+                  color: vehicleColor,
+                  insuranceExpiry,
+                  roadWorthinessExpiry,
+                  hackneyPermitExpiry,
+                });
+              }
 
               // Update the local state
               setVehicles((prev) =>
                 prev.map((v) =>
                   v.vehicleNo === selectedVehicle.vehicleNo
                     ? {
-                        vehicleNo: selectedVehicle.vehiclein, // Keep the original vehicleNo
+                        vehicleNo: vehicleInput, // Update the vehicle number if changed
                         tonnage: tonnageInput,
                         brand: vehicleBrand,
                         color: vehicleColor,
@@ -519,14 +544,16 @@ export default function Details() {
 
   return (
     <KeyboardAvoidingView behavior="padding" style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.container}>
             <View style={styles.topSection}>
-              <TouchableOpacity onPress={() => router.back()}>
+              
                 <Text style={{ fontSize: 20 }}>Dashboard</Text>
-              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={() => router.back()}>
               <Image source={require("../../assets/images/Back.png")} style={{ width: 30, resizeMode: "contain", marginRight: 10 }} />
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.title}>Vehicle List</Text>
@@ -553,7 +580,8 @@ export default function Details() {
                 <FlatList
                   data={filteredVehicles}
                   keyExtractor={(item) => item.vehicleNo}
-                  ListEmptyComponent={<Text style={styles.noResults}>No vehicles found.</Text>}
+                  ListEmptyComponent={<View style={{width:'100%', height:50, justifyContent:'center'}}><Text style={{marginLeft:10, fontSize:17, color:'grey', fontFamily: 'Roboto'}}>No vehicles found.</Text>
+                  </View>}
                   renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => handleVehiclePress(item)}>
                       <View style={styles.row}>
@@ -577,140 +605,169 @@ export default function Details() {
 
             <Modal visible={modalVisible} transparent animationType="slide">
               <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter Vehicle No."
-                    value={vehicleInput}
-                    onChangeText={setVehicleInput}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter Vehicle Brand"
-                    value={vehicleBrand}
-                    onChangeText={setVehicleBrand}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter Vehicle Color"
-                    value={vehicleColor}
-                    onChangeText={setVehicleColor}
-                  />
-                  <SearchableDropdown
-                    onItemSelect={(item) => setTonnageInput(item.name)}
-                    containerStyle={styles.dropdownContainer}
-                    textInputStyle={styles.dropdownInput}
-                    itemStyle={styles.dropdownItem}
-                    itemTextStyle={styles.dropdownItemText}
-                    itemsContainerStyle={styles.dropdownItemsContainer}
-                    items={tonnageItems}
-                    placeholder="Select Tonnage"
-                    resetValue={false}
-                    underlineColorAndroid="transparent"
-                    defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}
-                  />
-                  <TouchableOpacity onPress={() => showDatePicker('insurance')}>
-                    <Text style={styles.input}>Insurance Expiry: {insuranceExpiry.toDateString()}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => showDatePicker('roadWorthiness')}>
-                    <Text style={styles.input}>Road Worthiness Expiry: {roadWorthinessExpiry.toDateString()}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => showDatePicker('hackneyPermit')}>
-                    <Text style={styles.input}>Hackney Permit Expiry: {hackneyPermitExpiry.toDateString()}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.addButton} onPress={addVehicle}>
-                    {isSaving ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Submit</Text>
+                <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+                  <View style={styles.modalContent}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter Vehicle No."
+                      value={vehicleInput}
+                      onChangeText={setVehicleInput}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter Vehicle Brand"
+                      value={vehicleBrand}
+                      onChangeText={setVehicleBrand}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter Vehicle Color"
+                      value={vehicleColor}
+                      onChangeText={setVehicleColor}
+                    />
+                    <SearchableDropdown
+                      onItemSelect={(item) => setTonnageInput(item.name)}
+                      containerStyle={styles.dropdownContainer}
+                      textInputStyle={styles.dropdownInput}
+                      itemStyle={styles.dropdownItem}
+                      itemTextStyle={styles.dropdownItemText}
+                      itemsContainerStyle={styles.dropdownItemsContainer}
+                      items={tonnageItems}
+                      placeholder={tonnageInput ? tonnageItems.find((c) => c.name === tonnageInput)?.name : 'Select Tonnage..'}
+                      resetValue={false}
+                      underlineColorAndroid="transparent"
+                      defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}
+                    />
+                    <TouchableOpacity onPress={() => showDatePicker('insurance')}>
+                      <Text style={styles.input}>Insurance Expiry: {insuranceExpiry.toDateString()}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => showDatePicker('roadWorthiness')}>
+                      <Text style={styles.input}>Road Worthiness Expiry: {roadWorthinessExpiry.toDateString()}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => showDatePicker('hackneyPermit')}>
+                      <Text style={styles.input}>Hackney Permit Expiry: {hackneyPermitExpiry.toDateString()}</Text>
+                    </TouchableOpacity>
+                    {_showDatePicker && (
+                      <View>
+                        <DateTimePicker
+                          value={
+                            currentDateType === 'insurance'
+                              ? insuranceExpiry
+                              : currentDateType === 'roadWorthiness'
+                              ? roadWorthinessExpiry
+                              : hackneyPermitExpiry
+                          }
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={handleDateChange}
+                        />
+                       
+                      </View>
                     )}
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <Text style={styles.closeButton}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
+
+                    <TouchableOpacity style={styles.addButton} onPress={addVehicle}>
+                      {isSaving ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.buttonText}>Submit</Text>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setModalVisible(false)}>
+                      <Text style={styles.closeButton}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
             </Modal>
 
             <Modal visible={detailsModalVisible} transparent animationType="slide">
               <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Vehicle Details</Text>
-                  <Text style={styles.detailText}>Vehicle No: {selectedVehicle?.vehicleNo}</Text>
-                  <Text style={styles.detailText}>Tonnage: {selectedVehicle?.tonnage}</Text>
-                  <Text style={styles.detailText}>Brand: {selectedVehicle?.brand}</Text>
-                  <Text style={styles.detailText}>Color: {selectedVehicle?.color}</Text>
-                  <Text style={styles.detailText}>Insurance Expiry: {selectedVehicle?.insuranceExpiry}</Text>
-                  <Text style={styles.detailText}>Road Worthiness Expiry: {selectedVehicle?.roadWorthinessExpiry}</Text>
-                  <Text style={styles.detailText}>Hackney Permit Expiry: {selectedVehicle?.hackneyPermitExpiry}</Text>
-                  {isEditing ? (
-                    <>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter Vehicle No."
-                        value={vehicleInput}
-                        onChangeText={setVehicleInput}
-                      />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter Vehicle Brand"
-                        value={vehicleBrand}
-                        onChangeText={setVehicleBrand}
-                      />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter Vehicle Color"
-                        value={vehicleColor}
-                        onChangeText={setVehicleColor}
-                      />
-                      <SearchableDropdown
-                        onItemSelect={(item) => setTonnageInput(item.name)}
-                        containerStyle={styles.dropdownContainer}
-                        textInputStyle={styles.dropdownInput}
-                        itemStyle={styles.dropdownItem}
-                        itemTextStyle={styles.dropdownItemText}
-                        itemsContainerStyle={styles.dropdownItemsContainer}
-                        items={tonnageItems}
-                        placeholder="Select Tonnage"
-                        resetValue={false}
-                        underlineColorAndroid="transparent"
-                        defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}
-                      />
-                      <TouchableOpacity onPress={() => showDatePicker('insurance')}>
-                        <Text style={styles.input}>Insurance Expiry: {insuranceExpiry.toDateString()}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => showDatePicker('roadWorthiness')}>
-                        <Text style={styles.input}>Road Worthiness Expiry: {roadWorthinessExpiry.toDateString()}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => showDatePicker('hackneyPermit')}>
-                        <Text style={styles.input}>Hackney Permit Expiry: {hackneyPermitExpiry.toDateString()}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.addButton} onPress={handleSave}>
-                        {isSaving ? (
-                          <ActivityIndicator color="#fff" />
-                        ) : (
-                          <Text style={styles.buttonText}>Save Changes</Text>
+                <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>Vehicle Details</Text>
+                    <Text style={styles.detailText}>Vehicle No: {selectedVehicle?.vehicleNo}</Text>
+                    <Text style={styles.detailText}>Tonnage: {selectedVehicle?.tonnage}</Text>
+                    <Text style={styles.detailText}>Brand: {selectedVehicle?.brand}</Text>
+                    <Text style={styles.detailText}>Color: {selectedVehicle?.color}</Text>
+                    <Text style={styles.detailText}>Insurance Expiry: {selectedVehicle?.insuranceExpiry}</Text>
+                    <Text style={styles.detailText}>Road Worthiness Expiry: {selectedVehicle?.roadWorthinessExpiry}</Text>
+                    <Text style={styles.detailText}>Hackney Permit Expiry: {selectedVehicle?.hackneyPermitExpiry}</Text>
+                    {isEditing ? (
+                      <>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter Vehicle No."
+                          value={vehicleInput}
+                          onChangeText={setVehicleInput}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter Vehicle Brand"
+                          value={vehicleBrand}
+                          onChangeText={setVehicleBrand}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter Vehicle Color"
+                          value={vehicleColor}
+                          onChangeText={setVehicleColor}
+                        />
+                        <SearchableDropdown
+                          onItemSelect={(item) => setTonnageInput(item.name)}
+                          containerStyle={styles.dropdownContainer}
+                          textInputStyle={styles.dropdownInput}
+                          itemStyle={styles.dropdownItem}
+                          itemTextStyle={styles.dropdownItemText}
+                          itemsContainerStyle={styles.dropdownItemsContainer}
+                          items={tonnageItems}
+                          placeholder={tonnageInput ? tonnageItems.find((c) => c.name === tonnageInput)?.name : 'Select Tonnage..'}
+                          resetValue={false}
+                          underlineColorAndroid="transparent"
+                          defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}
+                        />
+                        <TouchableOpacity onPress={() => showDatePicker('insurance')}>
+                          <Text style={styles.input}>Insurance Expiry: {insuranceExpiry.toDateString()}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => showDatePicker('roadWorthiness')}>
+                          <Text style={styles.input}>Road Worthiness Expiry: {roadWorthinessExpiry.toDateString()}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => showDatePicker('hackneyPermit')}>
+                          <Text style={styles.input}>Hackney Permit Expiry: {hackneyPermitExpiry.toDateString()}</Text>
+                        </TouchableOpacity>
+                        {_showDatePicker && (
+                          <DateTimePicker
+                            value={
+                              currentDateType === 'insurance'
+                                ? insuranceExpiry
+                                : currentDateType === 'roadWorthiness'
+                                ? roadWorthinessExpiry
+                                : hackneyPermitExpiry
+                            }
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleDateChange}
+                          />
                         )}
+                        <TouchableOpacity style={styles.addButton} onPress={handleSave}>
+                          {isSaving ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={styles.buttonText}>Save Changes</Text>
+                          )}
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <TouchableOpacity style={styles.addButton} onPress={handleEdit}>
+                        <Text style={styles.buttonText}>Edit</Text>
                       </TouchableOpacity>
-                    </>
-                  ) : (
-                    <TouchableOpacity style={styles.addButton} onPress={handleEdit}>
-                      <Text style={styles.buttonText}>Edit</Text>
+                    )}
+                    <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
+                      <Text style={styles.closeButton}>Close</Text>
                     </TouchableOpacity>
-                  )}
-                  <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
-                    <Text style={styles.closeButton}>Close</Text>
-                  </TouchableOpacity>
-                </View>
+                  </View>
+                </ScrollView>
               </View>
             </Modal>
-
-            <DateTimePickerModal
-              isVisible={isDatePickerVisible}
-              mode="date"
-              onConfirm={handleConfirm}
-              onCancel={hideDatePicker}
-            />
           </View>
         </TouchableWithoutFeedback>
       </ScrollView>
@@ -795,8 +852,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalContent: { backgroundColor: "white", padding: 20, borderRadius: 10, width: "80%" },
+  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", width:'100%' },
+  modalContent: { backgroundColor: "white", padding: 20, borderRadius: 10, width: "95%" },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -808,17 +869,19 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   closeButton: { textAlign: "center", marginTop: 10, color: "red" },
-  noResults: { textAlign: "center", marginTop: 10, fontSize: 16, color: "gray" },
+  noResults: { textAlign: "center", marginTop: 10, fontSize: 16, color: "gray",  alignSelf: 'center' },
   dropdownContainer: {
-    paddingHorizontal: 10,
     marginVertical: 8,
   },
   dropdownInput: {
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
+    height: 50,
     backgroundColor: "#f3f3f3",
+    borderRadius: 10,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    fontFamily: "Nunito",
+    color: "#000",
+    marginVertical: 8,
   },
   dropdownItem: {
     padding: 10,
@@ -833,5 +896,17 @@ const styles = StyleSheet.create({
   },
   dropdownItemsContainer: {
     maxHeight: 150,
+  },
+  dismissButton: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  dismissButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

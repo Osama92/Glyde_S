@@ -296,6 +296,7 @@ const { width } = Dimensions.get("window");
 type Vehicle = {
   vehicleNo: string;
   tonnage: string;
+  tons: number;
   brand: string;
   color: string;
   insuranceExpiry: string;
@@ -307,6 +308,7 @@ export default function Details() {
   const [transporterName, setTransporterName] = useState<string | null>(null);
   const [vehicleInput, setVehicleInput] = useState<string>("");
   const [tonnageInput, setTonnageInput] = useState<string>("");
+  const [tons, setTons] = useState<number | null>(null);
   const [vehicleBrand, setVehicleBrand] = useState<string>("");
   const [vehicleColor, setVehicleColor] = useState<string>("");
   const [insuranceExpiry, setInsuranceExpiry] = useState<Date>(new Date());
@@ -327,8 +329,13 @@ export default function Details() {
   // Tonnage dropdown items
   const [tonnageItems, setTonnageItems] = useState([
     { id: 1, name: "Bus 1 ton" },
-    { id: 2, name: "Bus 3 ton" },
-    { id: 3, name: "Truck 4 ton" },
+    { id: 3, name: "Bus 3 ton" },
+    { id: 4, name: "Truck 4 ton" },
+    { id: 5, name: "Truck 5 ton" },
+    { id: 10, name: "Truck 10 ton" },
+    { id: 15, name: "Truck 15 ton" },
+    { id: 20, name: "Truck 20 ton" },
+    { id: 30, name: "Truck 30 ton" },
   ]);
 
   const [fontsLoaded] = useFonts({
@@ -367,6 +374,7 @@ export default function Details() {
         vehicleSnapshot.docs.map((doc) => ({
           vehicleNo: doc.id,
           tonnage: doc.data().tonnage || "N/A",
+          tons: doc.data().tons || "N/A",
           brand: doc.data().brand || "N/A",
           color: doc.data().color || "N/A",
           insuranceExpiry: doc.data().insuranceExpiry?.toDate().toDateString() || "N/A",
@@ -390,6 +398,7 @@ export default function Details() {
       const vehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", vehicleInput);
       await setDoc(vehicleDocRef, {
         tonnage: tonnageInput,
+        tons: tons,
         brand: vehicleBrand,
         color: vehicleColor,
         insuranceExpiry,
@@ -402,6 +411,7 @@ export default function Details() {
         {
           vehicleNo: vehicleInput,
           tonnage: tonnageInput,
+          tons: tons as number,
           brand: vehicleBrand,
           color: vehicleColor,
           insuranceExpiry: insuranceExpiry.toDateString(),
@@ -411,6 +421,7 @@ export default function Details() {
       ]);
       setVehicleInput("");
       setTonnageInput("");
+      setTons(null);
       setVehicleBrand("");
       setVehicleColor("");
       setInsuranceExpiry(new Date());
@@ -446,9 +457,7 @@ export default function Details() {
     setShowDatePicker(false); // Hide the picker on Android
   };
 
-  const dismissDatePicker = () => {
-    setShowDatePicker(false); // Manually dismiss the picker
-  };
+  
 
   const handleVehiclePress = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
@@ -459,6 +468,7 @@ export default function Details() {
     setIsEditing(true);
     setVehicleInput(selectedVehicle?.vehicleNo || "");
     setTonnageInput(selectedVehicle?.tonnage || "");
+    setTons(selectedVehicle?.tons || 0);
     setVehicleBrand(selectedVehicle?.brand || "");
     setVehicleColor(selectedVehicle?.color || "");
     setInsuranceExpiry(new Date(selectedVehicle?.insuranceExpiry || new Date()));
@@ -487,6 +497,7 @@ export default function Details() {
                 const newVehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", vehicleInput);
                 await setDoc(newVehicleDocRef, {
                   tonnage: tonnageInput,
+                  tons: tons as number,
                   brand: vehicleBrand,
                   color: vehicleColor,
                   insuranceExpiry,
@@ -499,6 +510,7 @@ export default function Details() {
                 const vehicleDocRef = doc(db, "transporter", transporterName, "VehicleNo", selectedVehicle.vehicleNo);
                 await updateDoc(vehicleDocRef, {
                   tonnage: tonnageInput,
+                  tons: tons as number,
                   brand: vehicleBrand,
                   color: vehicleColor,
                   insuranceExpiry,
@@ -514,6 +526,7 @@ export default function Details() {
                     ? {
                         vehicleNo: vehicleInput, // Update the vehicle number if changed
                         tonnage: tonnageInput,
+                        tons: tons as number,
                         brand: vehicleBrand,
                         color: vehicleColor,
                         insuranceExpiry: insuranceExpiry.toDateString(),
@@ -610,23 +623,26 @@ export default function Details() {
                     <TextInput
                       style={styles.input}
                       placeholder="Enter Vehicle No."
+                      placeholderTextColor={"#000"}
                       value={vehicleInput}
                       onChangeText={setVehicleInput}
                     />
                     <TextInput
                       style={styles.input}
                       placeholder="Enter Vehicle Brand"
+                      placeholderTextColor={"#000"}
                       value={vehicleBrand}
                       onChangeText={setVehicleBrand}
                     />
                     <TextInput
                       style={styles.input}
                       placeholder="Enter Vehicle Color"
+                      placeholderTextColor={"#000"}
                       value={vehicleColor}
                       onChangeText={setVehicleColor}
                     />
                     <SearchableDropdown
-                      onItemSelect={(item) => setTonnageInput(item.name)}
+                      onItemSelect={(item) => {setTonnageInput(item.name), setTons(item.id)}}
                       containerStyle={styles.dropdownContainer}
                       textInputStyle={styles.dropdownInput}
                       itemStyle={styles.dropdownItem}
@@ -634,6 +650,7 @@ export default function Details() {
                       itemsContainerStyle={styles.dropdownItemsContainer}
                       items={tonnageItems}
                       placeholder={tonnageInput ? tonnageItems.find((c) => c.name === tonnageInput)?.name : 'Select Tonnage..'}
+                      placeholderTextColor={"#000"}
                       resetValue={false}
                       underlineColorAndroid="transparent"
                       defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}
@@ -697,23 +714,26 @@ export default function Details() {
                         <TextInput
                           style={styles.input}
                           placeholder="Enter Vehicle No."
+                          placeholderTextColor={"#000"}
                           value={vehicleInput}
                           onChangeText={setVehicleInput}
                         />
                         <TextInput
                           style={styles.input}
                           placeholder="Enter Vehicle Brand"
+                          placeholderTextColor={"#000"}
                           value={vehicleBrand}
                           onChangeText={setVehicleBrand}
                         />
                         <TextInput
                           style={styles.input}
                           placeholder="Enter Vehicle Color"
+                          placeholderTextColor={"#000"}
                           value={vehicleColor}
                           onChangeText={setVehicleColor}
                         />
                         <SearchableDropdown
-                          onItemSelect={(item) => setTonnageInput(item.name)}
+                          onItemSelect={(item) => {setTonnageInput(item.name), setTons(item.id)}}
                           containerStyle={styles.dropdownContainer}
                           textInputStyle={styles.dropdownInput}
                           itemStyle={styles.dropdownItem}
@@ -721,6 +741,7 @@ export default function Details() {
                           itemsContainerStyle={styles.dropdownItemsContainer}
                           items={tonnageItems}
                           placeholder={tonnageInput ? tonnageItems.find((c) => c.name === tonnageInput)?.name : 'Select Tonnage..'}
+                          placeholderTextColor={"#000"}
                           resetValue={false}
                           underlineColorAndroid="transparent"
                           defaultIndex={tonnageItems.findIndex((item) => item.name === tonnageInput)}

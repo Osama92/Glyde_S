@@ -788,7 +788,7 @@ export default function CreateShipment() {
     }
 
     try {
-      const routesSnapshot = await getDocs(collection(db, "routes")); // Replace "routes" with your actual collection name
+      const routesSnapshot = await getDocs(collection(db, "routes")); 
       const filtered = routesSnapshot.docs
         .filter((doc) => doc.data().tonnage === parseInt(tonnageValue, 10)) // Assuming "tonnage" is a field in the document
         .map((doc) => ({
@@ -879,6 +879,7 @@ export default function CreateShipment() {
                 setSelectedT(item.name);
               }}
               placeholder="Select a Transporter"
+              placeholderTextColor={"#000"}
               containerStyle={styles.dropdownContainer}
               textInputStyle={styles.input}
               itemStyle={styles.item}
@@ -909,6 +910,7 @@ export default function CreateShipment() {
                   items={filteredVehicleNumbers}
                   onItemSelect={(item: DropdownItem) => setSelectedItem(item.name)}
                   placeholder="Select a Vehicle No"
+                  placeholderTextColor={"#000"}
                   containerStyle={styles.dropdownContainer}
                   textInputStyle={styles.input}
                   itemStyle={styles.item}
@@ -937,6 +939,7 @@ export default function CreateShipment() {
             <Text>Contact Number</Text>
             <TextInput
               placeholder="Mobile Number"
+              placeholderTextColor={"#000"}
               value={mobileNumber}
               onChangeText={setMobileNumber}
               keyboardType="phone-pad"
@@ -945,6 +948,7 @@ export default function CreateShipment() {
             <Text>Driver Name</Text>
             <TextInput
               placeholder="Driver Name"
+              placeholderTextColor={"#000"}
               value={driverName}
               onChangeText={setDriverName}
               keyboardType="default"
@@ -955,6 +959,7 @@ export default function CreateShipment() {
             <Text style={styles.title}>Filter Routes by Tonnage</Text>
             <TextInput
               placeholder="Enter Tonnage (e.g., 20)"
+              placeholderTextColor={"#000"}
               value={tonnage}
               onChangeText={handleTonnageChange}
               keyboardType="numeric"
@@ -973,6 +978,7 @@ export default function CreateShipment() {
                     setFreightCost(item.freight || null); // Set freight cost when a route is selected
                   }}
                   placeholder="Select a Route"
+                  placeholderTextColor={"#000"}
                   containerStyle={styles.dropdownContainer}
                   textInputStyle={styles.input}
                   itemStyle={styles.item}

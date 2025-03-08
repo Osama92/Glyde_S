@@ -27,22 +27,23 @@ export default function ManageDriver() {
   const [driverPhoto, setDriverPhoto] = useState<string | null>(null);
   const [licencePhoto, setLicencePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [transporters, setTransporters] = useState<any[]>([]); // State to store transporters
-  const [loadingTransporters, setLoadingTransporters] = useState(false); // Loading state for transporters
+  const [transporters, setTransporters] = useState<any[]>([]);
+  const [loadingTransporters, setLoadingTransporters] = useState(false);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
 
   const [fontsLoaded] = useFonts({
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
-  // Fetch transporters from Firestore
   useEffect(() => {
     const fetchTransporters = async () => {
       setLoadingTransporters(true);
       try {
         const transportersQuery = query(
           collection(db, 'transporter'),
-          where('loadingPoint', '==', 'Agbara') // Filter transporters with loadingPoint = 'agbara'
+          where('loadingPoint', '==', 'Agbara')
         );
         const querySnapshot = await getDocs(transportersQuery);
         const transportersList = querySnapshot.docs.map((doc) => ({
@@ -61,6 +62,21 @@ export default function ManageDriver() {
     fetchTransporters();
   }, []);
 
+  const fetchVehicles = async (transporterId: string) => {
+    try {
+      const vehiclesQuery = query(collection(db, 'transporter', transporterId, 'VehicleNo'));
+      const querySnapshot = await getDocs(vehiclesQuery);
+      const vehiclesList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(), // Include all fields from Firestore
+      }));
+      setVehicles(vehiclesList);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      alert('Failed to fetch vehicles.');
+    }
+  };
+
   const pickImage = async (setImage: React.Dispatch<React.SetStateAction<string | null>>) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -69,7 +85,7 @@ export default function ManageDriver() {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri); // Fix for accessing the `uri` property
+      setImage(result.assets[0].uri);
     }
   };
 
@@ -81,7 +97,7 @@ export default function ManageDriver() {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri); // Fix for accessing the `uri` property
+      setImage(result.assets[0].uri);
     }
   };
 
@@ -94,7 +110,7 @@ export default function ManageDriver() {
     setLoading(true);
 
     try {
-      const docId = `${transporter}-${vehicleNo}`; // Customize document ID logic if needed
+      const docId = `${transporter}-${vehicleNo}`;
       await setDoc(doc(db, 'DriverOnBoarding', docId), {
         vehicleNo,
         transporter,
@@ -104,7 +120,6 @@ export default function ManageDriver() {
         licencePhoto,
       });
       alert('Data saved successfully!');
-      //router.back();
       setVehicleNo('');
       setTransporter('');
       setDriverName('');
@@ -136,7 +151,6 @@ export default function ManageDriver() {
           />
         </View>
 
-        {/* Image Upload here */}
         <View style={styles.imageUploadContainer}>
           <Text style={styles.imageUploadText}>Insert Driver Photo here</Text>
           <View style={styles.imageActions}>
@@ -162,21 +176,15 @@ export default function ManageDriver() {
           {licencePhoto && <Image source={{ uri: licencePhoto }} style={styles.image} />}
         </View>
 
-        <TextInput
-          placeholder="Vehicle No"
-          value={vehicleNo}
-          onChangeText={setVehicleNo}
-          style={styles.input}
-          placeholderTextColor='#000'
-        />
-
-        {/* Searchable Dropdown for Transporter */}
         {loadingTransporters ? (
           <ActivityIndicator size="small" color="orange" />
         ) : (
           <SearchableDropdown
             onTextChange={(text: string) => setTransporter(text)}
-            onItemSelect={(item: any) => setTransporter(item.name)} 
+            onItemSelect={(item: any) => {
+              setTransporter(item.name);
+              fetchVehicles(item.id); // Fetch vehicles for the selected transporter
+            }}
             containerStyle={styles.dropdownContainer}
             textInputStyle={styles.dropdownInput}
             items={transporters.map((transporter) => ({
@@ -190,6 +198,46 @@ export default function ManageDriver() {
             underlineColorAndroid="transparent"
           />
         )}
+
+        <SearchableDropdown
+          onTextChange={(text: string) => setVehicleNo(text)}
+          onItemSelect={(item: any) => {
+            setVehicleNo(item.id);
+            setSelectedVehicle(item); // Update selectedVehicle with full details
+          }}
+          containerStyle={styles.dropdownContainer}
+          textInputStyle={styles.dropdownInput}
+          items={vehicles.map((vehicle) => ({
+            id: vehicle.id,
+            name: vehicle.id, // Display vehicle number in the dropdown
+            ...vehicle, // Include all fields from Firestore
+          }))}
+          placeholder={vehicleNo ? vehicleNo : 'Select Vehicle No'}
+          placeholderTextColor="#000"
+          resetValue={false}
+          itemStyle={styles.item}
+          underlineColorAndroid="transparent"
+        />
+
+        {selectedVehicle && (
+          <>
+            <TextInput
+              placeholder="Tonnage"
+              value={selectedVehicle.tonnage || ''}
+              style={styles.input}
+              placeholderTextColor='#000'
+              editable={false}
+            />
+            <TextInput
+              placeholder="Tons"
+              value={selectedVehicle.tons?.toString() || ''}
+              style={styles.input}
+              placeholderTextColor='#000'
+              editable={false}
+            />
+          </>
+        )}
+
         <TextInput
           placeholder="Driver Name"
           value={driverName}
@@ -299,7 +347,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   dropdownContainer: {
-    
     marginBottom: 20,
   },
   dropdownInput: {
@@ -310,7 +357,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontFamily: 'Nunito',
     height: 50,
-    //backgroundColor: "#f9f9f9",
   },
   item: {
     padding: 10,

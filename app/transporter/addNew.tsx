@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   dropdownItemsContainer: {
-    maxHeight: 150,
+    maxHeight: 400,
   },
   dismissButton: {
     backgroundColor: "green",

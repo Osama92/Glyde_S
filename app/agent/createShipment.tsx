@@ -268,36 +268,25 @@ export default function CreateShipment() {
             {selectedVehicleDetails && (
               <>
                 <Text style={styles.title}>Vehicle Details</Text>
-                <TextInput
-                  placeholder="Tonnage"
-                  value={selectedVehicleDetails.tonnage}
-                  style={styles.input}
-                  placeholderTextColor="#000"
-                  editable={false}
-                />
-                <TextInput
-                  placeholder="Tons"
-                  value={selectedVehicleDetails.tons?.toString()}
-                  style={styles.input}
-                  placeholderTextColor="#000"
-                  editable={false}
-                />
+                
+                <Text>A {selectedVehicleDetails.tonnage} is a commercial vehicle designed for the efficient transportation of goods, typically handling payloads of up to {selectedVehicleDetails.tons},000 kg</Text>
+                
               </>
             )}
 
             <Text style={styles.title}>Driver Details</Text>
-            <Text>Contact Number</Text>
+            <Text style={{marginBottom:15}}>Contact Number</Text>
             <TextInput
-              placeholder="Mobile Number"
+              placeholder=" Enter Reachable Mobile Number"
               placeholderTextColor={"#000"}
               value={mobileNumber}
               onChangeText={setMobileNumber}
               keyboardType="phone-pad"
               style={styles.input}
             />
-            <Text>Driver Name</Text>
+            <Text style={{marginBottom:15}}>Driver Name</Text>
             <TextInput
-              placeholder="Driver Name"
+              placeholder="Enter Driver Name"
               placeholderTextColor={"#000"}
               value={driverName}
               onChangeText={setDriverName}
@@ -339,7 +328,7 @@ export default function CreateShipment() {
                 )}
               </>
             ) : (
-              <Text style={styles.noRoutesText}>No routes created for this tonnage.</Text>
+              <Text style={styles.noRoutesText}>No routes created for this tonnage. <Text style={{fontWeight:'bold', color:'black'}}>{selectedVehicleDetails.tonnage}</Text></Text>
             )}
           </ScrollView>
 
@@ -365,6 +354,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
     marginTop: 10,
+    fontWeight:'bold'
   },
   dropdownContainer: {
     marginBottom: 20,
@@ -375,6 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     fontSize: 16,
+    marginBottom: 20,
   },
   item: {
     padding: 10,
@@ -400,6 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "red",
     marginTop: 10,
+    alignSelf:'center'
   },
   loading: {
     flex: 1,

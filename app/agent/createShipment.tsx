@@ -148,6 +148,8 @@ export default function CreateShipment() {
     const shipmentData = {
       transporter: selectedT,
       vehicleNo: selectedItem,
+      tonnage: selectedVehicleDetails?.tonnage,
+      tons: selectedVehicleDetails.tons,
       mobileNumber,
       driverName,
       route: selectedRoute.name, // Save the selected route
@@ -269,7 +271,7 @@ export default function CreateShipment() {
               <>
                 <Text style={styles.title}>Vehicle Details</Text>
                 
-                <Text>A {selectedVehicleDetails.tonnage} is a commercial vehicle designed for the efficient transportation of goods, typically handling payloads of up to {selectedVehicleDetails.tons},000 kg</Text>
+                <Text>A {selectedVehicleDetails?.tonnage} is a commercial vehicle designed for the efficient transportation of goods, typically handling payloads of up to {selectedVehicleDetails.tons},000 kg</Text>
                 
               </>
             )}
@@ -328,7 +330,7 @@ export default function CreateShipment() {
                 )}
               </>
             ) : (
-              <Text style={styles.noRoutesText}>No routes created for this tonnage. <Text style={{fontWeight:'bold', color:'black'}}>{selectedVehicleDetails.tonnage}</Text></Text>
+              <Text style={styles.noRoutesText}>No routes created for this tonnage. <Text style={{fontWeight:'bold', color:'black'}}>{selectedVehicleDetails?.tonnage}</Text></Text>
             )}
           </ScrollView>
 

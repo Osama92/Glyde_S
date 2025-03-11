@@ -24,7 +24,7 @@ const CheckLoadingPointOccurrences = ({ searchValue }) => {
 
         // Get the count of documents that match the query
         setCount(querySnapshot.size);
-        console.log("Count of occurrences:", querySnapshot.size);
+      
 
         // Stop loading once data is fetched
         setLoading(false);

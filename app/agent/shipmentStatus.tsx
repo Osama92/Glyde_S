@@ -18,9 +18,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { Link, router } from "expo-router";
-import * as Print from "expo-print";
-import { shareAsync } from "expo-sharing";
+import { router } from "expo-router";
 
 const db = getFirestore();
 
@@ -133,113 +131,6 @@ export default function ShipmentsScreen() {
     setModalVisible(true);
   };
 
-  // const generatePDF = async (shipment: any) => {
-  //   const html = `
-  //     <html>
-  //       <body>
-  //         <h1>DELIVERY NOTE</h1>
-  //         <h2>Lorem Ipsum Dolor</h2>
-  //         <p>Your address, ABC-123</p>
-  //         <p>+1234 56 789</p>
-  //         <p>mail@company.com</p>
-  //         <p>www.website.com</p>
-  //         <h3>Reference No.</h3>
-  //         <p>Invoice Date</p>
-  //         <p>Order No.</p>
-  //         <p>Client No.</p>
-  //         <p>Carrier</p>
-  //         <p>Delivery Method</p>
-  //         <p>Total Weight</p>
-  //         <h3>Name</h3>
-  //         <p>Address</p>
-  //         <p>City, State</p>
-  //         <p>ZIP</p>
-  //         <table>
-  //           <tr>
-  //             <th>No.</th>
-  //             <th>Item Code</th>
-  //             <th>Item Description</th>
-  //             <th>Quantity</th>
-  //             <th>Total</th>
-  //           </tr>
-  //           ${shipment.deliveries?.map((delivery: any, index: number) => `
-  //             <tr>
-  //               <td>${index + 1}</td>
-  //               <td>${delivery.id}</td>
-  //               <td>Item Description</td>
-  //               <td>Quantity</td>
-  //               <td>Total</td>
-  //             </tr>
-  //           `).join('')}
-  //         </table>
-  //         <h3>Items received by:</h3>
-  //         <p>Print Name: ______</p>
-  //         <p>Signature: Date: ______</p>
-  //         <p>Returns must be made within 30 days. Please use the included return label. Thank you!</p>
-  //       </body>
-  //     </html>
-  //   `;
-  
-  //   const { uri } = await Print.printToFileAsync({ html });
-  //   await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
-  // };
-
-
-  const generatePDF = async (delivery: any) => {
-    const html = `
-      <html>
-        <body>
-          <h1>DELIVERY NOTE</h1>
-          <h2>Lorem Ipsum Dolor</h2>
-          <p>Your address, ABC-123</p>
-          <p>+1234 56 789</p>
-          <p>mail@company.com</p>
-          <p>www.website.com</p>
-  
-          <h3>Delivery Details</h3>
-          <p>Delivery Number: ${delivery.id}</p>
-          <p>Customer: ${delivery.customer}</p>
-          <p>Address: ${delivery.address}</p>
-          <p>Shipment: ${delivery.shipment}</p>
-          <p>Created At: ${new Date(delivery.createdAt).toLocaleString()}</p>
-  
-          <h3>Materials</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <th style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">No.</th>
-              <th style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">Material Name</th>
-              <th style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">Total Weight (kg)</th>
-            </tr>
-            ${delivery.materials.map(
-              (material: any, index: number) => `
-              <tr>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${material.name}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${material.totalWeight}</td>
-              </tr>
-            `
-            ).join('')}
-          </table>
-  
-          <h3>Items received by:</h3>
-          <p>Print Name: ______</p>
-          <p>Signature: Date: ______</p>
-  
-          <p style="font-style: italic; text-align: center;">
-            Returns must be made within 30 days. Please use the included return label. Thank you!
-          </p>
-        </body>
-      </html>
-    `;
-  
-    const { uri } = await Print.printToFileAsync({ html });
-    await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
-  };
-  const handleWaybillPress = async (shipment: any) => {
-    await generatePDF(shipment);
-  }
-  
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchShipments().finally(() => setRefreshing(false));
@@ -266,8 +157,7 @@ export default function ShipmentsScreen() {
           keyExtractor={(item) => item.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => {router.push(`/agent/waybill?id=${item.id}`), handleWaybillPress(item)}}>
-              <View style={styles.shipmentCard}>
+            <View style={styles.shipmentCard}>
               <Text style={styles.shipmentTitle}>Shipment ID: {item.id}</Text>
               <Text style={styles.shipmentDetails}>Vehicle No: {item.vehicleNo}</Text>
               <Text>Status: {item.statusId ? statusOptions.find((s) => s.id === item.statusId)?.status : "Pending"}</Text>
@@ -287,8 +177,6 @@ export default function ShipmentsScreen() {
                   <Text style={{color:'white'}}>Change Status</Text>
                 </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-         
           )}
         />
       )}

@@ -158,7 +158,7 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "column" }}>
             
-        <Text>Winter is coming</Text>
+        <Text>Kings Landing</Text>
       
             </View>
           </View>
@@ -270,6 +270,13 @@ export default function Dashboard() {
             <Image source={require('../../assets/images/material.png')} style={{width: 30, height:30}}/>
           </TouchableOpacity>
           <Text style={{textAlign:'center'}}>Create Material</Text>
+          </View>
+
+          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
+          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/invoice')}>
+            <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
+          </TouchableOpacity>
+          <Text style={{textAlign:'center'}}>Create Invoice</Text>
           </View>
 
         

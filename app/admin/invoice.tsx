@@ -592,6 +592,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -605,6 +607,7 @@ const InvoiceScreen = () => {
   const [billTo, setBillTo] = useState("FMCG Distribution Ltd");
   const [billToAddress, setBillToAddress] = useState("No.1, Cocoa Industries Road, Ogba, Ikeja, Lagos state, Nigeria.");
   const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
+  const [shipmentNo, setShipmentNo] = useState("");
   const [date, setDate] = useState(new Date().toLocaleDateString());
   const [truckType, setTruckType] = useState("20T");
   const [description, setDescription] = useState("FFF 117 XC - Delivery to Abuja from Ajao");
@@ -612,13 +615,14 @@ const InvoiceScreen = () => {
   const [numberOfCustomers, setNumberOfCustomers] = useState("1");
   const [numberOfLocations, setNumberOfLocations] = useState("1");
   const [serviceCharge, setServiceCharge] = useState("5000.00");
-  const [vat, setVat] = useState("375.00");
+  const [vat, setVat] = useState("0.00");
   const [bankName, setBankName] = useState("Parallex Bank");
   const [accountName, setAccountName] = useState("Glyde Systems Services LTD");
   const [accountNumber, setAccountNumber] = useState("1000209551");
   const [logoUri, setLogoUri] = useState(null);
   const [logoBase64, setLogoBase64] = useState(null); // Store base64-encoded image
   const [isGenerating, setIsGenerating] = useState(false);
+  const [items, setItems] = useState([{ description: "", quantity: "", unitPrice: "" }]);
 
   // Generate a random invoice number
   function generateInvoiceNumber() {
@@ -658,7 +662,37 @@ const InvoiceScreen = () => {
     return total.toFixed(2);
   };
 
+  const calculateVAT = () => {
+    const total = parseFloat(calculateTotal());
+    const vatAmount = (total * 7.5) / 100;
+    setVat(vatAmount.toFixed(2));
+  };
+
+  const addItem = () => {
+    setItems([...items, { description: "", quantity: "", unitPrice: "" }]);
+  };
+
+  const handleItemChange = (text, index, field) => {
+    const updatedItems = [...items];
+    updatedItems[index][field] = text;
+    setItems(updatedItems);
+  };
+
   const generateInvoiceHTML = () => {
+    const itemsHTML = items
+      .map(
+        (item: any, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.description}</td>
+          <td>${item.quantity}</td>
+          <td>₦${item.unitPrice}</td>
+          <td>₦${item.quantity * item.unitPrice}</td>
+        </tr>
+      `
+      )
+      .join("");
+
     return `
       <html>
         <head>
@@ -706,30 +740,21 @@ const InvoiceScreen = () => {
                 ${logoBase64 ? `<img src="${logoBase64}" class="logo" alt="Company Logo" />` : ""}
                 <h2>INVOICE #${invoiceNumber}</h2>
                 <p>Date: ${date}</p>
+                <p>Shipment No: ${shipmentNo}</p>
               </div>
             </div>
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Truck Type</th>
+                  <th>#</th>
                   <th>Description</th>
+                  <th>Quantity</th>
                   <th>Unit Price</th>
-                  <th>Number of Customers</th>
-                  <th>Number of Locations</th>
                   <th>Total</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>${date}</td>
-                  <td>${truckType}</td>
-                  <td>${description}</td>
-                  <td>₦${unitPrice}</td>
-                  <td>${numberOfCustomers}</td>
-                  <td>${numberOfLocations}</td>
-                  <td>₦${calculateTotal()}</td>
-                </tr>
+                ${itemsHTML}
               </tbody>
             </table>
             <div class="invoice-total">Total: ₦${calculateTotal()}</div>
@@ -769,121 +794,164 @@ const InvoiceScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title>Create Invoice</Title>
-          <Button mode="contained" onPress={pickLogo} style={styles.button}>
-            Select Logo
-          </Button>
-          {logoUri && <Image source={{ uri: logoUri }} style={styles.logo} />}
-          <TextInput
-            style={styles.input}
-            placeholder="Biller Name"
-            value={billerName}
-            onChangeText={setBillerName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Biller Address"
-            value={billerAddress}
-            onChangeText={setBillerAddress}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Bill To"
-            value={billTo}
-            onChangeText={setBillTo}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Bill To Address"
-            value={billToAddress}
-            onChangeText={setBillToAddress}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Date"
-            value={date}
-            onChangeText={setDate}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Truck Type"
-            value={truckType}
-            onChangeText={setTruckType}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Description"
-            value={description}
-            onChangeText={setDescription}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Unit Price"
-            value={unitPrice}
-            onChangeText={setUnitPrice}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Number of Customers"
-            value={numberOfCustomers}
-            onChangeText={setNumberOfCustomers}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Number of Locations"
-            value={numberOfLocations}
-            onChangeText={setNumberOfLocations}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Service Charge"
-            value={serviceCharge}
-            onChangeText={setServiceCharge}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="VAT 7.5% Service Charge"
-            value={vat}
-            onChangeText={setVat}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Bank Name"
-            value={bankName}
-            onChangeText={setBankName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Account Name"
-            value={accountName}
-            onChangeText={setAccountName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Account Number"
-            value={accountNumber}
-            onChangeText={setAccountNumber}
-            keyboardType="numeric"
-          />
-          <Button
-            mode="contained"
-            onPress={generatePDF}
-            style={styles.generateButton}
-            disabled={isGenerating}
-          >
-            {isGenerating ? <ActivityIndicator color="#fff" /> : "Generate PDF"}
-          </Button>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <ScrollView style={styles.container}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title>Create Invoice</Title>
+            <Button mode="contained" onPress={pickLogo} style={styles.button}>
+              Select Logo
+            </Button>
+            {logoUri && <Image source={{ uri: logoUri }} style={styles.logo} />}
+            <TextInput
+              style={styles.input}
+              placeholder="Biller Name"
+              value={billerName}
+              onChangeText={setBillerName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Biller Address"
+              value={billerAddress}
+              onChangeText={setBillerAddress}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Bill To"
+              value={billTo}
+              onChangeText={setBillTo}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Bill To Address"
+              value={billToAddress}
+              onChangeText={setBillToAddress}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Shipment No"
+              value={shipmentNo}
+              onChangeText={setShipmentNo}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Date"
+              value={date}
+              onChangeText={setDate}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Truck Type"
+              value={truckType}
+              onChangeText={setTruckType}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Description"
+              value={description}
+              onChangeText={setDescription}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Unit Price"
+              value={unitPrice}
+              onChangeText={(text) => {
+                setUnitPrice(text);
+                calculateVAT();
+              }}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Number of Customers"
+              value={numberOfCustomers}
+              onChangeText={(text) => {
+                setNumberOfCustomers(text);
+                calculateVAT();
+              }}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Number of Locations"
+              value={numberOfLocations}
+              onChangeText={setNumberOfLocations}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Service Charge"
+              value={serviceCharge}
+              onChangeText={setServiceCharge}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="VAT 7.5% Service Charge"
+              value={vat}
+              editable={false}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Bank Name"
+              value={bankName}
+              onChangeText={setBankName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Account Name"
+              value={accountName}
+              onChangeText={setAccountName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Account Number"
+              value={accountNumber}
+              onChangeText={setAccountNumber}
+              keyboardType="numeric"
+            />
+            {items.map((item, index) => (
+              <View key={index} style={styles.itemRow}>
+                <TextInput
+                  style={[styles.input, styles.itemInput]}
+                  placeholder="Description"
+                  value={item.description}
+                  onChangeText={(text) => handleItemChange(text, index, "description")}
+                />
+                <TextInput
+                  style={[styles.input, styles.itemInput]}
+                  placeholder="Quantity"
+                  value={item.quantity}
+                  onChangeText={(text) => handleItemChange(text, index, "quantity")}
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={[styles.input, styles.itemInput]}
+                  placeholder="Unit Price"
+                  value={item.unitPrice}
+                  onChangeText={(text) => handleItemChange(text, index, "unitPrice")}
+                  keyboardType="numeric"
+                />
+              </View>
+            ))}
+            <Button mode="contained" onPress={addItem} style={styles.button}>
+              Add Item
+            </Button>
+            <Button
+              mode="contained"
+              onPress={generatePDF}
+              style={styles.generateButton}
+              disabled={isGenerating}
+            >
+              {isGenerating ? <ActivityIndicator color="#fff" /> : "Generate PDF"}
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -902,6 +970,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  itemInput: {
+    flex: 1,
+    marginRight: 5,
   },
   button: {
     marginTop: 10,

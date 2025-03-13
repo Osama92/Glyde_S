@@ -224,14 +224,14 @@ const TransporterScreen = () => {
             <View style={{width:70, height:70, backgroundColor: 'lightgreen', borderRadius: 35}}></View>
         </View>
         <View style={{width:'100%', height: 60, marginTop:10, flexDirection:'row', alignItems:'center', justifyContent:'space-between', backgroundColor:'#f5f5f5', borderRadius: 10, paddingHorizontal: 5}}>
-            {["Overview", "Shipping", "Tracking", "Invoice", "Manage"].map((item) => (
+            {["Overview", "Shipping", "Tracking", "Invoice", "Routes"].map((item) => (
         <TouchableOpacity
           key={item}
           style={[
             styles.button,
             pressedButton === item && styles.pressedButton,
           ]}
-          onPressIn={() => handlePressIn(item)}
+          onPressIn={() => {handlePressIn(item); router.push(`/transporter/${item.toLowerCase()}`)}}
           onPressOut={handlePressOut}
         >
           <Text style={styles.buttonText}>{item}</Text>

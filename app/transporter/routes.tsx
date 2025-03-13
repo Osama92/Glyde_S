@@ -532,7 +532,7 @@ export default function Details() {
                     {/* Render rows */}
                     {item.data.map((row, rowIndex) => (
                       <View key={rowIndex} style={styles.row}>
-                        {Object.values(row).map((cell, cellIndex) => (
+                        {Object.values(row).map((cell: any, cellIndex) => (
                           <Text key={cellIndex} style={styles.cell}>{cell}</Text>
                         ))}
                       </View>
@@ -636,3 +636,4 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
+

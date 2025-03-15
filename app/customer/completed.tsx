@@ -35,7 +35,7 @@ const labels = ["Loaded", "Dispatched", "In-Transit", "Delivered"];
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
 
-export default function Dashboard() {
+export default function Completed() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -250,79 +250,6 @@ export default function Dashboard() {
    
   }, [displayName]);
 
-  const renderDeliveryItem = ({ item }: { item: any }, isPending: boolean) => {
-    const handlePress = (deliveryItem: any) => {
-      setSelectedItem(deliveryItem);
-      setModalVisible(true);
-    };
-
-    const confirmDelivery = () => {
-      if (selectedItem) {
-        markAsReceived(selectedItem);
-      }
-      setModalVisible(false);
-    };
-
-    return (
-      <View style={styles.deliveryItem}>
-        <Text style={styles.deliveryNumber}>
-          <Text style={{ fontSize: 14 }}>Delivery No:</Text>{" "}
-          {item.deliveryNumber}
-        </Text>
-        <View style={{flexDirection:'row', width: '80%', height: 30, justifyContent:'space-between'}}>
-          <Text style={{fontWeight:'bold', fontSize: 25}}>{vehicleNo}</Text>
-          <Text style={{ fontSize: 18}}><Text style={{fontSize: 13}}>Delivery Driver Name: </Text>{driverName}</Text>
-        </View>
-        {item.eta ? (<Text> Your delivery is arriving in: {item.eta}</Text>) : (<Text> Your delivery is arriving soon</Text>)}
-        <StepIndicator
-          customStyles={customStyles}
-          currentPosition={item.statusId}
-          labels={labels}
-          stepCount={4}
-        />
-        {isPending && (
-          <TouchableOpacity
-            style={[styles.button, item.statusId < 3 && styles.disabledButton]}
-            onPress={() => handlePress(item)}
-            disabled={item.statusId < 3}
-          >
-            <Text style={styles.buttonText}>Delivered</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Confirmation Modal */}
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>
-                Are you sure you want to mark this delivery as received?
-              </Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.buttonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.confirmButton}
-                  onPress={confirmDelivery}
-                >
-                  <Text style={styles.buttonText}>Confirm</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </View>
-    );
-  };
-
   const renderCompletedItem = ({ item }: { item: any }, isPending: boolean) => (
     <View style={styles.deliveryItem1}>
       <View style={{ flexDirection: "column", width: "70%", height: "100%" }}>
@@ -354,170 +281,21 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.TopNav}>
-        <View style={styles.leftNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "50%",
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={
-                profileImage
-                  ? { uri: profileImage }
-                  : require("../../assets/images/icon.png")
-              }
-              resizeMode="cover"
-              style={{ width: 40, height: 40, borderRadius: 20, margin: 5 }}
-            />
-            <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Hi, {displayName}
-              </Text>
-              <TouchableOpacity
-                onPress={() =>
-                  router.push(
-                    `/customer/editProfile?collectionName=${collectionName}&id=${id}`
-                  )
-                }
-              >
-                <Text>Edit my Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View
-            style={{
-              width: "100%",
-              height: "50%",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Pin.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20 }}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-              <Text>{locationLabel}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.rightNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "46%",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Trackk.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20 }}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Delivery History
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/customer/completed")}
-              >
-                <Text>View completed deliveries</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View
-            style={{
-              width: "100%",
-              height: "46%",
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#F6984C",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Support.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20 }}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-              <TouchableOpacity>
-                <Text>Support Desk</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </View>
+         <View style={styles.topSection}>
+                            
+                              <Text style={{ fontSize: 20, fontWeight: "bold" }}>Back</Text>
+                           
+                            <TouchableOpacity onPress={() => router.push('/customer/dashboard')}>
+                            <Image
+                              source={require("../../assets/images/Back.png")}
+                              style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
+                            />
+                            </TouchableOpacity>
+                          </View>
       <ScrollView style={{ width: "100%" }}
                   refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                   }>
-        <Text style={styles.sectionTitle}>Incoming Deliveries</Text>
-
-        {loadingPending ? (
-          <ActivityIndicator
-            size="small"
-            color="orange"
-            style={{ marginTop: 15 }}
-          />
-        ) : pendingDeliveries.length === 0 ? (
-          <Text style={styles.emptyText}>No pending deliveries.</Text>
-        ) : (
-          <FlatList
-            data={pendingDeliveries}
-            keyExtractor={(item) => item.id}
-            renderItem={(item) => renderDeliveryItem(item, true)}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-        )}
-
         {/* Completed Deliveries Section */}
         <Text style={styles.sectionTitle}>Completed Transactions</Text>
         {loadingCompleted ? (
@@ -688,5 +466,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     fontSize: 20,
     marginTop: 15,
+  },
+  topSection: {
+    width: '100%',
+    height: '10%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
 });

@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [collectionName, setCollectionName] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [vehicleNo, setVehicleNo] = useState<string | null>(null);
+  const [driverName, setDriverName] = useState<string | null>(null);
   const [loadingPending, setLoadingPending] = useState<boolean>(true);
   const [loadingCompleted, setLoadingCompleted] = useState<boolean>(true);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
@@ -178,6 +179,7 @@ export default function Dashboard() {
           ) {
             pending.push(delivery);
             setVehicleNo(shipmentData.vehicleNo);
+            setDriverName(shipmentData.driverName);
           } else if (delivery.statusId === 4) {
             completed.push(delivery);
           }
@@ -267,10 +269,11 @@ export default function Dashboard() {
           <Text style={{ fontSize: 14 }}>Delivery No:</Text>{" "}
           {item.deliveryNumber}
         </Text>
-        <Text style={{ fontSize: 14, marginBottom: 20 }}>
-          <Text>Vehicle No:</Text> {vehicleNo}
-        </Text>
-        {(item.eta) && (<Text> Your delivery is arriving in: {item.eta}</Text>)}
+        <View style={{flexDirection:'row', width: '80%', height: 30, justifyContent:'space-between'}}>
+          <Text style={{fontWeight:'bold', fontSize: 25}}>{vehicleNo}</Text>
+          <Text style={{ fontSize: 18}}><Text style={{fontSize: 13}}>Delivery Driver Name: </Text>{driverName}</Text>
+        </View>
+        {item.eta ? (<Text> Your delivery is arriving in: {item.eta}</Text>) : (<Text> Your delivery is arriving soon</Text>)}
         <StepIndicator
           customStyles={customStyles}
           currentPosition={item.statusId}

@@ -938,7 +938,7 @@ type Coordinate = {
 
  // Custom marker images
  const currentLocationMarker = require("../../assets/images/van.png");
- const destinationMarker = require("../../assets/images/Pin.png");
+ const destinationMarker = require("../../assets/images/down.png");
 
 const NotificationScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -1685,7 +1685,7 @@ const NotificationScreen = () => {
                   : require("../../assets/images/icon.png")
               }
               resizeMode="cover"
-              style={{ width: 60, height: 60, borderRadius: 30, margin: 5, borderWidth:3, borderColor:'black' }}
+              style={{ width: 60, height: 60, borderRadius: 30, margin: 5, borderWidth:3, borderColor:'#F38301' }}
             />
             <View style={{ flexDirection: "column" }}>
               <Text style={{ fontWeight: "bold", marginBottom: 3 }}>
@@ -1708,8 +1708,8 @@ const NotificationScreen = () => {
       {/* Modal for Shipment Details */}
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
-          <Text style={{marginBottom:30, fontSize: 25, textAlign:'center'}}>Shipment Number: <Text style={{ fontWeight: "bold" }}>{shipmentData?.id}</Text> has been assigned to you!</Text>
-          <Text style={{marginBottom:30, fontSize: 20, textAlign:'center'}}>Route Assigned: {shipmentData?.route}</Text>
+          <Text style={{marginBottom:30, fontSize: 25, textAlign:'center', color: 'white'}}>Hello! 👋🏻, Shipment Number: <Text style={{ fontWeight: "bold" }}>{shipmentData?.id}</Text> has been assigned to you!</Text>
+          <Text style={{marginBottom:30, fontSize: 20, textAlign:'center', color: 'white'}}>Route Assigned: {shipmentData?.route}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.rejectButton} onPress={handleDecline}>
               <Text style={styles.buttonText}>Decline</Text>
@@ -1791,7 +1791,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F38301",
     padding: 10,
     borderRadius: 50,
     elevation: 5,

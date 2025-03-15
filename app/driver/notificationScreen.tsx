@@ -74,11 +74,6 @@ const NotificationScreen = () => {
  
 
 
-
-
-
-
-
   // Haversine formula to calculate distance between two coordinates
   const haversineDistance = (coord1: Coordinate, coord2: Coordinate) => {
     const toRad = (x: number) => (x * Math.PI) / 180;
@@ -289,57 +284,6 @@ const NotificationScreen = () => {
   
     return optimizedDeliveries;
   };
-
-  // const fetchDeliveryOrder = async (shipmentId: string) => {
-  //   try {
-  //     const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
-  //     const querySnapshot = await getDocs(deliveriesQuery);
-  //     const deliveries: Delivery[] = querySnapshot.docs.map((doc) => ({
-  //       id: doc.id,
-  //       customer: doc.data().customer,
-  //       address: doc.data().address,
-  //       latitude: doc.data().latitude,
-  //       longitude: doc.data().longitude,
-  //     }));
-  
-  //     if (location) {
-  //       const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
-  //       setDeliveryOrder(optimizedDeliveries);
-  //     }
-  //   } catch (error: any) {
-  //     Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
-  //   }
-  // };
-
-
-  // const fetchDeliveryOrder = async (shipmentId: string) => {
-  //   try {
-  //     const deliveriesQuery = query(collection(db, "Shipment", shipmentId, "deliveries"));
-  //     const querySnapshot = await getDocs(deliveriesQuery);
-  //     const deliveries: Delivery[] = querySnapshot.docs
-  //       .map((doc) => ({
-  //         id: doc.id,
-  //         customer: doc.data().customer,
-  //         address: doc.data().address,
-  //         latitude: doc.data().latitude,
-  //         longitude: doc.data().longitude,
-  //         statusId: doc.data().statusId, // Add statusId to Delivery type
-  //       }))
-  //       .filter((delivery) => delivery.statusId !== 4); // Filter out completed deliveries
-  
-  //     if (location) {
-  //       const optimizedDeliveries = await optimizeDeliveryOrder(deliveries, location);
-  //       setDeliveryOrder(optimizedDeliveries);
-  //     }
-  
-  //     // If all deliveries are completed, update shipment statusId to 4
-  //     if (deliveries.length === 0) {
-  //       await updateDoc(doc(db, "Shipment", shipmentId), { statusId: 4 });
-  //     }
-  //   } catch (error: any) {
-  //     Alert.alert("Error", `Failed to fetch deliveries: ${error.message}`);
-  //   }
-  // };
 
   useEffect(() => {
   if (!shipmentId) return;
@@ -554,42 +498,6 @@ const NotificationScreen = () => {
     return points;
   };
 
-  // useEffect(() => {
-  //   const fetchLocation = async () => {
-  //     try {
-  //       if (Platform.OS === "web") {
-  //         navigator.geolocation.getCurrentPosition(
-  //           (position) => {
-  //             setLocation({
-  //               latitude: position.coords.latitude,
-  //               longitude: position.coords.longitude,
-  //             });
-  //           },
-  //           (error) => {
-  //             Alert.alert("Error", `Failed to get location: ${error.message}`);
-  //           }
-  //         );
-  //       } else {
-  //         let { status } = await Location.requestForegroundPermissionsAsync();
-  //         if (status !== "granted") {
-  //           setErrorMsg("Location permission denied.");
-  //           Alert.alert("Error", "Permission to access location was denied.");
-  //           return;
-  //         }
-
-  //         let currentLocation = await Location.getCurrentPositionAsync({});
-  //         setLocation({
-  //           latitude: currentLocation.coords.latitude,
-  //           longitude: currentLocation.coords.longitude,
-  //         });
-  //       }
-  //     } catch (error: any) {
-  //       Alert.alert("Error", `Failed to fetch location: ${error.message}`);
-  //     }
-  //   };
-  //   fetchLocation();
-  // }, []);
-
   useEffect(() => {
     const fetchLocation = async () => {
       try {
@@ -626,20 +534,6 @@ const NotificationScreen = () => {
     fetchLocation();
   }, []);
 
-  // const handleAccept = async () => {
-  //   if (!shipmentId) return;
-  //   try {
-  //     const shipmentDocRef = doc(db, "Shipment", shipmentId);
-  //     await updateDoc(shipmentDocRef, { statusId: 3 });
-  //     Alert.alert("Success", "Shipment accepted.");
-  //     setIsModalVisible(false);
-  //     setShowRedDot(false);
-  //     startTracking();
-  //     fetchDeliveryOrder(shipmentId); // Refresh deliveries after accepting shipment
-  //   } catch (error: any) {
-  //     Alert.alert("Error", `Failed to update shipment: ${error.message}`);
-  //   }
-  // };
   const handleAccept = async () => {
     if (!shipmentId) return;
     try {
@@ -702,12 +596,7 @@ const NotificationScreen = () => {
     }
   };
 
-  // const handleDeliveryTap = (delivery: Delivery) => {
-  //   setSelectedDelivery(delivery);
-  //   if (location) {
-  //     fetchDirections(location, delivery); // Fetch directions to the selected delivery
-  //   }
-  // };
+ 
 
   if (loading || !location) {
     return (
@@ -769,7 +658,7 @@ const NotificationScreen = () => {
               key={delivery.id}
               coordinate={{ latitude: delivery.latitude, longitude: delivery.longitude }}
               title={delivery.address}
-              pinColor="blue" // Blue marker for destinations
+              pinColor="Orange" // Blue marker for destinations
             />
           ))}
           {/* Polyline for directions */}

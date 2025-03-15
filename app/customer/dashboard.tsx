@@ -518,26 +518,6 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Completed Deliveries Section */}
-        <Text style={styles.sectionTitle}>Completed Transactions</Text>
-        {loadingCompleted ? (
-          <ActivityIndicator
-            size="small"
-            color="orange"
-            style={{ marginTop: 15 }}
-          />
-        ) : completedDeliveries.length === 0 ? (
-          <Text style={styles.emptyText}>No completed transactions.</Text>
-        ) : (
-          <FlatList
-            data={completedDeliveries}
-            keyExtractor={(item) => item.id}
-            renderItem={(item) => renderCompletedItem(item, false)}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-        )}
       </ScrollView>
     </View>
   );

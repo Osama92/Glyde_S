@@ -237,7 +237,7 @@ export default function Dashboard() {
     await fetchDeliveryDetails();
     setLoading(false);
     setRefreshing(false)
-    console.log("called")
+
   };
 
   useEffect(() => {

@@ -113,8 +113,8 @@ export default function ManageDriver() {
       const docId = `${transporter}-${vehicleNo}`;
       await setDoc(doc(db, 'DriverOnBoarding', docId), {
         vehicleNo,
-        tonnage: selectedVehicle.tonnage,
-        tons: selectedVehicle.tons,
+        tonnage: selectedVehicle.tonnage as string,
+        tons: selectedVehicle.tons as number,
         transporter,
         driverName,
         mobileNumber,

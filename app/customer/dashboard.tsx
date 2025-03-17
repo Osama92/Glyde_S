@@ -429,12 +429,12 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: "column" }}>
               <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Delivery History
+                History
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/customer/completed")}
               >
-                <Text>View completed deliveries</Text>
+                <Text>Past deliveries</Text>
               </TouchableOpacity>
             </View>
           </View>

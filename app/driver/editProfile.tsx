@@ -185,6 +185,8 @@ const handleImageUpload = async () => {
         style={styles.input}
         value={profile.name}
         onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+        spellCheck={false}
+        autoCorrect={false}
       />
 
       {/* Display Email */}
@@ -192,7 +194,9 @@ const handleImageUpload = async () => {
       <TextInput
         style={styles.input}
         value={profile.email}
-        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+        onChangeText={(text) => setProfile((prev) => ({ ...prev, email: text }))}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       {/* Display password */}
@@ -200,7 +204,9 @@ const handleImageUpload = async () => {
       <TextInput
         style={styles.input}
         value={profile.password}
-        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+        onChangeText={(text) => setProfile((prev) => ({ ...prev, password: text }))}
+        spellCheck={false}
+        autoCorrect={false}
       />
 
       {/* Save Button */}
@@ -210,7 +216,7 @@ const handleImageUpload = async () => {
 
          
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={styles.logoutButton} onPress={()=>router.push('/credentials/signIn')}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
       

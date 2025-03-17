@@ -323,26 +323,7 @@ export default function Dashboard() {
     );
   };
 
-  const renderCompletedItem = ({ item }: { item: any }, isPending: boolean) => (
-    <View style={styles.deliveryItem1}>
-      <View style={{ flexDirection: "column", width: "70%", height: "100%" }}>
-        <Text style={styles.deliveryNumber}>{item.deliveryNumber}</Text>
-        <Text>Confirmed on: {item.deliveredAt}</Text>
-      </View>
-      <View
-        style={{
-          width: 100,
-          height: 40,
-          backgroundColor: "green",
-          borderRadius: 10,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ color: "#ffff" }}>Successful</Text>
-      </View>
-    </View>
-  );
+
 
   if (loading) {
     return (

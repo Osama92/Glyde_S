@@ -158,29 +158,60 @@ const handleImageUpload = async () => {
 
 
     // Fetch and update the user's current location in Firestore
+  // const updateLocation = async () => {
+  //   try {
+  //     setLocationUpdating(true);
+
+  //     // Request location permissions
+  //     let { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") {
+  //       Alert.alert("Permission Denied", "Allow location access to update your location.");
+  //       return;
+  //     }
+
+  //     // Get current location
+  //     let location = await Location.getCurrentPositionAsync({});
+  //     const { latitude, longitude } = location.coords;
+
+  //     const getAddress = async () => {
+  //       const address = await reverseGeocode(latitude, longitude);
+  //       setAddress(address)
+  //     };
+      
+  //     getAddress();
+
+  //     // Save location to Firestore
+  //     const docRef = doc(db, collectionName as string, id as string);
+  //     await setDoc(docRef, { location: { latitude, longitude, address } }, { merge: true });
+  //     Alert.alert("Success", "Location updated successfully!");
+  //   } catch (error) {
+  //     Alert.alert("Error", "Failed to update location!");
+  //     console.error(error);
+  //   } finally {
+  //     setLocationUpdating(false);
+  //   }
+  // };
+
   const updateLocation = async () => {
     try {
       setLocationUpdating(true);
-
+  
       // Request location permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert("Permission Denied", "Allow location access to update your location.");
         return;
       }
-
+  
       // Get current location
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-
-      const getAddress = async () => {
-        const address = await reverseGeocode(latitude, longitude);
-        setAddress(address)
-      };
-      
-      getAddress();
-
-      // Save location to Firestore
+  
+      // Get the address using reverse geocoding
+      const address = await reverseGeocode(latitude, longitude);
+      setAddress(address);
+  
+      // Save location and address to Firestore
       const docRef = doc(db, collectionName as string, id as string);
       await setDoc(docRef, { location: { latitude, longitude, address } }, { merge: true });
       Alert.alert("Success", "Location updated successfully!");

@@ -77,16 +77,39 @@ export default function Dashboard() {
     currentStepLabelColor: "#fe7013",
   };
 
+  // const reverseGeocode = async (latitude: number, longitude: number) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
+  //     );
+
+  //     if (response.data.status === "OK") {
+  //       return response.data.results[0].formatted_address; // First result is usually the most relevant
+  //     } else {
+  //       throw new Error("Geocoding failed.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error in reverse geocoding:", error);
+  //     return "Address not found";
+  //   }
+  // };
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`
-      );
-
+      // Check if latitude and longitude are valid
+      if (typeof latitude !== "number" || typeof longitude !== "number") {
+        throw new Error("Invalid latitude or longitude.");
+      }
+  
+      // Log the API request URL for debugging
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+      
+  
+      const response = await axios.get(url);
+  
       if (response.data.status === "OK") {
         return response.data.results[0].formatted_address; // First result is usually the most relevant
       } else {
-        throw new Error("Geocoding failed.");
+        throw new Error(`Geocoding failed: ${response.data.status}`);
       }
     } catch (error) {
       console.error("Error in reverse geocoding:", error);
@@ -101,14 +124,14 @@ export default function Dashboard() {
         Alert.alert("Error", "No phone number found. Please log in again.");
         return;
       }
-
+  
       for (const colName of collections) {
         const userQuery = query(
           collection(db, colName),
           where("phoneNumber", "==", phoneNumber)
         );
         const querySnapshot = await getDocs(userQuery);
-
+  
         if (!querySnapshot.empty) {
           const userDoc = querySnapshot.docs[0].data();
           setDisplayName(userDoc.name || "Unknown User");
@@ -117,18 +140,15 @@ export default function Dashboard() {
           const encodedID = encodeURIComponent(userDoc.uid);
           setId(encodedID);
           const { latitude, longitude } = userDoc.location || {};
-
-          const getAddress = async () => {
+  
+          // Check if latitude and longitude are valid
+          if (typeof latitude === "number" && typeof longitude === "number") {
             const address = await reverseGeocode(latitude, longitude);
-            if (userDoc.location != null) {
-              setLocationLabel("Verified");
-            } else {
-              setLocationLabel("Not Verified");
-            }
-          };
-
-          getAddress();
-
+            setLocationLabel("Verified");
+          } else {
+            setLocationLabel("Not Verified");
+          }
+  
           break;
         }
       }
@@ -136,6 +156,49 @@ export default function Dashboard() {
       Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
     }
   };
+
+  // const fetchUserDetails = async () => {
+  //   try {
+  //     const phoneNumber = await AsyncStorage.getItem("phoneNumber");
+  //     if (!phoneNumber) {
+  //       Alert.alert("Error", "No phone number found. Please log in again.");
+  //       return;
+  //     }
+
+  //     for (const colName of collections) {
+  //       const userQuery = query(
+  //         collection(db, colName),
+  //         where("phoneNumber", "==", phoneNumber)
+  //       );
+  //       const querySnapshot = await getDocs(userQuery);
+
+  //       if (!querySnapshot.empty) {
+  //         const userDoc = querySnapshot.docs[0].data();
+  //         setDisplayName(userDoc.name || "Unknown User");
+  //         setProfileImage(userDoc.imageUrl || null);
+  //         setCollectionName(colName);
+  //         const encodedID = encodeURIComponent(userDoc.uid);
+  //         setId(encodedID);
+  //         const { latitude, longitude } = userDoc.location || {};
+
+  //         const getAddress = async () => {
+  //           const address = await reverseGeocode(latitude, longitude);
+  //           if (userDoc.location != null) {
+  //             setLocationLabel("Verified");
+  //           } else {
+  //             setLocationLabel("Not Verified");
+  //           }
+  //         };
+
+  //         getAddress();
+
+  //         break;
+  //       }
+  //     }
+  //   } catch (error: any) {
+  //     Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
+  //   }
+  // };
 
   const fetchDeliveryDetails = async () => {
     if (!displayName) return;

@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   Image,
   TouchableOpacity,
   ScrollView,
-  StatusBar
+  StatusBar,
+  Animated,
+  Easing,
+  Dimensions
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -19,12 +21,10 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { app } from "../firebase";
-import { router, useLocalSearchParams, useGlobalSearchParams, } from "expo-router";
-import CheckValueInCollection from "../../app/count"
-
-
+import { router } from "expo-router";
 
 const db = getFirestore(app);
+const { width, height } = Dimensions.get('window');
 
 interface ShippingPointCounterProps {
   shippingPoint: string;
@@ -40,24 +40,38 @@ export default function Dashboard() {
   const [id, setId] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   
-
-  
-
-
+  // Animation setup
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinAnim.setValue(0);
+    }
+  }, [loading]);
 
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
 
+  useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        // Get phone number from AsyncStorage
         const phoneNumber = await AsyncStorage.getItem("phoneNumber");
         if (!phoneNumber) {
           Alert.alert("Error", "No phone number found. Please log in again.");
           return;
         }
 
-        // Search through collections to find the user
         for (const colName of collections) {
           const userQuery = query(
             collection(db, colName),
@@ -73,7 +87,6 @@ export default function Dashboard() {
             setCollectionName(colName);
             const encodedID = encodeURIComponent(userDoc.uid);
             setId(encodedID)
-            
             break;
           }
         }
@@ -86,37 +99,27 @@ export default function Dashboard() {
     };
 
     fetchUserDetails();
-    
-    //console.log(id)
   }, []);
 
-  
-  
-
   if (loading) {
-    
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="orange" />
+        <Animated.View style={[styles.loadingContainer, { transform: [{ rotate: spin }] }]}>
+          <Image
+            source={require('../../assets/images/Glyde.png')}
+            style={styles.loadingLogo}
+          />
+        </Animated.View>
       </View>
     );
   }
-
-  
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content"/>
       <View style={styles.TopNav}>
         <View style={styles.leftNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "50%",
-              alignItems: "center",
-            }}
-          >
+          <View style={{ flexDirection: "row", width: "100%", height: "50%", alignItems: "center" }}>
             <Image
               source={profileImage ? { uri: profileImage } : require('../../assets/images/icon.png')}
               resizeMode="cover"
@@ -131,25 +134,8 @@ export default function Dashboard() {
               </TouchableOpacity>
             </View>
           </View>
-          <View
-            style={{
-              width: "100%",
-              height: "50%",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          <View style={{ width: "100%", height: "50%", flexDirection: "row", alignItems: "center" }}>
+            <View style={styles.iconContainer}>
               <Image
                 source={require("../../assets/images/Pin.png")}
                 resizeMode="cover"
@@ -157,34 +143,13 @@ export default function Dashboard() {
               />
             </View>
             <View style={{ flexDirection: "column" }}>
-            
-        <Text>Kings Landing</Text>
-      
+              <Text>Kings Landing</Text>
             </View>
           </View>
         </View>
         <View style={styles.rightNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "46%",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          <View style={styles.navItem}>
+            <View style={styles.iconContainer}>
               <Image
                 source={require("../../assets/images/Trackk.png")}
                 resizeMode="cover"
@@ -201,27 +166,8 @@ export default function Dashboard() {
             </View>
           </View>
           
-          <View
-            style={{
-              width: "100%",
-              height: "46%",
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#F6984C",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          <View style={styles.navItem}>
+            <View style={[styles.iconContainer, { backgroundColor: "#F6984C" }]}>
               <Image
                 source={require("../../assets/images/Support.png")}
                 resizeMode="cover"
@@ -236,52 +182,37 @@ export default function Dashboard() {
           </View>
         </View>
       </View>
-      {/*Scroll View will live here */}
+      
       <ScrollView style={{ width: "100%", height: "70%"}}>
-
-        <View
-          style={{
-            width: "100%",
-            height: 130,
-            backgroundColor: "#f4f4f4",
-            borderRadius: 20,
-            flexDirection: 'row',
-            alignItems:'flex-start',
-            justifyContent: 'center'
-          }}
-        >
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push("/admin/addUser")}>
-            <Image source={require('../../assets/images/userIcon.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create User</Text>
+        <View style={styles.menuContainer}>
+          <View style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push("/admin/addUser")}>
+              <Image source={require('../../assets/images/userIcon.png')} style={{width: 30, height:30}}/>
+            </TouchableOpacity>
+            <Text style={styles.menuText}>Create User</Text>
           </View>
           
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/approve_onboard')}>
-            <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Vehicle Approval</Text>
+          <View style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/approve_onboard')}>
+              <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
+            </TouchableOpacity>
+            <Text style={styles.menuText}>Vehicle Approval</Text>
           </View>
 
-         
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/createMaterial')}>
-            <Image source={require('../../assets/images/material.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Material</Text>
+          <View style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/createMaterial')}>
+              <Image source={require('../../assets/images/material.png')} style={{width: 30, height:30}}/>
+            </TouchableOpacity>
+            <Text style={styles.menuText}>Create Material</Text>
           </View>
 
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/admin/invoice')}>
-            <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Invoice</Text>
+          <View style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/invoice')}>
+              <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
+            </TouchableOpacity>
+            <Text style={styles.menuText}>Create Invoice</Text>
           </View>
-
-        
         </View>
-       
       </ScrollView>
     </View>
   );
@@ -292,28 +223,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding:10,
-    backgroundColor:'#fff',
-    width:'100%',
-    height:'100%'
-
+    padding: 10,
+    backgroundColor: '#fff',
+    width: '100%',
+    height: '100%'
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  info: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  label: {
-    fontWeight: "bold",
+  loadingLogo: {
+    width: 100,
+    height: 100,
   },
   TopNav: {
     flexDirection: "row",
@@ -321,21 +248,63 @@ const styles = StyleSheet.create({
     height: 130,
     justifyContent: "space-between",
     alignItems: 'flex-end',
-    marginTop:20
+    marginTop: 20
   },
   leftNav: {
     backgroundColor: "#f4f4f4",
     width: "48%",
     height: "80%",
     borderRadius: 30,
-    marginBottom:10
+    marginBottom: 10
   },
   rightNav: {
-    //backgroundColor:'#f4f4f4',
     width: "48%",
     height: "80%",
     borderRadius: 30,
     justifyContent: "space-between",
-    marginBottom:10
+    marginBottom: 10
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#EDEBEB",
+    borderRadius: 20,
+    margin: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navItem: {
+    flexDirection: "row",
+    width: "100%",
+    height: "46%",
+    alignItems: "center",
+    backgroundColor: "#f4f4f4",
+    borderRadius: 30,
+  },
+  menuContainer: {
+    width: "100%",
+    height: 130,
+    backgroundColor: "#f4f4f4",
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center'
+  },
+  menuItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 70,
+    margin: 10
+  },
+  menuIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'lightgrey',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  menuText: {
+    textAlign: 'center'
+  }
 });

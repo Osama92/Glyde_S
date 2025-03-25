@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
-import { collection, getDocs, getFirestore, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -155,7 +155,7 @@ export default function CreateShipment() {
       route: selectedRoute.name, // Save the selected route
       freightCost: freightCost, // Save the freight cost
       statusId: 0,
-      createdAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
     };
 
     try {

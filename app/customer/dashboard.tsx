@@ -157,48 +157,6 @@ export default function Dashboard() {
     }
   };
 
-  // const fetchUserDetails = async () => {
-  //   try {
-  //     const phoneNumber = await AsyncStorage.getItem("phoneNumber");
-  //     if (!phoneNumber) {
-  //       Alert.alert("Error", "No phone number found. Please log in again.");
-  //       return;
-  //     }
-
-  //     for (const colName of collections) {
-  //       const userQuery = query(
-  //         collection(db, colName),
-  //         where("phoneNumber", "==", phoneNumber)
-  //       );
-  //       const querySnapshot = await getDocs(userQuery);
-
-  //       if (!querySnapshot.empty) {
-  //         const userDoc = querySnapshot.docs[0].data();
-  //         setDisplayName(userDoc.name || "Unknown User");
-  //         setProfileImage(userDoc.imageUrl || null);
-  //         setCollectionName(colName);
-  //         const encodedID = encodeURIComponent(userDoc.uid);
-  //         setId(encodedID);
-  //         const { latitude, longitude } = userDoc.location || {};
-
-  //         const getAddress = async () => {
-  //           const address = await reverseGeocode(latitude, longitude);
-  //           if (userDoc.location != null) {
-  //             setLocationLabel("Verified");
-  //           } else {
-  //             setLocationLabel("Not Verified");
-  //           }
-  //         };
-
-  //         getAddress();
-
-  //         break;
-  //       }
-  //     }
-  //   } catch (error: any) {
-  //     Alert.alert("Error", `Failed to fetch user detail: ${error.message}`);
-  //   }
-  // };
 
   const fetchDeliveryDetails = async () => {
     if (!displayName) return;

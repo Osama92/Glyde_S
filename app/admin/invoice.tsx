@@ -39,10 +39,10 @@ const InvoiceScreen = () => {
     shipmentNo: "", 
     truckType: "", 
     route: "", 
-    freightCost: "0.00", 
-    serviceCharge: "",
-    total: "0.00",
-    vat: "0.00"
+    freightCost: 0, 
+    serviceCharge: 0,
+    total: 0,
+    vat: 0
   }]);
 
   // Generate invoice number
@@ -54,14 +54,14 @@ const InvoiceScreen = () => {
   // Calculate item totals whenever freightCost or serviceCharge changes
   useEffect(() => {
     const updatedItems = items.map(item => {
-      const freight = parseFloat(item.freightCost) || 0;
-      const service = parseFloat(item.serviceCharge) || 0;
+      const freight = Number(item.freightCost) || 0;
+      const service = Number(item.serviceCharge) || 0;
       const total = freight + service;
-      const vat = (total * 0.075).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const vat = total * 0.075
       
       return {
         ...item,
-        total: total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        total, 
         vat
       };
     });
@@ -74,14 +74,14 @@ const InvoiceScreen = () => {
     let totalVat = 0;
 
     items.forEach(item => {
-      subtotal += parseFloat(item.total) || 0;
-      totalVat += parseFloat(item.vat) || 0;
+      subtotal += Number(item.total) || 0;
+      totalVat += Number(item.vat) || 0;
     });
-
+    const grandTotal = subtotal + totalVat;
     return {
-      subtotal: subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      totalVat: totalVat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      grandTotal: (subtotal + totalVat).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      subtotal: subtotal.toFixed(2),
+      totalVat: totalVat.toFixed(2),
+      grandTotal: grandTotal.toFixed(2)
     };
   };
 
@@ -118,10 +118,10 @@ const InvoiceScreen = () => {
       shipmentNo: "", 
       truckType: "", 
       route: "", 
-      freightCost: "0.00", 
-      serviceCharge: "",
-      total: "0.00",
-      vat: "0.00"
+      freightCost: 0, 
+      serviceCharge: 0,
+      total: 0,
+      vat: 0
     }]);
   };
 
@@ -133,9 +133,19 @@ const InvoiceScreen = () => {
   };
 
   // Handle item field changes
+  // const handleItemChange = (text, index, field) => {
+  //   const updatedItems = [...items];
+  //   updatedItems[index][field] = text;
+  //   setItems(updatedItems);
+  // };
   const handleItemChange = (text, index, field) => {
     const updatedItems = [...items];
-    updatedItems[index][field] = text;
+    // Convert to number if it's a numeric field
+    if (['freightCost', 'serviceCharge'].includes(field)) {
+      updatedItems[index][field] = text === '' ? 0 : parseFloat(text) || 0;
+    } else {
+      updatedItems[index][field] = text;
+    }
     setItems(updatedItems);
   };
 
@@ -430,7 +440,7 @@ const InvoiceScreen = () => {
                   <TextInput
                     style={[styles.input, styles.itemInput]}
                     placeholder="Freight Cost"
-                    value={item.freightCost}
+                    //value={item.freightCost}
                     onChangeText={(text) => handleItemChange(text, index, "freightCost")}
                     keyboardType="numeric"
                   />
@@ -440,7 +450,7 @@ const InvoiceScreen = () => {
                   <TextInput
                     style={[styles.input, styles.itemInput]}
                     placeholder="Service Charge"
-                    value={item.serviceCharge}
+                    //value={item.serviceCharge}
                     onChangeText={(text) => handleItemChange(text, index, "serviceCharge")}
                     keyboardType="numeric"
                   />

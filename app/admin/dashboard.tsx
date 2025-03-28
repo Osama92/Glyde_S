@@ -208,7 +208,7 @@ export default function Dashboard() {
 
           <View style={styles.menuItem}>
             <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/invoice')}>
-              <Image source={require('../../assets/images/cVan.png')} style={{width: 30, height:30}}/>
+              <Image source={require('../../assets/images/invoice.png')} style={{width: 30, height:30}}/>
             </TouchableOpacity>
             <Text style={styles.menuText}>Create Invoice</Text>
           </View>

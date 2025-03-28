@@ -9,6 +9,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity
 } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -16,9 +17,9 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { Button, Card, Title } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const InvoiceScreen = () => {
-  // Form state
   const [billerName, setBillerName] = useState("");
   const [billerAddress, setBillerAddress] = useState("");
   const [billTo, setBillTo] = useState("");
@@ -306,9 +307,18 @@ const InvoiceScreen = () => {
       style={{ flex: 1 }}
     >
       <ScrollView style={styles.container}>
+      <View style={styles.topSection}>
+                            
+                              <Text style={{fontWeight:'700', fontSize:20,marginLeft:10}}>Create Invoice</Text>
+                            <TouchableOpacity onPress={() => router.back()}>
+                            <Image
+                              source={require('../../assets/images/Back.png')}
+                              style={{ width: 30, resizeMode: 'contain', marginLeft: 15 }}
+                            />
+                            </TouchableOpacity>
+                          </View>
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Create Invoice</Title>
             
             {/* Logo and company info */}
             <Button mode="contained" onPress={pickLogo} style={styles.button}>
@@ -349,7 +359,7 @@ const InvoiceScreen = () => {
             {/* Invoice info */}
             <TextInput
               style={styles.input}
-              placeholder="Date"
+              placeholder="Invoice Date"
               value={date}
               onChangeText={setDate}
             />
@@ -435,7 +445,7 @@ const InvoiceScreen = () => {
                     keyboardType="numeric"
                   />
                   <View style={[styles.input, styles.itemInput, styles.totalContainer]}>
-                    <Text style={styles.totalLabel}>Subtotal:</Text>
+                    {/* <Text style={styles.totalLabel}>Subtotal:</Text> */}
                     <Text>₦{item.total}</Text>
                   </View>
                 </View>
@@ -469,8 +479,8 @@ const InvoiceScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#f5f5f5",
+    padding: 10,
+    backgroundColor: "#f3f3f3",
   },
   card: {
     marginBottom: 20,
@@ -546,6 +556,7 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 10,
     backgroundColor: "#6200ee",
+    marginBottom: 15
   },
   addButton: {
     marginTop: 10,
@@ -559,6 +570,15 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginBottom: 10,
+  },
+  topSection: {
+    width: '100%',
+    marginTop:20,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: 30,
+    
   },
 });
 

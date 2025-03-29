@@ -1,237 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   StyleSheet,
-//   KeyboardAvoidingView,
-//   Platform,
-//   Keyboard,
-//   TouchableWithoutFeedback,
-//   ActivityIndicator,
-//   Alert,
-//   Image,
-//   Animated
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { useRouter } from "expo-router";
-// import {
-//   getFirestore,
-//   doc,
-//   getDocs,
-//   query,
-//   where,
-//   collection,
-// } from "firebase/firestore";
-// import { app } from "../firebase";
-// import { useFonts } from "expo-font";
-
-// const db = getFirestore(app);
-
-// export default function SignIn() {
-//   const [phoneNumber, setPhoneNumber] = useState("");
-//   const [password, setPassword] = useState("");
-//   const [loading, setLoading] = useState(false);
-//   const router = useRouter();
-
-//   const [fontsLoaded] = useFonts({
-//     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
-//     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
-//   });
-
-//   if (!fontsLoaded) return null;
-
-//   useEffect(() => {
-//     // Load the persisted phone number from AsyncStorage
-//     const loadPhoneNumber = async () => {
-//       const savedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
-//       if (savedPhoneNumber) {
-//         setPhoneNumber(savedPhoneNumber);
-//       }
-//     };
-//     loadPhoneNumber();
-//   }, []);
-
-//   const dismissKeyboard = () => Keyboard.dismiss();
-
-//   const handleLogin = async () => {
-//     const collections = [
-//       "Admin",
-//       "deliverydriver",
-//       "customer",
-//       "fieldagent",
-//       "transporter",
-//     ]; // Add your collection names here
-//     let userFound = false;
-  
-//     if (!phoneNumber || !password) {
-//       Alert.alert("Error", "Please enter both phone number and password.");
-//       return;
-//     }
-  
-//     setLoading(true);
-  
-//     try {
-//       for (const collectionName of collections) {
-//         const userQuery = query(
-//           collection(db, collectionName), // Replace "db" with your Firestore instance
-//           where("phoneNumber", "==", phoneNumber)
-//         );
-  
-//         const querySnapshot = await getDocs(userQuery);
-  
-//         if (!querySnapshot.empty) {
-//           for (const doc of querySnapshot.docs) {
-//             const userData = doc.data();
-//             if (userData.password === password) {
-//               userFound = true;
-  
-//               // Save phone number to AsyncStorage for persistence
-//               await AsyncStorage.setItem("phoneNumber", phoneNumber);
-  
-//               // Redirect user based on their collection name
-//               let screen: any = "/credentials/whoami"; // Default screen
-//               if (collectionName === "customer") {
-//                 screen = "/customer/dashboard";
-//               } else if (collectionName === "deliverydriver") {
-//                 screen = "/driver/notificationScreen";
-//               } else if (collectionName === "fieldagent") {
-//                 screen = "/agent/dashboard";
-//               } else if (collectionName === "transporter") {
-//                 screen = "/transporter/dashboard";
-//               }else if (collectionName === "Admin") {
-//                 // screen = "/admin/approve_onboard";
-//                 screen = "/admin/dashboard";
-//               }
-  
-//               setLoading(false);
-//               router.push(screen);
-//               return; 
-//             }
-//           }
-//         }
-//       }
-  
-//       if (!userFound) {
-//         setLoading(false);
-//         Alert.alert("Error", "Invalid phone number or password.");
-//       }
-//     } catch (error: any) {
-//       setLoading(false);
-//       Alert.alert("Error", `Login failed: ${error.message}`);
-//     }
-//   };
-
-//   return (
-//     <KeyboardAvoidingView
-//       style={styles.container}
-//       behavior={Platform.OS === "ios" ? "padding" : undefined}
-//     >
-//       <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        
-
-//         <View style={styles.innerContainer}>
-
-//         <View style={styles.topSection}>
-//           <TouchableOpacity onPress={() => router.push("/credentials/signUp")}>
-//             <Text style={{fontSize:20}}>Back to sign up</Text>
-//           </TouchableOpacity>
-//           <Image
-//             source={require("../../assets/images/Back.png")}
-//             style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-//           />
-//         </View>
-
-//         <Image source={require('../../assets/images/signIn.png')} resizeMode='contain' style={{width:200, height:200}}/>
-
-//           <Text style={styles.title}>Login</Text>
-
-//           <TextInput
-//             placeholder="Phone Number"
-//             style={styles.input}
-//             keyboardType="phone-pad"
-//             value={phoneNumber}
-//             onChangeText={setPhoneNumber}
-//             clearButtonMode= 'while-editing'
-//           />
-
-//           <TextInput
-//             placeholder="Password"
-//             style={styles.input}
-//             secureTextEntry
-//             value={password}
-//             onChangeText={setPassword}
-//             placeholderTextColor={"grey"}
-//             autoCapitalize="none"
-//             clearButtonMode= 'while-editing'
-//           />
-
-//           {loading ? (
-//             <ActivityIndicator size="large" color="orange" />
-//           ) : (
-//             <TouchableOpacity style={styles.button} onPress={handleLogin}>
-//               <Text style={styles.buttonText}>Log In</Text>
-//             </TouchableOpacity>
-//           )}
-//         </View>
-//       </TouchableWithoutFeedback>
-//     </KeyboardAvoidingView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//   },
-//   innerContainer: {
-//     flex: 1,
-//     justifyContent: "center",
-//     padding: 20,
-//   },
-//   title: {
-//     fontSize: 40,
-//     fontWeight: "bold",
-//     textAlign: "left",
-//     marginBottom: 20,
-//     fontFamily: "Poppins",
-//   },
-//   input: {
-//     height: 50,
-//     width: "100%",
-//     backgroundColor: "#f5f5f5",
-//     borderRadius: 10,
-//     fontSize: 18,
-//     paddingHorizontal: 10,
-//     fontFamily: "Nunito",
-//     color: "#000",
-//     marginTop: 15,
-//   },
-//   button: {
-//     backgroundColor: "#000",
-//     paddingVertical: 15,
-//     borderRadius: 10,
-//     alignItems: "center",
-//     marginTop: 20,
-//     width:'50%',
-//     alignSelf:'center'
-//   },
-//   buttonText: {
-//     color: "#fff",
-//     fontSize: 20,
-//     fontFamily: 'Nunito'
-//   },
-//   topSection: {
-//     width: '100%',
-//     height: '20%',
-//     flexDirection: 'row-reverse',
-//     alignItems: 'center',
-//     justifyContent: 'flex-end',
-//   },
-// });
-
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -247,20 +13,18 @@ import {
   Image,
   Dimensions,
   Easing,
-  Alert
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  ScrollView
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import {
-  getFirestore,
-  doc,
-  getDocs,
-  query,
-  where,
-  collection,
-} from "firebase/firestore";
+import { getFirestore, doc, getDocs, query, where, collection } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const db = getFirestore(app);
 
@@ -268,9 +32,11 @@ export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [secureEntry, setSecureEntry] = useState(true);
   const router = useRouter();
   const spinAnim = useRef(new Animated.Value(0)).current;
-  const { width, height } = Dimensions.get('window');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { width } = Dimensions.get('window');
 
   const [fontsLoaded] = useFonts({
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
@@ -278,11 +44,28 @@ export default function SignIn() {
   });
 
   useEffect(() => {
+    // Entry animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+
+    const loadPhoneNumber = async () => {
+      const savedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
+      if (savedPhoneNumber) {
+        setPhoneNumber(savedPhoneNumber);
+      }
+    };
+    loadPhoneNumber();
+  }, []);
+
+  useEffect(() => {
     if (loading) {
       Animated.loop(
         Animated.timing(spinAnim, {
           toValue: 1,
-          duration: 2000,
+          duration: 1500,
           easing: Easing.linear,
           useNativeDriver: true,
         })
@@ -296,16 +79,6 @@ export default function SignIn() {
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
   });
-
-  useEffect(() => {
-    const loadPhoneNumber = async () => {
-      const savedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
-      if (savedPhoneNumber) {
-        setPhoneNumber(savedPhoneNumber);
-      }
-    };
-    loadPhoneNumber();
-  }, []);
 
   const dismissKeyboard = () => Keyboard.dismiss();
 
@@ -377,123 +150,275 @@ export default function SignIn() {
   if (!fontsLoaded) return null;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        <View style={styles.innerContainer}>
-          {/* Loading Overlay */}
-          {loading && (
-            <View style={styles.loadingOverlay}>
-              <Animated.View style={[styles.loadingContainer, { transform: [{ rotate: spin }] }]}>
-                <Image
-                  source={require('../../assets/images/Glyde.png')}
-                  style={styles.loadingLogo}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TouchableWithoutFeedback onPress={dismissKeyboard}>
+            <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
+              {/* Loading Overlay */}
+              {loading && (
+                <View style={styles.loadingOverlay}>
+                  <Animated.View style={[styles.loadingContainer, { transform: [{ rotate: spin }] }]}>
+                    <Image
+                      source={require('../../assets/images/Glyde.png')}
+                      style={styles.loadingLogo}
+                    />
+                  </Animated.View>
+                </View>
+              )}
+
+              {/* Header */}
+              <View style={styles.header}>
+                <TouchableOpacity 
+                  onPress={() => router.push("/credentials/signUp")}
+                  style={styles.backButton}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#333" />
+                  <Text style={styles.backText}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Main Content - Wrapped in a View with flexGrow */}
+              <View style={styles.contentContainer}>
+                <Image 
+                  source={require('../../assets/images/signIn.png')} 
+                  resizeMode='contain' 
+                  style={styles.illustration}
                 />
-              </Animated.View>
-            </View>
-          )}
 
-          <View style={styles.topSection}>
-            <TouchableOpacity onPress={() => router.push("/credentials/signUp")}>
-              <Text style={{fontSize:20}}>Back to sign up</Text>
-            </TouchableOpacity>
-            <Image
-              source={require("../../assets/images/Back.png")}
-              style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-            />
-          </View>
+                <Text style={styles.title}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to continue</Text>
 
-          <Image 
-            source={require('../../assets/images/signIn.png')} 
-            resizeMode='contain' 
-            style={{width:200, height:200}}
-          />
+                {/* Input Fields */}
+                <View style={styles.formContainer}>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Phone Number</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="call-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        placeholder="Enter your phone number"
+                        style={styles.input}
+                        keyboardType="phone-pad"
+                        value={phoneNumber}
+                        onChangeText={setPhoneNumber}
+                        clearButtonMode='while-editing'
+                        placeholderTextColor="#aaa"
+                      />
+                    </View>
+                  </View>
 
-          <Text style={styles.title}>Login</Text>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Password</Text>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                      <TextInput
+                        placeholder="Enter your password"
+                        style={styles.input}
+                        secureTextEntry={secureEntry}
+                        value={password}
+                        onChangeText={setPassword}
+                        placeholderTextColor="#aaa"
+                        autoCapitalize="none"
+                      />
+                      <TouchableOpacity 
+                        onPress={() => setSecureEntry(!secureEntry)}
+                        style={styles.eyeIcon}
+                      >
+                        <Ionicons 
+                          name={secureEntry ? "eye-off-outline" : "eye-outline"} 
+                          size={20} 
+                          color="#888" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-          <TextInput
-            placeholder="Phone Number"
-            style={styles.input}
-            keyboardType="phone-pad"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            clearButtonMode='while-editing'
-          />
+                  <TouchableOpacity style={styles.forgotPassword}>
+                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
 
-          <TextInput
-            placeholder="Password"
-            style={styles.input}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            placeholderTextColor={"grey"}
-            autoCapitalize="none"
-            clearButtonMode='while-editing'
-          />
+                {/* Login Button with Space */}
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.loginButton} 
+                    onPress={handleLogin} 
+                    disabled={loading}
+                  >
+                    <LinearGradient
+                      colors={['#F6984C', '#FF8C00']}
+                      style={styles.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      <Text style={styles.loginButtonText}>
+                        {loading ? 'Signing In...' : 'Sign In'}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={handleLogin} 
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+              {/* Footer - Now properly spaced */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Don't have an account?</Text>
+                <TouchableOpacity onPress={() => router.push("/credentials/signUp")}>
+                  <Text style={styles.signUpText}> Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 20, // Extra padding at bottom
   },
   innerContainer: {
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 25,
+  },
+  header: {
+    flexDirection: 'row',
+    paddingTop: Platform.OS === 'ios' ? 10 : 20,
+    paddingBottom: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 5,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  illustration: {
+    width: Dimensions.get('window').width * 0.6, // Responsive width
+    height: Dimensions.get('window').width * 0.6, // Responsive height
+    maxWidth: 220,
+    maxHeight: 220,
+    alignSelf: 'center',
+    marginBottom: 30,
   },
   title: {
-    fontSize: 40,
-    fontWeight: "bold",
-    textAlign: "left",
+    fontSize: 32,
+    fontFamily: 'Poppins',
+    color: '#333',
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 40,
+    fontFamily: 'Nunito',
+  },
+  formContainer: {
     marginBottom: 20,
-    fontFamily: "Poppins",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 8,
+    fontFamily: 'Nunito',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    height: 50,
-    width: "100%",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    fontSize: 18,
-    paddingHorizontal: 10,
-    fontFamily: "Nunito",
-    color: "#000",
-    marginTop: 15,
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    height: '100%',
+    fontFamily: 'Nunito',
   },
-  button: {
-    backgroundColor: "#000",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20,
-    width:'50%',
-    alignSelf:'center'
+  eyeIcon: {
+    padding: 10,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 20,
-    fontFamily: 'Nunito'
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
   },
-  topSection: {
-    width: '100%',
-    height: '20%',
-    flexDirection: 'row-reverse',
+  forgotPasswordText: {
+    color: '#F6984C',
+    fontSize: 14,
+    fontFamily: 'Nunito',
+  },
+  buttonContainer: {
+    marginBottom: 30, // Space between button and footer
+  },
+  loginButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#F6984C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  gradient: {
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontFamily: 'Nunito',
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingBottom: 30,
+    marginTop: 'auto', // Pushes footer to bottom
+  },
+  footerText: {
+    color: '#888',
+    fontSize: 14,
+    fontFamily: 'Nunito',
+  },
+  signUpText: {
+    color: '#F6984C',
+    fontSize: 14,
+    fontFamily: 'Nunito',
+    fontWeight: '600',
   },
   loadingOverlay: {
     position: 'absolute',
@@ -511,7 +436,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingLogo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
   },
 });

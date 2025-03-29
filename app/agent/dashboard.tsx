@@ -8,29 +8,19 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  StatusBar
+  StatusBar,
+  Animated,
+  Easing
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { app } from "../firebase";
-import { router, useLocalSearchParams, useGlobalSearchParams, } from "expo-router";
-import CheckValueInCollection from "../../app/count"
-
-
+import { router, useLocalSearchParams } from "expo-router";
+import CheckValueInCollection from "../../app/count";
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 
 const db = getFirestore(app);
-
-interface ShippingPointCounterProps {
-  shippingPoint: string;
-}
-
-const collections = ["deliverydriver", "customer", "fieldagent", "transporter"];
 
 export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -39,25 +29,19 @@ export default function Dashboard() {
   const [shippingPoint, setShippingPoint] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  
-
-  
-
-
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(300));
 
   useEffect(() => {
-
-
     const fetchUserDetails = async () => {
       try {
-        // Get phone number from AsyncStorage
         const phoneNumber = await AsyncStorage.getItem("phoneNumber");
         if (!phoneNumber) {
           Alert.alert("Error", "No phone number found. Please log in again.");
           return;
         }
 
-        // Search through collections to find the user
+        const collections = ["deliverydriver", "customer", "fieldagent", "transporter"];
         for (const colName of collections) {
           const userQuery = query(
             collection(db, colName),
@@ -69,15 +53,12 @@ export default function Dashboard() {
             const userDoc = querySnapshot.docs[0].data();
             setDisplayName(userDoc.name || "Unknown User");
             setProfileImage(userDoc.imageUrl || null);
-            setShippingPoint(userDoc.LoadingPoint || "Not Defined")
+            setShippingPoint(userDoc.LoadingPoint || "Not Defined");
             setCollectionName(colName);
-            const encodedID = encodeURIComponent(userDoc.uid);
-            setId(encodedID)
-            
+            setId(encodeURIComponent(userDoc.uid));
             break;
           }
         }
-
         setLoading(false);
       } catch (error: any) {
         setLoading(false);
@@ -87,278 +68,312 @@ export default function Dashboard() {
 
     fetchUserDetails();
     
-    //console.log(id)
+    // Animation sequence
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      })
+    ]).start();
   }, []);
 
-  
-  
-
   if (loading) {
-    
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="orange" />
+        <ActivityIndicator size="large" color="#F6984C" />
       </View>
     );
   }
 
-  
+  const ActionCard = ({ title, icon, color, onPress }) => (
+    <Animated.View 
+      style={[
+        styles.actionCard, 
+        { backgroundColor: color },
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+      ]}
+    >
+      <TouchableOpacity style={styles.cardTouchable} onPress={onPress}>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{title}</Text>
+          {icon}
+        </View>
+        {/* <Image source={image} style={styles.cardImage} resizeMode="contain" /> */}
+      </TouchableOpacity>
+    </Animated.View>
+  );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content"/>
-      <View style={styles.TopNav}>
-        <View style={styles.leftNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "50%",
-              alignItems: "center",
-            }}
-          >
+    <LinearGradient colors={['#f9f9f9', '#ffffff']} style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={() => router.push(`/agent/editProfile?collectionName=${collectionName}&id=${id}`)}>
             <Image
               source={profileImage ? { uri: profileImage } : require('../../assets/images/icon.png')}
-              resizeMode="cover"
-              style={{ width: 40, height: 40, borderRadius: 20, margin: 5 }}
+              style={styles.profileImage}
             />
-            <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Hi, {displayName}
-              </Text>
-              <TouchableOpacity onPress={()=>router.push(`/agent/editProfile?collectionName=${collectionName}&id=${id}`)}>
-                <Text>Edit my Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View
-            style={{
-              width: "100%",
-              height: "50%",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Pin.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20 }}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-            
-        <Text>Winter is coming</Text>
-      
+          </TouchableOpacity>
+          <View style={styles.profileText}>
+            <Text style={styles.greeting}>Hello, {displayName}</Text>
+            <View style={styles.locationBadge}>
+              <MaterialIcons name="location-on" size={16} color="#F6984C" />
+              <Text style={styles.locationText}>{shippingPoint}</Text>
             </View>
           </View>
         </View>
-        <View style={styles.rightNav}>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: "46%",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
+        
+        <View style={styles.quickActions}>
+          <TouchableOpacity 
+            style={styles.quickActionButton}
+            onPress={() => router.push('/agent/trackShipment')}
           >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#EDEBEB",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Trackk.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20 }}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "600", marginBottom: 3 }}>
-                Track Shipment
-              </Text>
-              <TouchableOpacity onPress={()=>router.push('/agent/trackShipment')}>
-                <Text>Track by ID</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <View
-            style={{
-              width: "100%",
-              height: "46%",
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#f4f4f4",
-              borderRadius: 30,
-            }}
-          >
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                backgroundColor: "#F6984C",
-                borderRadius: 20,
-                margin: 5,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/Support.png")}
-                resizeMode="cover"
-                style={{ width: 20, height: 20}}
-              />
-            </View>
-            <View style={{ flexDirection: "column" }}>
-              <TouchableOpacity>
-                <Text>Support Desk</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            <Feather name="search" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickActionButton}>
+            <Feather name="help-circle" size={20} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
-      {/*Scroll View will live here */}
-      <ScrollView style={{ width: "100%", height: "70%"}}>
-        <View style={{flexDirection:'row', height: 60, width: '100%', marginBottom: 10, justifyContent:'space-between', borderBottomWidth: 1, borderBottomColor: 'lightgrey'}}>
-            <View style={{width:'40%',height:'100%'}}>
-                <Text style={{fontSize: 20}}>Fleet Size</Text>
-                <CheckValueInCollection searchValue={shippingPoint} />
-            </View>
-            <View style={{width:'40%',height:'100%'}}>
-                <Text style={{fontSize: 20, marginBottom: 10}}>Shipping Point</Text>
-                <Text>{shippingPoint}</Text>
-            </View>
-            <TouchableOpacity style={{width:40,height:40,justifyContent:'center', alignItems:'center', backgroundColor:'#F6984C', borderRadius:20, margin:5}} onPress={()=>router.push(`/agent/manage?shippingPoint=${shippingPoint}`)}>
-                <Image source={require('../../assets/images/edit.png')} resizeMode="contain" style={{width: 30, height: 30}}/>
-            </TouchableOpacity>
+
+      {/* Stats Section */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Fleet Size</Text>
+          <CheckValueInCollection searchValue={shippingPoint} />
+          <MaterialIcons name="local-shipping" size={24} color="#F6984C" style={styles.statIcon} />
         </View>
-        {/* <View
-          style={{
-            width: "100%",
-            height: 200,
-            backgroundColor: "#f4f4f4",
-            borderRadius: 20,
-            flexDirection: 'row',
-            alignItems:'flex-start'
-          }}
-        >
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
-            <Image source={require('../../assets/images/Shipment.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Shipment</Text>
-          </View>
-          
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/createDelivery')}>
-            <Image source={require('../../assets/images/Create.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Create Delivery</Text>
-          </View>
-
-         
-          <View style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-          <TouchableOpacity style={{width: 60, height:60, borderRadius: 30, backgroundColor:'lightgrey', justifyContent:'center', alignItems:'center'}} onPress={()=>router.push('/agent/shipmentStatus')}>
-            <Image source={require('../../assets/images/View.png')} style={{width: 30, height:30}}/>
-          </TouchableOpacity>
-          <Text style={{textAlign:'center'}}>Shipment Status</Text>
-          </View>
-
-          
-          <TouchableOpacity onPress={(()=>router.push('/agent/createMaterial'))} style={{alignItems:'center',justifyContent:'center', width: 70, margin:10}}>
-            <Text>create Material</Text>
-          </TouchableOpacity>
         
-        </View> */}
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '50%'}}>Create a Shipment</Text>
-          <Image source={require('../../assets/images/CreateShipment.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
+        <TouchableOpacity 
+          style={[styles.statCard, styles.editButton]}
+          onPress={() => router.push(`/agent/manage?shippingPoint=${shippingPoint}`)}
+        >
+          <Feather name="edit-3" size={20} color="#F6984C" />
         </TouchableOpacity>
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row-reverse', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Create Delivery</Text>
-          <Image source={require('../../assets/images/CreateDelivery.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
-        </TouchableOpacity>
+      </View>
 
-        <TouchableOpacity style={{width:'100%', height: 180, backgroundColor: 'lightgrey', borderRadius: 25, flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:10, marginBottom:20}} onPress={()=>router.push('/agent/shipmentStatus')}>
-          <Text style={{fontSize: 28, fontWeight:'800', width: '40%', textAlign:'left'}}>Shipment Status</Text>
-          <Image source={require('../../assets/images/ShipmentStatus.png')} resizeMode="contain" style={{width:180, height:180}}/>
-          
-        </TouchableOpacity>
+      {/* Main Actions */}
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <ActionCard
+          title="Create Shipment"
+          icon={<FontAwesome5 name="shipping-fast" size={42} color="#fff" />}
+          color="#6C63FF"
+          onPress={() => router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}
+        />
+        
+        <ActionCard
+          title="Create Delivery"
+          icon={<MaterialIcons name="delivery-dining" size={42} color="#fff" />}
+          color="#FF6584"
+          onPress={() => router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}
+        />
+        
+        <ActionCard
+          title="Shipment Status"
+          icon={<MaterialIcons name="assessment" size={42} color="#fff" />}
+          color="#20C3AF"
+          onPress={() => router.push('/agent/shipmentStatus')}
+        />
+        
+        {/* Additional Feature Card */}
+        <Animated.View 
+          style={[
+            styles.featureCard,
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          <Text style={styles.featureTitle}>Need Help?</Text>
+          <Text style={styles.featureText}>Our support team is available 24/7 to assist you</Text>
+          <TouchableOpacity style={styles.featureButton}>
+            <Text style={styles.featureButtonText}>Contact Support</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding:10,
-    backgroundColor:'#fff',
-    width:'100%',
-    height:'100%'
-
+    padding: 20,
+    backgroundColor: '#fff',
   },
   loaderContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
   },
-  info: {
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: '#F6984C',
+  },
+  profileText: {
+    justifyContent: 'center',
+  },
+  greeting: {
     fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  locationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+    backgroundColor: 'rgba(246, 152, 76, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 15,
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#F6984C',
+    marginLeft: 5,
+  },
+  quickActions: {
+    flexDirection: 'row',
+  },
+  quickActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F6984C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 25,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    justifyContent: 'center',
+  },
+  statLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  statIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+  },
+  editButton: {
+    maxWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 15,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  actionCard: {
+    height: 160,
+    borderRadius: 20,
+    marginBottom: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  cardTouchable: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  cardContent: {
+    justifyContent: 'space-between',
+    zIndex: 2,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
     marginBottom: 10,
   },
-  label: {
-    fontWeight: "bold",
+  cardImage: {
+    width: 150,
+    height: 150,
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    opacity: 0.8,
   },
-  TopNav: {
-    flexDirection: "row",
-    width: "100%",
-    height: 130,
-    justifyContent: "space-between",
-    alignItems: 'flex-end',
-    marginTop:20
+  featureCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  leftNav: {
-    backgroundColor: "#f4f4f4",
-    width: "48%",
-    height: "80%",
-    borderRadius: 30,
-    marginBottom:10
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 5,
   },
-  rightNav: {
-    //backgroundColor:'#f4f4f4',
-    width: "48%",
-    height: "80%",
-    borderRadius: 30,
-    justifyContent: "space-between",
-    marginBottom:10
+  featureText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 15,
+  },
+  featureButton: {
+    backgroundColor: '#F6984C',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  featureButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });

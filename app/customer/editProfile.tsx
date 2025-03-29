@@ -9,7 +9,8 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -19,13 +20,20 @@ import { app } from "../firebase";
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Location from "expo-location";
 import axios from "axios";
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
 const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
 const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
 
 const ProfileScreen = () => {
-  const [profile, setProfile] = useState({ name: "", phoneNumber: "", imageUrl: "", email:"", password:"" });
+  const [profile, setProfile] = useState({ 
+    name: "", 
+    phoneNumber: "", 
+    imageUrl: "", 
+    email: "", 
+    password: "" 
+  });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [locationUpdating, setLocationUpdating] = useState(false);
@@ -37,7 +45,6 @@ const ProfileScreen = () => {
     fetchPhoneNumberAndProfile();
   }, []);
 
-  // Fetch phoneNumber from AsyncStorage and existing profile from Firestore
   const fetchPhoneNumberAndProfile = async () => {
     try {
       const phoneNumber = await AsyncStorage.getItem("phoneNumber");
@@ -45,33 +52,38 @@ const ProfileScreen = () => {
         setProfile((prev) => ({ ...prev, phoneNumber }));
         await fetchProfileFromFirestore(phoneNumber);
       } else {
-        Alert.alert("Error", "Phone number not found in AsyncStorage!");
+        Alert.alert("Error", "Phone number not found!");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch phone number from AsyncStorage!");
+      Alert.alert("Error", "Failed to fetch phone number!");
+      console.error(error);
     }
   };
 
-  const fetchProfileFromFirestore = async (phoneNumber) => {
+  const fetchProfileFromFirestore = async (phoneNumber: string) => {
     try {
       setLoading(true);
       const docRef = doc(db, collectionName as string, decodeURIComponent(Array.isArray(id) ? id[0] : id) as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        const data = docSnap.data();
         setProfile((prev) => ({
           ...prev,
-          ...docSnap.data(),
+          ...data,
         }));
+        if (data.location?.address) {
+          setAddress(data.location.address);
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch profile from Firestore!");
-      console.log(error);
+      Alert.alert("Error", "Failed to fetch profile!");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-const handleImageUpload = async () => {
+  const handleImageUpload = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -80,44 +92,21 @@ const handleImageUpload = async () => {
         quality: 1,
       });
   
-      if (!result.canceled) {
+      if (!result.canceled && result.assets[0].uri) {
         setUploading(true);
         const uri = result.assets[0].uri;
-  
-        // Convert the image to a Blob using XMLHttpRequest
-        const blob: any = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.onload = () => {
-            resolve(xhr.response);
-          };
-          xhr.onerror = (e) => {
-            reject(new TypeError("Network request failed"));
-          };
-          xhr.responseType = "blob";
-          xhr.open("GET", uri, true);
-          xhr.send(null);
-        });
-  
-        // Create a reference to the Firebase Storage path
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        
         const imageRef = ref(storage, `profile_pictures/${profile.phoneNumber}.jpg`);
-  
-        // Upload the image to Firebase Storage
         await uploadBytes(imageRef, blob);
-  
-        // Get the download URL of the uploaded image
         const downloadURL = await getDownloadURL(imageRef);
-  
-        // Update the profile state with the new image URL
+        
         setProfile((prev) => ({ ...prev, imageUrl: downloadURL }));
-  
-        // Save the updated profile to Firestore
         await saveProfileToFirestore();
-  
-        Alert.alert("Success", "Profile picture uploaded successfully!");
       }
     } catch (error) {
       Alert.alert("Error", "Failed to upload image!");
-      console.log(storage)
       console.error("Upload error:", error);
     } finally {
       setUploading(false);
@@ -131,270 +120,422 @@ const handleImageUpload = async () => {
       );
   
       if (response.data.status === "OK") {
-        return response.data.results[0].formatted_address; // First result is usually the most relevant
-      } else {
-        throw new Error("Geocoding failed.");
+        return response.data.results[0].formatted_address;
       }
+      throw new Error("Geocoding failed");
     } catch (error) {
-      console.error("Error in reverse geocoding:", error);
-      return "Address not found";
+      console.error("Geocoding error:", error);
+      return "Address not available";
     }
   };
   
-  // Save profile to Firestore
   const saveProfileToFirestore = async () => {
     try {
       setLoading(true);
       const docRef = doc(db, collectionName as string, id as string);
       await setDoc(docRef, profile, { merge: true });
-      Alert.alert("Success", "Profile updated successfully!");
+      Alert.alert("Success", "Profile updated!");
     } catch (error) {
-      Alert.alert("Error", "Failed to update profile!");
-      console.log(error);
+      Alert.alert("Error", "Update failed!");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-
-    // Fetch and update the user's current location in Firestore
-  // const updateLocation = async () => {
-  //   try {
-  //     setLocationUpdating(true);
-
-  //     // Request location permissions
-  //     let { status } = await Location.requestForegroundPermissionsAsync();
-  //     if (status !== "granted") {
-  //       Alert.alert("Permission Denied", "Allow location access to update your location.");
-  //       return;
-  //     }
-
-  //     // Get current location
-  //     let location = await Location.getCurrentPositionAsync({});
-  //     const { latitude, longitude } = location.coords;
-
-  //     const getAddress = async () => {
-  //       const address = await reverseGeocode(latitude, longitude);
-  //       setAddress(address)
-  //     };
-      
-  //     getAddress();
-
-  //     // Save location to Firestore
-  //     const docRef = doc(db, collectionName as string, id as string);
-  //     await setDoc(docRef, { location: { latitude, longitude, address } }, { merge: true });
-  //     Alert.alert("Success", "Location updated successfully!");
-  //   } catch (error) {
-  //     Alert.alert("Error", "Failed to update location!");
-  //     console.error(error);
-  //   } finally {
-  //     setLocationUpdating(false);
-  //   }
-  // };
-
   const updateLocation = async () => {
     try {
       setLocationUpdating(true);
-  
-      // Request location permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission Denied", "Allow location access to update your location.");
+        Alert.alert("Permission Denied", "Please enable location access");
         return;
       }
   
-      // Get current location
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
-  
-      // Get the address using reverse geocoding
       const address = await reverseGeocode(latitude, longitude);
+      
       setAddress(address);
-  
-      // Save location and address to Firestore
       const docRef = doc(db, collectionName as string, id as string);
-      await setDoc(docRef, { location: { latitude, longitude, address } }, { merge: true });
-      Alert.alert("Success", "Location updated successfully!");
+      await setDoc(docRef, { 
+        location: { 
+          latitude, 
+          longitude, 
+          address,
+          updatedAt: new Date().toISOString() 
+        } 
+      }, { merge: true });
     } catch (error) {
-      Alert.alert("Error", "Failed to update location!");
+      Alert.alert("Error", "Location update failed!");
       console.error(error);
     } finally {
       setLocationUpdating(false);
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("phoneNumber");
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="orange" />
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
   return (
-    
-    <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.topSection}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                      <Text style={{ fontSize: 20, fontWeight: "bold" }}>Edit Profile</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.back()}>
-                    <Image
-                      source={require("../../assets/images/Back.png")}
-                      style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-                    />
-                    </TouchableOpacity>
-                  </View>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <View style={styles.headerRight} />
+        </View>
 
-      {/* Profile Image Upload */}
-      <TouchableOpacity onPress={handleImageUpload} style={styles.imageContainer}>
-        {profile.imageUrl ? (
-          <Image source={{ uri: profile.imageUrl }} style={styles.profileImage} />
-        ) : (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>Upload</Text>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={handleImageUpload} style={styles.imageContainer}>
+            {profile.imageUrl ? (
+              <Image source={{ uri: profile.imageUrl }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.placeholder}>
+                <Ionicons name="person" size={40} color="#aaa" />
+              </View>
+            )}
+            <View style={styles.editIcon}>
+              <MaterialIcons name="edit" size={18} color="white" />
+            </View>
+            {uploading && (
+              <View style={styles.uploadOverlay}>
+                <ActivityIndicator size="small" color="white" />
+              </View>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.profileName}>{profile.name || 'Your Name'}</Text>
+          <Text style={styles.profilePhone}>{profile.phoneNumber || 'Phone number'}</Text>
+        </View>
+
+        {/* Form Section */}
+        <View style={styles.formContainer}>
+          {/* Name */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Display Name</Text>
+            <TextInput
+              style={styles.input}
+              value={profile.name}
+              onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
+              placeholder="Enter your name"
+              placeholderTextColor="#999"
+            />
           </View>
-        )}
-        {uploading && <ActivityIndicator style={styles.imageLoader} size="small" color="orange" />}
-      </TouchableOpacity>
 
-      {/* Display Name */}
-      <Text style={styles.label}>Display Name</Text>
-      <TextInput
-        style={styles.input}
-        value={profile.name}
-        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
-      />
+          {/* Email */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              value={profile.email}
+              onChangeText={(text) => setProfile((prev) => ({ ...prev, email: text }))}
+              placeholder="Enter your email"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
 
-      {/* Display Email */}
-      <Text style={styles.label}>Display Email</Text>
-      <TextInput
-        style={styles.input}
-        value={profile.email}
-        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
-      />
+          {/* Password */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Change Password</Text>
+            <TextInput
+              style={styles.input}
+              value={profile.password}
+              onChangeText={(text) => setProfile((prev) => ({ ...prev, password: text }))}
+              placeholder="Enter new password"
+              placeholderTextColor="#999"
+              secureTextEntry
+            />
+          </View>
 
-      {/* Display password */}
-      <Text style={styles.label}>Change Password</Text>
-      <TextInput
-        style={styles.input}
-        value={profile.password}
-        onChangeText={(text) => setProfile((prev) => ({ ...prev, name: text }))}
-      />
+          {/* Location */}
+          <View style={styles.locationContainer}>
+            <Text style={styles.sectionTitle}>Location</Text>
+            {address ? (
+              <View style={styles.addressContainer}>
+                <Ionicons name="location-sharp" size={18} color="#007AFF" />
+                <Text style={styles.addressText} numberOfLines={2}>{address}</Text>
+              </View>
+            ) : (
+              <Text style={styles.noAddressText}>No location set</Text>
+            )}
+            <TouchableOpacity 
+              onPress={updateLocation} 
+              style={styles.locationButton}
+              disabled={locationUpdating}
+            >
+              {locationUpdating ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={18} color="white" />
+                  <Text style={styles.locationButtonText}>Update Location</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* Save Button */}
-      <TouchableOpacity onPress={saveProfileToFirestore} style={[styles.button, styles.saveButton]}>
-        <Text style={styles.saveButtonText}>Save</Text>
-      </TouchableOpacity>
+        {/* Actions */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            onPress={saveProfileToFirestore} 
+            style={styles.saveButton}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
 
-          {/*Update Location button */}
-          <TouchableOpacity onPress={updateLocation} style={[styles.button, styles.locationButton]} disabled={locationUpdating}>
-          {locationUpdating ? <ActivityIndicator color="#fff" /> : <Text style={styles.locationButtonText}>Update Location</Text>}
-        </TouchableOpacity>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-      
-    </ScrollView>
-    
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out" size={20} color="#ff4444" />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
-export default ProfileScreen;
-
 const styles = StyleSheet.create({
   container: {
-    flex:1,
-    padding: 20,
-    alignItems: "center",
-    backgroundColor:'#fff'
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  scrollContainer: {
+    paddingBottom: 30,
   },
   loaderContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  headerRight: {
+    width: 40,
+  },
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    backgroundColor: 'white',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   imageContainer: {
-    marginBottom: 20,
-    position: "relative",
+    position: 'relative',
+    marginBottom: 12,
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#eee',
   },
   placeholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#eee',
   },
-  placeholderText: {
-    color: "#aaa",
-    fontSize: 14,
+  editIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#007AFF',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   },
-  imageLoader: {
-    position: "absolute",
-    top: 50,
-    left: 50,
+  uploadOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  label: {
-    alignSelf: "flex-start",
+  profileName: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 8,
+  },
+  profilePhone: {
     fontSize: 16,
-    marginBottom: 5,
-    fontWeight: "600",
+    color: '#666',
+    marginTop: 4,
+  },
+  formContainer: {
+    paddingHorizontal: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 8,
   },
   input: {
-    width: "100%",
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 20,
+    fontSize: 16,
+    color: '#333',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  button: {
-    padding: 15,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    width: "100%",
-    marginBottom: 15,
+  locationContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  saveButton: {
-    backgroundColor: "black",
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 12,
   },
-  saveButtonText: {
-    textAlign: "center",
-    color: "#fff",
-  },
-  logoutButton: {
-    backgroundColor: "#ff4444",
-    padding: 15,
-    borderRadius: 8,
-    width: "100%",
-  },
-  logoutText: {
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "600",
-  },
-  topSection: {
-    width: '100%',
-    height: '10%',
-    flexDirection: 'row-reverse',
+  addressContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    marginBottom: 16,
   },
-    locationButton: {
-    backgroundColor: "#007AFF",
-    alignItems:'center'
+  addressText: {
+    fontSize: 15,
+    color: '#333',
+    marginLeft: 8,
+    flex: 1,
+  },
+  noAddressText: {
+    fontSize: 15,
+    color: '#999',
+    fontStyle: 'italic',
+    marginBottom: 16,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    padding: 14,
+    borderRadius: 8,
   },
   locationButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  actionsContainer: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ff4444',
+  },
+  logoutText: {
+    color: '#ff4444',
+    fontWeight: '600',
+    marginLeft: 8,
+    fontSize: 16,
   },
 });
+
+export default ProfileScreen;

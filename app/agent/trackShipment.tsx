@@ -473,7 +473,7 @@ const TrackShipment = () => {
   if (loading && !refreshing) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#4169E1" />
+        <ActivityIndicator size="large" color="#FFA500" />
       </View>
     );
   }
@@ -525,6 +525,13 @@ const TrackShipment = () => {
             }
           >
             <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()}>
+                <Image
+                  source={require("../../assets/images/Back.png")}
+                  resizeMode="contain"
+                  style={styles.backIcon}
+                />
+              </TouchableOpacity>
               <Text style={styles.title}>Track Shipments</Text>
             </View>
             

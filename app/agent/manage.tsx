@@ -17,7 +17,6 @@ import {
   RefreshControl,
   ScrollView
 } from "react-native";
-import SearchableDropdown from "react-native-searchable-dropdown";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   getFirestore,

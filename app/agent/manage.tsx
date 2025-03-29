@@ -14,7 +14,8 @@ import {
   StatusBar,
   FlatList,
   Alert,
-  RefreshControl
+  RefreshControl,
+  ScrollView
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -27,7 +28,6 @@ import {
 } from "firebase/firestore";
 import { app, auth } from "../firebase";
 import { useFonts } from "expo-font";
-
 
 // Initialize Firestore
 const db = getFirestore(app);
@@ -49,17 +49,16 @@ export default function Manage() {
   });
 
   const { shippingPoint } = useLocalSearchParams();
+
   // Fetch data from Firestore
   useEffect(() => {
     const fetchShippingPoints = async () => {
       try {
         const snapshot = await getDocs(collection(db, "shippingpoints"));
-        
         const points:any = snapshot.docs.map((doc) => ({
           id: doc.id,
-          name: doc.data().shippingpoint, // Ensure your Firestore documents have a `name` field
+          name: doc.data().shippingpoint,
         }));
-        
         setShippingPoints(points);
       } catch (error) {
         console.error("Error fetching shipping points:", error);
@@ -74,13 +73,13 @@ export default function Manage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const snapshot = await getDocs(collection(db, "DriverOnBoarding")); // Use your collection name
+      const snapshot = await getDocs(collection(db, "DriverOnBoarding"));
       const fetchedRows = snapshot.docs
         .map((doc) => ({
-          id: doc.id, // Document ID
+          id: doc.id,
           ...doc.data(),
         }))
-        .filter((row: any) => row.LoadingPoint === shippingPoint); // Filter based on the condition
+        .filter((row: any) => row.LoadingPoint === shippingPoint);
   
       setRows(fetchedRows);
       setFilteredData(fetchedRows);
@@ -93,7 +92,6 @@ export default function Manage() {
     }
   };
   
-
   // Initial data fetch
   useEffect(() => {
     fetchData();
@@ -111,12 +109,10 @@ export default function Manage() {
       setFilteredData(rows);
     } else {
       const filtered = rows.filter((item) => {
-        // Safely access the properties and convert to lower case
         const vehicleNo = item.vehicleNo?.toLowerCase() || "";
         const transporter = item.transporter?.toLowerCase() || "";
         const driver = item.driverName?.toLowerCase() || "";
   
-        // Perform the search
         return (
           vehicleNo.includes(text.toLowerCase()) ||
           transporter.includes(text.toLowerCase()) ||
@@ -127,26 +123,22 @@ export default function Manage() {
     }
   };
   
-  
-
   // Handle edit action
   const handleEdit = (row: any) => {
     setEditableRowId(row.id);
-    setEditedRow({ ...row }); // Clone the row for editing
+    setEditedRow({ ...row });
   };
 
-  // Handle save action (locally and in Firestore)
+  // Handle save action
   const handleSave = async (id: string) => {
     try {
-      // Update the local state
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id === id ? { ...row, ...editedRow } : row
         )
       );
 
-      // Update Firestore
-      const docRef = doc(db, "DriverOnBoarding", id); // Use your collection name
+      const docRef = doc(db, "DriverOnBoarding", id);
       await updateDoc(docRef, editedRow);
 
       Alert.alert("Success", "Row updated successfully.");
@@ -154,11 +146,9 @@ export default function Manage() {
       console.error("Error updating Firestore:", error);
       Alert.alert("Error", "Unable to update data in Firestore.");
     } finally {
-      setEditableRowId(null); // Exit edit mode
+      setEditableRowId(null);
     }
   };
-
-
 
   const confirmSave = (id: string) => {
     Alert.alert(
@@ -171,13 +161,11 @@ export default function Manage() {
     );
   };
   
-
   const renderRow = ({ item }: { item: any }) => {
     const isEditable = editableRowId === item.id;
 
     return (
       <View style={styles.row}>
-        {/* Editable or Static Field for Vehicle No */}
         {isEditable ? (
           <TextInput
             style={styles.cellInput}
@@ -190,7 +178,6 @@ export default function Manage() {
           <Text style={styles.cell}>{item.vehicleNo}</Text>
         )}
 
-        {/* Editable or Static Field for Transporter */}
         {isEditable ? (
           <TextInput
             style={styles.cellInput}
@@ -203,7 +190,6 @@ export default function Manage() {
           <Text style={styles.cell}>{item.transporter}</Text>
         )}
 
-        {/* Editable or Static Field for Driver */}
         {isEditable ? (
           <TextInput
             style={styles.cellInput}
@@ -216,17 +202,13 @@ export default function Manage() {
           <Text style={styles.cell}>{item.driverName}</Text>
         )}
 
-        {/* Edit/Save Icon */}
         <TouchableOpacity
           style={styles.editIcon}
-          // onPress={() =>
-          //   isEditable ? handleSave(item.id) : handleEdit(item)
-          // }
           onPress={() =>
             isEditable ? confirmSave(item.id) : handleEdit(item)
           }
         >
-          <Text style={{ fontSize: 16 }}>
+          <Text style={{ fontSize: 10 }}>
             {isEditable ? "✔️" : "✏️"}
           </Text>
         </TouchableOpacity>
@@ -238,79 +220,83 @@ export default function Manage() {
 
   const dismissKeyboard = () => Keyboard.dismiss();
 
-  
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
       <StatusBar barStyle="dark-content" />
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
         <View style={styles.innerContainer}>
+          {/* Header Section */}
           <View style={styles.topSection}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={{ fontSize: 20, fontWeight: "bold" }}>Manage</Text>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Image
+                source={require("../../assets/images/Back.png")}
+                resizeMode="contain"
+                style={styles.backIcon}
+              />
+              <Text style={styles.manageText}>Manage</Text>
             </TouchableOpacity>
-            <Image
-              source={require("../../assets/images/Back.png")}
-              style={{ width: 30, resizeMode: "contain", marginRight: 10 }}
-            />
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              height: 40,
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 16 }}>Current Shipping Point</Text>
-            <Text style={{ color: "#F6984C", fontSize:18 }}>{shippingPoint}</Text>
+          {/* Shipping Point Info */}
+          <View style={styles.shippingPointContainer}>
+            <Text style={styles.shippingPointLabel}>Current Shipping Point</Text>
+            <Text style={styles.shippingPointValue}>{shippingPoint}</Text>
           </View>
 
-          <View style={{flexDirection:'row', width:'100%', height: 40,alignItems:'flex-end', justifyContent:'space-between', marginBottom:10}}>
-            <Text style={{fontSize:20, fontWeight: "600"}}>Manage Drivers</Text>
+          {/* Manage Drivers Header */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.manageDriversText}>Manage Drivers</Text>
             <TouchableOpacity onPress={() => router.push('/agent/manageDriver')}>
-              <Text style={{fontSize:14, fontWeight:'bold', color:'orange'}}> + New</Text>
+              <Text style={styles.newDriverButton}> + New</Text>
             </TouchableOpacity>
           </View>
-          <>
-             {/* Search Input */}
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search"
-        value={searchText}
-        onChangeText={handleSearch}
-      />
 
-      {/* Table Header */}
-      <View style={styles.header}>
-        <Text style={[styles.cell, styles.headerText]}>Vehicle No.</Text>
-        <Text style={[styles.cell, styles.headerText]}>Transporter</Text>
-        <Text style={[styles.cell, styles.headerText]}>Driver</Text>
-        <Text style={styles.headerText}></Text>
-      </View>
+          {/* Search Bar */}
+          <TextInput
+            style={styles.searchBar}
+            placeholder="Search"
+            value={searchText}
+            onChangeText={handleSearch}
+            placeholderTextColor="#888"
+          />
 
-      {/* Table Rows */}
-      {loading ? (
-        <Text style={styles.loadingText}>Loading...</Text>
-      ) : (
-        <FlatList
-          //data={rows}
-          data={filteredData}
-          keyExtractor={(item) => item.id}
-          renderItem={renderRow}
-          ListEmptyComponent={<Text style={styles.noDataText}>No Results Found</Text>}
-          style={{width:'100%'}}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        />
-      )}
-          </>
+          {/* Table Header */}
+          <View style={styles.header}>
+            <Text style={[styles.cell, styles.headerText]}>Vehicle No.</Text>
+            <Text style={[styles.cell, styles.headerText]}>Transporter</Text>
+            <Text style={[styles.cell, styles.headerText]}>Driver</Text>
+            <Text style={styles.headerText}></Text>
+          </View>
+
+          {/* Scrollable Table Content */}
+          {loading ? (
+            <ActivityIndicator size="large" color="#F6984C" style={styles.loadingIndicator} />
+          ) : (
+            <View style={styles.tableContainer}>
+              <FlatList
+                data={filteredData}
+                keyExtractor={(item) => item.id}
+                renderItem={renderRow}
+                ListEmptyComponent={
+                  <Text style={styles.noDataText}>No Results Found</Text>
+                }
+                style={styles.flatList}
+                contentContainerStyle={styles.flatListContent}
+                refreshControl={
+                  <RefreshControl 
+                    refreshing={refreshing} 
+                    onRefresh={handleRefresh}
+                    colors={['#F6984C']}
+                    tintColor="#F6984C"
+                  />
+                }
+              />
+            </View>
+          )}
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -320,65 +306,86 @@ export default function Manage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   innerContainer: {
     flex: 1,
-    alignItems: "center",
     padding: 20,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: "bold",
-    textAlign: "left",
-    marginBottom: 20,
-    fontFamily: "Poppins",
-  },
-  input: {
-    height: 50,
-    width: "100%",
-    backgroundColor: "#f3f3f3",
-    borderRadius: 10,
-    fontSize: 18,
-    paddingHorizontal: 10,
-    fontFamily: "Nunito",
-    color: "#000",
-    marginTop: 15,
-  },
-  button: {
-    backgroundColor: "#000",
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20,
-    width:'50%',
-    alignSelf:'center'
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 20,
-    fontFamily: 'Nunito'
-  },
   topSection: {
-    width: '100%',
-    height: '10%',
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    marginBottom: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  manageText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: '#000',
+  },
+  shippingPointContainer: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  shippingPointLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  shippingPointValue: {
+    color: "#F6984C",
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  manageDriversText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: '#000',
+  },
+  newDriverButton: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#F6984C',
   },
   searchBar: {
-    height: 40,
-    width:'100%',
-    borderColor: "#ccc",
+    height: 45,
+    width: '100%',
+    borderColor: "#ddd",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
     fontSize: 16,
+    backgroundColor: '#f8f8f8',
   },
   header: {
     flexDirection: "row",
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 10,
+    backgroundColor: "#f8f8f8",
+    paddingVertical: 12,
     borderRadius: 8,
     marginBottom: 5,
   },
@@ -386,23 +393,34 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
     color: "#333",
+    textAlign:'center'
   },
   row: {
     flexDirection: "row",
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#eee",
     alignItems: "center",
+    minHeight: 50,
   },
   cell: {
     flex: 1,
-    width:'100%',
     fontSize: 14,
     color: "#333",
     textAlign: "center",
   },
+  cellInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F6984C",
+    height: 40,
+    padding: 0,
+    margin: 0,
+  },
   editIcon: {
-    //flex: 0.5,
+    width: 20,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -410,20 +428,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#888",
     marginTop: 20,
-  },
-  loadingText: {
-    textAlign: "center",
     fontSize: 16,
-    marginTop: 20,
-    color: "#888",
   },
-  cellInput: {
-    flex: 1,
-    fontSize: 14,
-    color: "#333",
-    textAlign: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    height: 40
-  }
+  loadingIndicator: {
+    marginTop: 40,
+  },
+  tableContainer: {
+    flex: 1, // This makes the FlatList take up remaining space
+  },
+  flatList: {
+    width: '100%',
+    //marginBottom: 20,
+  },
+  flatListContent: {
+    flexGrow: 1,
+    paddingBottom: 20, // Add some padding at the bottom
+  },
 });

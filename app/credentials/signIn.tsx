@@ -20,13 +20,24 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { getFirestore, doc, getDocs, query, where, collection } from "firebase/firestore";
+import { getFirestore, doc, getDocs, query, where, collection, updateDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 
 const db = getFirestore(app);
+
+// Configure notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export default function SignIn() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -43,6 +54,24 @@ export default function SignIn() {
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
   });
 
+  // useEffect(() => {
+  //   // Entry animation
+  //   Animated.timing(fadeAnim, {
+  //     toValue: 1,
+  //     duration: 800,
+  //     useNativeDriver: true,
+  //   }).start();
+
+  //   const loadPhoneNumber = async () => {
+  //     const savedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
+  //     if (savedPhoneNumber) {
+  //       setPhoneNumber(savedPhoneNumber);
+  //     }
+  //   };
+  //   loadPhoneNumber();
+    
+  // }, []);
+
   useEffect(() => {
     // Entry animation
     Animated.timing(fadeAnim, {
@@ -58,6 +87,16 @@ export default function SignIn() {
       }
     };
     loadPhoneNumber();
+
+    // Check if user came from a notification tap
+    const checkInitialNotification = async () => {
+      const notification = await Notifications.getLastNotificationResponseAsync();
+      if (notification) {
+        // Handle navigation based on notification data
+        console.log('App opened from notification:', notification);
+      }
+    };
+    checkInitialNotification();
   }, []);
 
   useEffect(() => {
@@ -75,12 +114,118 @@ export default function SignIn() {
     }
   }, [loading]);
 
+  
+
+  const registerForPushNotifications = async (userId: string, collectionName: string) => {
+    try {
+      // Only proceed if running on a physical device
+      if (!Device.isDevice) {
+        console.log('Push notifications not supported on emulators');
+        return;
+      }
+  
+      // Request permission to send notifications
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        console.warn('Failed to get push token for push notification!');
+        return;
+      }
+  
+      // Get the push token
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log('Expo push token:', token);
+  
+      // Store the token in Firestore
+      const userRef = doc(db, collectionName, userId);
+      await updateDoc(userRef, {
+        expoPushToken: token,
+        pushTokenUpdatedAt: serverTimestamp()
+      });
+  
+      console.log('Push token stored successfully');
+    } catch (error) {
+      console.error('Error registering for push notifications:', error);
+    }
+  };
+
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
   });
 
   const dismissKeyboard = () => Keyboard.dismiss();
+
+  // const handleLogin = async () => {
+  //   const collections = [
+  //     "Admin",
+  //     "deliverydriver",
+  //     "customer",
+  //     "fieldagent",
+  //     "transporter",
+  //   ];
+  //   let userFound = false;
+  
+  //   if (!phoneNumber || !password) {
+  //     Alert.alert("Error", "Please enter both phone number and password.");
+  //     return;
+  //   }
+  
+  //   setLoading(true);
+  
+  //   try {
+  //     for (const collectionName of collections) {
+  //       const userQuery = query(
+  //         collection(db, collectionName),
+  //         where("phoneNumber", "==", phoneNumber)
+  //       );
+  
+  //       const querySnapshot = await getDocs(userQuery);
+  
+  //       if (!querySnapshot.empty) {
+  //         for (const doc of querySnapshot.docs) {
+  //           const userData = doc.data();
+  //           if (userData.password === password) {
+  //             userFound = true;
+  
+  //             await AsyncStorage.setItem("phoneNumber", phoneNumber);
+  
+  //             let screen: any = "/credentials/whoami";
+  //             if (collectionName === "customer") {
+  //               screen = "/customer/dashboard";
+  //             } else if (collectionName === "deliverydriver") {
+  //               screen = "/driver/notificationScreen";
+  //             } else if (collectionName === "fieldagent") {
+  //               screen = "/agent/dashboard";
+  //             } else if (collectionName === "transporter") {
+  //               screen = "/transporter/dashboard";
+  //             } else if (collectionName === "Admin") {
+  //               screen = "/admin/dashboard";
+  //             }
+  
+  //             setLoading(false);
+  //             router.push(screen);
+  //             return; 
+  //           }
+  //         }
+  //       }
+  //     }
+  
+  //     if (!userFound) {
+  //       setLoading(false);
+  //       Alert.alert("Error", "Invalid phone number or password.");
+  //     }
+  //   } catch (error: any) {
+  //     setLoading(false);
+  //     Alert.alert("Error", `Login failed: ${error.message}`);
+  //   }
+  // };
 
   const handleLogin = async () => {
     const collections = [
@@ -114,8 +259,13 @@ export default function SignIn() {
             if (userData.password === password) {
               userFound = true;
   
+              // Store phone number in AsyncStorage
               await AsyncStorage.setItem("phoneNumber", phoneNumber);
   
+              // Register for push notifications and store token
+              await registerForPushNotifications(doc.id, collectionName);
+  
+              // Determine the appropriate screen to navigate to
               let screen: any = "/credentials/whoami";
               if (collectionName === "customer") {
                 screen = "/customer/dashboard";
@@ -146,7 +296,6 @@ export default function SignIn() {
       Alert.alert("Error", `Login failed: ${error.message}`);
     }
   };
-
   if (!fontsLoaded) return null;
 
   return (

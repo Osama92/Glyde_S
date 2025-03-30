@@ -35,6 +35,7 @@ import { GoogleMap, LoadScript, Marker as WebMarker, Polyline as WebPolyline } f
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, FontAwesome, Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 
 const { width, height } = Dimensions.get('window');
 const db = getFirestore(app);
@@ -120,6 +121,22 @@ const NotificationScreen = () => {
       }).start();
     }
   }, [showDeliveries]);
+
+  useEffect(() => {
+    // Request notification permissions when screen mounts
+    const requestPermissions = async () => {
+      await Notifications.requestPermissionsAsync();
+    };
+    requestPermissions();
+
+    // Listen for notifications when app is foregrounded
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+      // You can update UI state here if needed
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   // Fetch phone number from storage
   useEffect(() => {

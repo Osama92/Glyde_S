@@ -48,6 +48,7 @@ export default function CreateShipment() {
   const [selectedVehicleDetails, setSelectedVehicleDetails] = useState<any>(null);
   const [isVehicleAvailable, setIsVehicleAvailable] = useState<boolean>(true);
   const [spinAnim] = useState(new Animated.Value(0));
+  const [isCreatingShipment, setIsCreatingShipment] = useState(false);
 
   const [fontsLoaded] = useFonts({
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
@@ -226,34 +227,42 @@ export default function CreateShipment() {
       );
       return;
     }
-
+  
     if (!selectedT || !selectedItem || !mobileNumber || !driverName || !selectedRoute || !freightCost) {
       Alert.alert("Error", "Please fill all fields, including selecting a route and ensuring freight cost is available.");
       return;
     }
-
-    const shipmentId = generateShipmentId();
-    const shipmentData = {
-      transporter: selectedT,
-      vehicleNo: selectedItem,
-      tonnage: selectedVehicleDetails?.tonnage,
-      tons: selectedVehicleDetails.tons,
-      mobileNumber,
-      driverName,
-      route: selectedRoute.name,
-      freightCost: freightCost,
-      statusId: 0, // 0 = Pending status
-      createdAt: serverTimestamp(),
-    };
-
+  
+    setIsCreatingShipment(true); // Disable the button
+  
     try {
+      const shipmentId = generateShipmentId();
+      const shipmentData = {
+        transporter: selectedT,
+        vehicleNo: selectedItem,
+        tonnage: selectedVehicleDetails?.tonnage,
+        tons: selectedVehicleDetails.tons,
+        mobileNumber,
+        driverName,
+        route: selectedRoute.name,
+        freightCost: freightCost,
+        statusId: 0, // 0 = Pending status
+        createdAt: serverTimestamp(),
+      };
+  
+      // Save the shipment
       await setDoc(doc(db, "Shipment", shipmentId), shipmentData);
+      
+      // Send notification to customer
       await sendShipmentNotification(mobileNumber, shipmentId);
+      
       Alert.alert("Success", `Shipment created with ID: ${shipmentId}`);
       router.push({ pathname: "/agent/shipment-detail", params: { shipmentId } });
     } catch (error) {
       console.error("Error saving shipment:", error);
       Alert.alert("Error", "Failed to save shipment. Please try again.");
+    } finally {
+      setIsCreatingShipment(false); // Re-enable the button whether success or error
     }
   };
 
@@ -272,7 +281,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
     await sendPushNotification(
       pushToken,
       "New Shipment Created",
-      `Your shipment #${shipmentId} has been created and is on its way!`,
+      `Shipment #${shipmentId} has been created and assigned to you!`,
       { shipmentId, type: "shipment_created" }
     );
     
@@ -470,17 +479,21 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
 
           {/* Save Button */}
           <TouchableOpacity 
-            style={[
-              styles.saveButton,
-              (!isVehicleAvailable || !selectedRoute) && styles.disabledButton
-            ]} 
-            onPress={handleSaveShipment}
-            disabled={!isVehicleAvailable || !selectedRoute}
-          >
-            <Text style={styles.saveButtonText}>
-              {!isVehicleAvailable ? "Vehicle Not Available" : "Save Shipment"}
-            </Text>
-          </TouchableOpacity>
+  style={[
+    styles.saveButton,
+    (!isVehicleAvailable || !selectedRoute || isCreatingShipment) && styles.disabledButton
+  ]} 
+  onPress={handleSaveShipment}
+  disabled={!isVehicleAvailable || !selectedRoute || isCreatingShipment}
+>
+  {isCreatingShipment ? (
+    <ActivityIndicator color="#FFF" />
+  ) : (
+    <Text style={styles.saveButtonText}>
+      {!isVehicleAvailable ? "Vehicle Not Available" : "Save Shipment"}
+    </Text>
+  )}
+</TouchableOpacity>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -672,6 +685,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    flexDirection: 'row', // Added for spinner
+    gap: 10, // Added for spinner
   },
   disabledButton: {
     backgroundColor: "#95A5A6",

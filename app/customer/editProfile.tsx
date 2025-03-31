@@ -186,7 +186,7 @@ const ProfileScreen = () => {
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="orange" />
       </View>
     );
   }
@@ -278,7 +278,7 @@ const ProfileScreen = () => {
             <Text style={styles.sectionTitle}>Location</Text>
             {address ? (
               <View style={styles.addressContainer}>
-                <Ionicons name="location-sharp" size={18} color="#007AFF" />
+                <Ionicons name="location-sharp" size={18} color="orange" />
                 <Text style={styles.addressText} numberOfLines={2}>{address}</Text>
               </View>
             ) : (
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: 'orange',
     padding: 14,
     borderRadius: 8,
   },

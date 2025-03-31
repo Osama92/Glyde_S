@@ -32,6 +32,7 @@ import { app } from '../firebase';
 import { router } from 'expo-router';
 import axios from 'axios';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 
 // Initialize Firestore
 const db = getFirestore(app);
@@ -126,6 +127,22 @@ export default function Dashboard() {
       return 'Location unknown';
     }
   };
+
+  useEffect(() => {
+    // Request notification permissions when screen mounts
+    const requestPermissions = async () => {
+      await Notifications.requestPermissionsAsync();
+    };
+    requestPermissions();
+
+    // Listen for notifications when app is foregrounded
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+      // You can update UI state here if needed
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   // Fetch user details with proper typing
   const fetchUserDetails = useCallback(async (): Promise<void> => {

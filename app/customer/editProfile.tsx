@@ -23,7 +23,7 @@ import axios from "axios";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
-const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
+const storage = getStorage(app, "gs://glyde-s-eb857.firebasestorage.app");
 const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
 
 const ProfileScreen = () => {

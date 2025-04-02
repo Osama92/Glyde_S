@@ -374,7 +374,7 @@ export default function CreateDelivery() {
       >
         <View style={styles.container}>
           {/* Loading Modal with Logo */}
-          <Modal visible={isLoading} transparent animationType="fade">
+          {/* <Modal visible={isLoading} transparent animationType="fade">
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <Image 
@@ -385,7 +385,7 @@ export default function CreateDelivery() {
                 <Text style={styles.modalText}>Processing Delivery...</Text>
               </View>
             </View>
-          </Modal>
+          </Modal> */}
 
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

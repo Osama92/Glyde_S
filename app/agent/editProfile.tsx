@@ -327,7 +327,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
-const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
+const storage = getStorage(app, "gs://glyde-s-eb857.firebasestorage.app");
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState({ 

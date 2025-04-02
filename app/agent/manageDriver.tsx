@@ -22,7 +22,7 @@ import SearchableDropdown from "react-native-searchable-dropdown";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
-const storage = getStorage(app, "gs://glyde-f716b.firebasestorage.app");
+const storage = getStorage(app, "gs://glyde-s-eb857.firebasestorage.app");
 
 export default function ManageDriver() {
   const [vehicleNo, setVehicleNo] = useState('');

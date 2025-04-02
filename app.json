@@ -45,6 +45,13 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location."
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "pk.eyJ1IjoiZ2x5ZGUtZ2x5ZGVyIiwiYSI6ImNtOHp3OG8xbzBmZnUybnNpOW9jcTE4aWEifQ.ahL12-w_gWqdmq0FIC76-g",
+          "RNMapboxMapsVersion": "10.0.0"
+        }
       ]
     ],
     "experiments": {

@@ -17,16 +17,17 @@ import { doc, setDoc, getFirestore, collection, query, where, getDocs } from 'fi
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app } from "../firebase"; 
 import { useFonts } from 'expo-font';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import SearchableDropdown from "react-native-searchable-dropdown"; 
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
-const storage = getStorage(app, "gs://glyde-s-eb857.firebasestorage.app");
+const storage = getStorage(app);
 
 export default function ManageDriver() {
   const [vehicleNo, setVehicleNo] = useState('');
   const [transporter, setTransporter] = useState('');
+  const [transporterId, setTransporterId] = useState(''); // Added to store transporter document ID
   const [driverName, setDriverName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [driverPhoto, setDriverPhoto] = useState<string | null>(null);
@@ -37,6 +38,7 @@ export default function ManageDriver() {
   const [loadingTransporters, setLoadingTransporters] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const { originPoint } = useLocalSearchParams(); // Default loading point
 
   const [fontsLoaded] = useFonts({
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
@@ -49,13 +51,17 @@ export default function ManageDriver() {
       try {
         const transportersQuery = query(
           collection(db, 'transporter'),
-          where('loadingPoint', '==', 'Agbara')
+          where('LoadingPoint', '==', originPoint)
         );
         const querySnapshot = await getDocs(transportersQuery);
+        
         const transportersList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
+          name: doc.id.split('_')[1], // Extract transporter name from document ID
+          phoneNumber: doc.data().phoneNumber,
           ...doc.data(),
         }));
+        
         setTransporters(transportersList);
       } catch (error) {
         console.error('Error fetching transporters:', error);
@@ -66,20 +72,24 @@ export default function ManageDriver() {
     };
 
     fetchTransporters();
-  }, []);
+  }, [originPoint]);
 
-  const fetchVehicles = async (transporterId: string) => {
+  const fetchVehicles = async (transporterDocId: string) => {
     try {
-      const vehiclesQuery = query(collection(db, 'transporter', transporterId, 'VehicleNo'));
-      const querySnapshot = await getDocs(vehiclesQuery);
+      // Fetch vehicles from the transporter's VehicleNo subcollection
+      const vehiclesRef = collection(db, 'transporter', transporterDocId, 'VehicleNo');
+      const querySnapshot = await getDocs(vehiclesRef);
+      
       const vehiclesList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
+      
       setVehicles(vehiclesList);
+      console.log('Fetched vehicles:', vehiclesList);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      Alert.alert('Error', 'Failed to fetch vehicles.');
+      Alert.alert('Error', 'Failed to fetch vehicles for this transporter.');
     }
   };
 
@@ -89,7 +99,6 @@ export default function ManageDriver() {
       const response = await fetch(uri);
       const blob = await response.blob();
       
-      // Create unique filename with timestamp
       const filename = `${folder}_${Date.now()}.jpg`;
       const storageRef = ref(storage, `DriverOnboarding/${filename}`);
       
@@ -156,17 +165,20 @@ export default function ManageDriver() {
     setLoading(true);
 
     try {
-      const docId = `${transporter}-${vehicleNo}}`;
+      const docId = `${transporterId}_${vehicleNo}`; // Use transporterId in document ID
       await setDoc(doc(db, 'DriverOnBoarding', docId), {
         vehicleNo,
         tonnage: selectedVehicle?.tonnage || '',
         tons: selectedVehicle?.tons || 0,
-        transporter,
+        transporter: transporterId, // Store transporter document ID
+        transporterName: transporter, // Store transporter name for display
         driverName,
         mobileNumber,
         driverPhoto,
         licencePhoto,
+        originPoint, // Store the loading point
         createdAt: new Date().toISOString(),
+        status: 'active',
       });
       
       Alert.alert('Success', 'Driver onboarding data saved successfully!');
@@ -182,11 +194,13 @@ export default function ManageDriver() {
   const resetForm = () => {
     setVehicleNo('');
     setTransporter('');
+    setTransporterId('');
     setDriverName('');
     setMobileNumber('');
     setDriverPhoto(null);
     setLicencePhoto(null);
     setSelectedVehicle(null);
+    setVehicles([]);
   };
 
   if (!fontsLoaded) {
@@ -211,6 +225,7 @@ export default function ManageDriver() {
           <Text style={styles.headerTitle}>Driver Onboarding</Text>
           <View style={styles.headerRight} />
         </View>
+
 
         {/* Image Upload Sections */}
         <View style={styles.section}>
@@ -287,15 +302,13 @@ export default function ManageDriver() {
               onTextChange={(text: string) => setTransporter(text)}
               onItemSelect={(item: any) => {
                 setTransporter(item.name);
-                fetchVehicles(item.id);
+                setTransporterId(item.id); // Store the transporter document ID
+                fetchVehicles(item.id); // Pass the document ID to fetch vehicles
               }}
               containerStyle={styles.dropdownContainer}
               textInputStyle={styles.dropdownInput}
-              items={transporters.map((transporter) => ({
-                id: transporter.id,
-                name: transporter.name,
-              }))}
-              placeholder="Select Transporter"
+              items={transporters}
+              placeholder={transporter ? transporters?.find((c) => c.name === transporter)?.name : 'Select Transporter'}
               placeholderTextColor="#888"
               resetValue={false}
               itemStyle={styles.dropdownItem}
@@ -311,16 +324,13 @@ export default function ManageDriver() {
             }}
             containerStyle={styles.dropdownContainer}
             textInputStyle={styles.dropdownInput}
-            items={vehicles.map((vehicle) => ({
-              id: vehicle.id,
-              name: vehicle.id,
-              ...vehicle,
-            }))}
-            placeholder="Select Vehicle No"
+            items={vehicles}
+            placeholder={vehicleNo ? vehicles?.find((c) => c.id === vehicleNo)?.id : 'Select Vehicle Number'}
             placeholderTextColor="#888"
             resetValue={false}
             itemStyle={styles.dropdownItem}
             underlineColorAndroid="transparent"
+            disabled={!transporterId} // Disable until transporter is selected
           />
 
           {selectedVehicle && (

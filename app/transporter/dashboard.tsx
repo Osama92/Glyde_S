@@ -243,7 +243,7 @@ const TransporterScreen = () => {
             </View>
             <TouchableOpacity 
               style={styles.cardActionButton}
-              onPress={() => router.push('/transporter/analytics')}
+              onPress={() => router.push('/transporter/shipping')}
             >
               <FontAwesome5 name="chart-line" size={20} color="orange" />
             </TouchableOpacity>

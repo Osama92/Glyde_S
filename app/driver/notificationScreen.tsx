@@ -199,7 +199,7 @@ const NotificationScreen = () => {
       }
   
       const shipmentDoc = querySnapshot.docs[0];
-      const shipmentData = { id: shipmentDoc.id, ...shipmentDoc.data() };
+      const shipmentData: any = { id: shipmentDoc.id, ...shipmentDoc.data() };
       setShipmentId(shipmentDoc.id);
       setShipmentData(shipmentData);
   

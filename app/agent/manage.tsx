@@ -249,7 +249,7 @@ export default function Manage() {
           {/* Manage Drivers Header */}
           <View style={styles.headerContainer}>
             <Text style={styles.manageDriversText}>Manage Drivers</Text>
-            <TouchableOpacity onPress={() => router.push('/agent/manageDriver')}>
+            <TouchableOpacity onPress={() => router.push({pathname:'/agent/manageDriver', params: { originPoint: shippingPoint }})}>
               <Text style={styles.newDriverButton}> + New</Text>
             </TouchableOpacity>
           </View>

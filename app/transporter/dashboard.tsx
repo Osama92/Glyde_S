@@ -20,7 +20,8 @@ import {
 } from "firebase/firestore";
 import { app } from "../firebase";
 import { router } from "expo-router";
-import { BarChart, LineChart, PieChart, PopulationPyramid, RadarChart } from "react-native-gifted-charts";
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
 
@@ -29,75 +30,36 @@ const TransporterScreen = () => {
   const [transporterName, setTransporterName] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [totalTrips, setTotalTrips] = useState<number>(0);
-  const [movedName, setMovedName] = useState<string | null>(null);
-
- 
-  
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Fetch phone number from AsyncStorage
   useEffect(() => {
-    const fetchPhoneNumber = async () => {
+    const fetchUserData = async () => {
       try {
         const storedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
+        const storedProfileImage = await AsyncStorage.getItem("profileImage");
+        
         if (!storedPhoneNumber) {
           console.error("No phone number found");
           return;
         }
+        
         setPhoneNumber(storedPhoneNumber);
+        if (storedProfileImage) {
+          setProfileImage(storedProfileImage);
+        }
       } catch (error) {
-        console.error("Error fetching phone number:", error);
+        console.error("Error fetching user data:", error);
       }
     };
 
-    fetchPhoneNumber();
+    fetchUserData();
   }, []);
 
   // Fetch Transporter Data
-  useEffect(() => {
-    if (!phoneNumber) return;
-
-    const fetchTransporterData = async () => {
-      try {
-        const transporterRef = collection(db, "transporter");
-        const transporterSnapshot = await getDocs(transporterRef);
-        let foundTransporter: any = null;
-
-        transporterSnapshot.forEach((doc) => {
-          if (doc.id.startsWith(`${phoneNumber}_`)) {
-            foundTransporter = doc.id;
-          }
-        });
-
-        if (!foundTransporter) {
-          console.error("Transporter not found");
-          setLoading(false);
-          return;
-        }
-
-        setTransporterName(foundTransporter);
-        
-
-        // Fetch Vehicles inside transporter
-        const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
-        const vehicleSnapshot = await getDocs(vehicleRef);
-        const vehicleList = vehicleSnapshot.docs.map((doc) => doc.id);
-
-        setVehicles(vehicleList);
-      } catch (error) {
-        console.error("Error fetching transporter data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransporterData();
-  }, [phoneNumber]);
-
-
-  const fetchTransporterData = async () => {
+  const fetchTransporterData = useCallback(async () => {
     if (!phoneNumber) return;
 
     try {
@@ -126,234 +88,351 @@ const TransporterScreen = () => {
       const vehicleList = vehicleSnapshot.docs.map((doc) => doc.id);
 
       setVehicles(vehicleList);
+
+      // Calculate total trips
+      let tripSum = 0;
+      for (const vehicle of vehicleList) {
+        const shipmentRef = collection(db, "Shipment");
+        const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicle));
+        const snapshot = await getDocs(shipmentQuery);
+        tripSum += snapshot.size;
+      }
+      setTotalTrips(tripSum);
     } catch (error) {
       console.error("Error fetching transporter data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [phoneNumber]);
 
   useEffect(() => {
     if (phoneNumber) {
       fetchTransporterData();
     }
-  }, [phoneNumber]);
-
-  useEffect(() => {
-    if (!vehicles.length) return;
-  
-    const fetchTotalTrips = async () => {
-      try {
-        let tripSum = 0;
-        for (const vehicle of vehicles) {
-          const shipmentRef = collection(db, "Shipment");
-          const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicle));
-          const snapshot = await getDocs(shipmentQuery);
-          tripSum += snapshot.size;
-        }
-        setTotalTrips(tripSum);
-      } catch (error) {
-        console.error("Error fetching total trips:", error);
-      }
-    };
-  
-    fetchTotalTrips();
-  }, [vehicles]);
+  }, [phoneNumber, fetchTransporterData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTransporterData().finally(() => setRefreshing(false));
-  }, []);
-
-  const useShipmentCount = (vehicleNo: string) => {
-    const [shipmentCount, setShipmentCount] = useState<number | null>(null);
-
-    useEffect(() => {
-      if (!vehicleNo) return;
-
-      const fetchShipmentCount = async () => {
-        try {
-          const shipmentRef = collection(db, "Shipment");
-          const shipmentQuery = query(shipmentRef, where("vehicleNo", "==", vehicleNo));
-          const snapshot = await getDocs(shipmentQuery);
-
-          setShipmentCount(snapshot.size);
-        } catch (error) {
-          console.error("Error fetching shipment count:", error);
-        }
-      };
-
-      fetchShipmentCount();
-    }, [vehicleNo]);
-
-    return shipmentCount;
-  };
-
-
-  
-  const handlePressIn = (button: string) => {
-    setPressedButton(button);
-  };
-
-  const handlePressOut = () => {
-    setPressedButton(null);
-  };
-
+  }, [fetchTransporterData]);
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="orange" />
-        <Text>Loading...</Text>
+        <Text style={styles.loadingText}>Loading your data...</Text>
       </View>
     );
   }
 
-  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   return (
-
     <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        <View style={{width:'100%', height: 90, flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginTop: 20}}>
-            <View style={{width:'70%', height:'100%', flexDirection:'column', justifyContent:'center'}}>
-                {transporterName ? <Text style={{fontSize:14, fontWeight:'500'}}>Hello {transporterName.split("_")[1]},</Text> : <Text>No transporter found</Text>
-                }
-                <Text style={{fontWeight:'bold', fontSize: 23,marginTop:10}}>Good Afternoon</Text>
-            </View>
-            <View style={{width:70, height:70, backgroundColor: 'lightgreen', borderRadius: 35}}></View>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.greetingText}>
+            Hello {transporterName ? transporterName.split("_")[1] : 'User'},
+          </Text>
+          <Text style={styles.timeGreeting}>{getGreeting()}</Text>
         </View>
-        <View style={{width:'100%', height: 60, marginTop:10, flexDirection:'row', alignItems:'center', justifyContent:'space-between', backgroundColor:'#f5f5f5', borderRadius: 10, paddingHorizontal: 5}}>
-            {["Overview", "Shipping", "Tracking", "Invoice", "Routes"].map((item) => (
-        <TouchableOpacity
-          key={item}
-          style={[
-            styles.button,
-            pressedButton === item && styles.pressedButton,
-          ]}
-          onPressIn={() => {handlePressIn(item); router.push(`/transporter/${item.toLowerCase()}`)}}
-          onPressOut={handlePressOut}
-        >
-          <Text style={styles.buttonText}>{item}</Text>
-        </TouchableOpacity>
-      ))}
-
-        </View>
-        <ScrollView showsVerticalScrollIndicator={false} style={{width:'100%', marginTop: 5}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-            <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
-                <View style={{width:'100%', height:60, flexDirection:'row'}}>
-                    <View style={{width:'80%', height:'100%'}}>
-                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Delivery Fleets</Text>
-                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Vehicles operating in your fleet</Text>
-                    </View>
-                    <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/addNew')}}>
-                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <View style={{width:'100%', height: 160,flexDirection:'row'}}>
-                    <View style={{width:'40%', height:'100%', justifyContent:'center'}}>
-                        <Text style={{paddingLeft:20, fontSize: 70, fontWeight:'bold', marginTop:10}}>{vehicles.length}</Text>
-                        <Text style={{paddingLeft:20, fontSize: 14}}>Fleets</Text>
-                    </View>
-                    <Image source={require('../../assets/images/Van01.png')} style={{width:190, height:190}} resizeMode="contain"/>
-                </View>
-                <TouchableOpacity style={{padding:8}}>
-                    <Text style={{color:'green'}}>View vehicle position</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
-                <View style={{width:'100%', height:60, flexDirection:'row'}}>
-                    <View style={{width:'80%', height:'100%'}}>
-                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Total Shipments</Text>
-                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>Summary of shipments</Text>
-                    </View>
-                    <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push('/transporter/analytics')}}>
-                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <View style={{width:'100%', height: 160,flexDirection:'row'}}>
-                    <View style={{width:'40%', height:'100%', justifyContent:'center'}}>
-                        <Text style={{paddingLeft:20, fontSize: 70, fontWeight:'bold', marginTop:10}}>{totalTrips}</Text>
-                        <Text style={{paddingLeft:20, fontSize: 14}}>Shipments</Text>
-                    </View>
-                    <Image source={require('../../assets/images/trips.png')} style={{width:190, height:190}} resizeMode="contain"/>
-                </View>
-            </View>
-
-            <View style={{width:'100%', height: 250, backgroundColor: '#f5f5f5', marginTop: 20, borderRadius: 10}}>
-                <View style={{width:'100%', height:60, flexDirection:'row'}}>
-                    <View style={{width:'80%', height:'100%'}}>
-                        <Text style={{fontSize: 20, fontWeight:'bold', marginLeft: 10, marginTop: 10}}>Analytics</Text>
-                        <Text style={{fontSize: 13, marginLeft: 10, marginTop: 5}}>View delivery and truck performance</Text>
-                    </View>
-                    <View style={{width:'20%', height:'100%',alignItems:'center', justifyContent:'center'}}>
-                        <TouchableOpacity style={{width: 50, height:50, borderRadius:25, justifyContent:'center', alignItems:'center'}} onPress={() => {router.push(`/transporter/analytics?transporterName=${transporterName?.split("_")[1]}`)}}>
-                            <Image source={require('../../assets/images/Kbutton.png')} resizeMode="contain" style={{width:40, height:40}}/>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <View style={{width:'100%', height: 160,justifyContent:'center',alignItems:'center'}}>
-                    <Image source={require('../../assets/images/analytics.png')} style={{width:190, height:190}} resizeMode="contain"/>
-                </View>
-            </View>
-            
-        </ScrollView>
         
+        <TouchableOpacity onPress={() => router.push('/')}>
+          {profileImage ? (
+            <Image 
+              source={{ uri: profileImage }} 
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.profilePlaceholder}>
+              <MaterialIcons name="person" size={24} color="#fff" />
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      
+      {/* Navigation Tabs */}
+      <ScrollView 
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        style={styles.tabContainer}
+      >
+        {["Overview", "Shipping", "Tracking", "Invoice", "Routes"].map((item) => (
+          <TouchableOpacity
+            key={item}
+            style={styles.tabButton}
+            onPress={() => router.push(`/transporter/${item.toLowerCase()}`)}
+          >
+            <Text style={styles.tabButtonText}>{item}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      
+      {/* Content */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        style={styles.contentContainer}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={['orange']}
+            tintColor="orange"
+          />
+        }
+      >
+        {/* Delivery Fleets Card */}
+        <LinearGradient
+          colors={['#f8f9fa', '#e9ecef']}
+          style={styles.card}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Delivery Fleets</Text>
+              <Text style={styles.cardSubtitle}>Vehicles in your fleet</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.cardActionButton}
+              onPress={() => router.push('/transporter/addNew')}
+            >
+              <Ionicons name="add-circle" size={24} color="orange" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.cardContent}>
+            <View style={styles.cardStats}>
+              <Text style={styles.cardNumber}>{vehicles.length}</Text>
+              <Text style={styles.cardLabel}>Fleets</Text>
+              <TouchableOpacity style={styles.viewButton}>
+                <Text style={styles.viewButtonText}>View positions</Text>
+                <MaterialIcons name="chevron-right" size={16} color="orange" />
+              </TouchableOpacity>
+            </View>
+            <Image 
+              source={require('../../assets/images/Van01.png')} 
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </View>
+        </LinearGradient>
+        
+        {/* Total Shipments Card */}
+        <LinearGradient
+          colors={['#f8f9fa', '#e9ecef']}
+          style={styles.card}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Total Shipments</Text>
+              <Text style={styles.cardSubtitle}>Summary of shipments</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.cardActionButton}
+              onPress={() => router.push('/transporter/analytics')}
+            >
+              <FontAwesome5 name="chart-line" size={20} color="orange" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.cardContent}>
+            <View style={styles.cardStats}>
+              <Text style={styles.cardNumber}>{totalTrips}</Text>
+              <Text style={styles.cardLabel}>Shipments</Text>
+            </View>
+            <Image 
+              source={require('../../assets/images/trips.png')} 
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </View>
+        </LinearGradient>
+        
+        {/* Analytics Card */}
+        <LinearGradient
+          colors={['#f8f9fa', '#e9ecef']}
+          style={styles.card}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Analytics</Text>
+              <Text style={styles.cardSubtitle}>Delivery & truck performance</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.cardActionButton}
+              onPress={() => router.push(`/transporter/analytics?transporterName=${transporterName?.split("_")[1]}`)}
+            >
+              <Ionicons name="analytics" size={20} color="orange" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={[styles.cardContent, {justifyContent: 'center'}]}>
+            <Image 
+              source={require('../../assets/images/analytics.png')} 
+              style={[styles.cardImage, {width: '100%', height: 150}]}
+              resizeMode="contain"
+            />
+          </View>
+        </LinearGradient>
+      </ScrollView>
     </View>
   );
 };
-
-
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    alignItems: "center",
     padding: 20,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    width: "90%",
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  addButton: {
-    backgroundColor: "green",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  button: {
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
-   
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
-  buttonText: {
-    color: "black",
-    //fontWeight: "bold",
-  },
-  vehicleItem: {
+  loadingText: {
+    marginTop: 20,
     fontSize: 16,
-    marginVertical: 5,
+    color: '#555',
   },
-
-  pressedButton: {
-    backgroundColor: "#f5f5f5",
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+    marginTop: 10,
   },
-
+  headerTextContainer: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 16,
+    color: '#555',
+    fontWeight: '500',
+  },
+  timeGreeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 5,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'orange',
+  },
+  profilePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'orange',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabContainer: {
+    paddingBottom: 10,
+    height: 70,
+  },
+  tabButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: '#f0f6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabButtonText: {
+    color: 'orange',
+    fontWeight: '500',
+  },
+  contentContainer: {
+    //flex: 1,
+    marginTop: 10,
+  },
+  card: {
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+  },
+  cardActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e6f0ff',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardStats: {
+    flex: 1,
+  },
+  cardNumber: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'orange',
+  },
+  cardLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: -5,
+  },
+  cardImage: {
+    width: 150,
+    height: 120,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  viewButtonText: {
+    color: 'orange',
+    fontWeight: '500',
+    marginRight: 5,
+  },
 });
 
 export default TransporterScreen;

@@ -39,7 +39,7 @@ const TransporterScreen = () => {
     const fetchUserData = async () => {
       try {
         const storedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
-        const storedProfileImage = await AsyncStorage.getItem("profileImage");
+        const storedProfileImage = await AsyncStorage.getItem("imageUrl");
         
         if (!storedPhoneNumber) {
           console.error("No phone number found");
@@ -73,6 +73,7 @@ const TransporterScreen = () => {
           foundTransporter = doc.id;
         }
       });
+      
 
       if (!foundTransporter) {
         console.error("Transporter not found");
@@ -81,6 +82,7 @@ const TransporterScreen = () => {
       }
 
       setTransporterName(foundTransporter);
+      setProfileImage(transporterSnapshot.docs[0].data().imageUrl);
 
       // Fetch Vehicles inside transporter
       const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
@@ -145,7 +147,7 @@ const TransporterScreen = () => {
           <Text style={styles.timeGreeting}>{getGreeting()}</Text>
         </View>
         
-        <TouchableOpacity onPress={() => router.push('/')}>
+        <TouchableOpacity onPress={() => router.push('/transporter/editProfile')}>
           {profileImage ? (
             <Image 
               source={{ uri: profileImage }} 

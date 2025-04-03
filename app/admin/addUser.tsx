@@ -382,7 +382,7 @@ const AddUserScreen: React.FC = () => {
                   defaultIndex={-1}
                   resetValue={false}
                   underlineColorAndroid="transparent"
-                  placeholder="Select Loading Point"
+                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
                   placeholderTextColor="#999"
                   searchPlaceholder="Search loading points..."
                   nestedScrollEnabled={true}
@@ -417,7 +417,7 @@ const AddUserScreen: React.FC = () => {
                   defaultIndex={-1}
                   resetValue={false}
                   underlineColorAndroid="transparent"
-                  placeholder="Select Loading Point"
+                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
                   placeholderTextColor="#999"
                   searchPlaceholder="Search loading points..."
                   nestedScrollEnabled={true}

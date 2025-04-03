@@ -25,8 +25,12 @@ import {
 import { app } from "../firebase";
 import { router } from "expo-router";
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import * as Location from 'expo-location';
 
 const db = getFirestore(app);
+
+// Replace with your actual Google Maps API key
+const GOOGLE_API_KEY = "AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0";
 
 export default function CreateMaterialScreen() {
   const [originPoints, setOriginPoints] = useState<any[]>([]);
@@ -42,6 +46,23 @@ export default function CreateMaterialScreen() {
   const [isNewOrigin, setIsNewOrigin] = useState<boolean>(false);
   const [newOriginName, setNewOriginName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [latitude, setLatitude] = useState<string>("");
+  const [longitude, setLongitude] = useState<string>("");
+  const [originAddress, setOriginAddress] = useState<string>("");
+  const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
+
+  const UoM = [
+    { id: 1, name: "Cartons", value: "Cartons" },
+    { id: 2, name: "Bags", value: "Bags" },
+    { id: 3, name: "Pieces", value: "Pieces" },
+    { id: 4, name: "Gallons", value: "Gallons" },
+  ];
+
+  const sensitivity = [
+    { id: 1, name: "Fragile", value: "Fragile" },
+    { id: 2, name: "Flammable", value: "Flammable" },
+    { id: 3, name: "Non-Fragile", value: "Non-Fragile" },
+  ]
 
   useEffect(() => {
     fetchOriginPoints();
@@ -78,9 +99,85 @@ export default function CreateMaterialScreen() {
     }
   };
 
+  const geocodeCoordinates = async () => {
+    if (!latitude || !longitude) {
+      Alert.alert("Error", "Please enter both latitude and longitude");
+      return;
+    }
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat)) {
+      Alert.alert("Error", "Invalid latitude value");
+      return;
+    }
+
+    if (isNaN(lng)) {
+      Alert.alert("Error", "Invalid longitude value");
+      return;
+    }
+
+    if (lat < -90 || lat > 90) {
+      Alert.alert("Error", "Latitude must be between -90 and 90");
+      return;
+    }
+
+    if (lng < -180 || lng > 180) {
+      Alert.alert("Error", "Longitude must be between -180 and 180");
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results.length > 0) {
+        setOriginAddress(data.results[0].formatted_address);
+      } else {
+        Alert.alert("Error", "Could not find address for these coordinates");
+        setOriginAddress("");
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      Alert.alert("Error", "Failed to geocode coordinates");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      setIsGeocoding(true);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is required to get your current location');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLatitude(location.coords.latitude.toString());
+      setLongitude(location.coords.longitude.toString());
+      await geocodeCoordinates();
+    } catch (error) {
+      console.error("Error getting location:", error);
+      Alert.alert("Error", "Failed to get current location");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const handleSaveMaterial = async () => {
     if ((!isNewOrigin && !selectedOrigin) || !materialName.trim() || !weight.trim()) {
       Alert.alert("Error", "Please fill all required fields.");
+      return;
+    }
+
+    if (isNewOrigin && (!newOriginName.trim() || !latitude || !longitude || !originAddress)) {
+      Alert.alert("Error", "Please provide all required location details for the new origin point.");
       return;
     }
 
@@ -89,13 +186,17 @@ export default function CreateMaterialScreen() {
     try {
       const originId = isNewOrigin ? newOriginName : selectedOrigin.id;
 
-      // If it's a new origin, add it to the "originPoint" collection
       if (isNewOrigin) {
         const originRef = doc(db, "originPoint", originId);
-        await setDoc(originRef, { name: originId });
+        await setDoc(originRef, { 
+          name: originId,
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+          address: originAddress,
+          createdAt: new Date().toISOString()
+        });
       }
 
-      // Add material to the subcollection
       const materialsRef = collection(db, `originPoint/${originId}/materials`);
       await addDoc(materialsRef, {
         name: materialName,
@@ -107,14 +208,7 @@ export default function CreateMaterialScreen() {
 
       Alert.alert("Success", "Material added successfully.");
       setIsCreateModalVisible(false);
-      setMaterialName("");
-      setWeight("");
-      setUom("Cartons");
-      setProductSensitivity("Fragile");
-      setNewOriginName("");
-      setIsNewOrigin(false);
-
-      // Refresh the origin points list
+      resetForm();
       fetchOriginPoints();
     } catch (error) {
       console.error("Error saving material:", error);
@@ -122,6 +216,18 @@ export default function CreateMaterialScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setMaterialName("");
+    setWeight("");
+    setUom("Cartons");
+    setProductSensitivity("Fragile");
+    setNewOriginName("");
+    setIsNewOrigin(false);
+    setLatitude("");
+    setLongitude("");
+    setOriginAddress("");
   };
 
   const filteredOrigins = originPoints.filter(origin =>
@@ -227,11 +333,16 @@ export default function CreateMaterialScreen() {
                   <View style={styles.originIcon}>
                     <Ionicons name="location" size={20} color="orange" />
                   </View>
-                  <View>
+                  <View style={styles.originInfo}>
                     <Text style={styles.originName}>{origin.id}</Text>
                     <Text style={styles.originDetails}>
                       Tap to view materials
                     </Text>
+                    {origin.address && (
+                      <Text style={styles.originAddress} numberOfLines={1}>
+                        {origin.address}
+                      </Text>
+                    )}
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#999" />
@@ -254,7 +365,7 @@ export default function CreateMaterialScreen() {
               onPress={() => setIsModalVisible(false)}
               style={styles.modalBackButton}
             >
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
+              <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               Materials at {selectedOrigin?.id}
@@ -355,16 +466,85 @@ export default function CreateMaterialScreen() {
             </View>
 
             {isNewOrigin ? (
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>New Origin Name</Text>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="e.g. Warehouse A"
-                  placeholderTextColor="#999"
-                  value={newOriginName}
-                  onChangeText={setNewOriginName}
-                />
-              </View>
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>New Origin Name</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. Warehouse A"
+                    placeholderTextColor="#999"
+                    value={newOriginName}
+                    onChangeText={setNewOriginName}
+                  />
+                </View>
+
+                <View style={styles.locationContainer}>
+                  <View style={styles.coordinateContainer}>
+                    <Text style={styles.inputLabel}>Latitude</Text>
+                    <TextInput
+                      style={styles.coordinateInput}
+                      placeholder="e.g. 40.7128"
+                      placeholderTextColor="#999"
+                      value={latitude}
+                      onChangeText={setLatitude}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={styles.coordinateContainer}>
+                    <Text style={styles.inputLabel}>Longitude</Text>
+                    <TextInput
+                      style={styles.coordinateInput}
+                      placeholder="e.g. -74.0060"
+                      placeholderTextColor="#999"
+                      value={longitude}
+                      onChangeText={setLongitude}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.geocodeButton}
+                  onPress={geocodeCoordinates}
+                  disabled={isGeocoding || !latitude || !longitude}
+                >
+                  {isGeocoding ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="map" size={20} color="#FFF" />
+                      <Text style={styles.geocodeButtonText}>Get Address from Coordinates</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.locationButton}
+                  onPress={getCurrentLocation}
+                  disabled={isGeocoding}
+                >
+                  {isGeocoding ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="locate" size={20} color="#FFF" />
+                      <Text style={styles.locationButtonText}>Use Current Location</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Address</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.disabledInput]}
+                    placeholder="Address will appear here after geocoding"
+                    placeholderTextColor="#999"
+                    value={originAddress}
+                    editable={false}
+                    multiline
+                  />
+                </View>
+              </>
             ) : (
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Select Origin</Text>
@@ -377,7 +557,7 @@ export default function CreateMaterialScreen() {
                   itemTextStyle={styles.dropdownItemText}
                   items={originPoints}
                   defaultIndex={0}
-                  placeholder="Select an origin point"
+                  placeholder={selectedOrigin ? originPoints?.find((c) => c.id === selectedOrigin)?.id : 'Select an Origin Point'}
                   placeholderTextColor="#999"
                   resetValue={false}
                   underlineColorAndroid="transparent"
@@ -416,14 +596,9 @@ export default function CreateMaterialScreen() {
                 textInputStyle={styles.dropdownInput}
                 itemStyle={styles.dropdownItem}
                 itemTextStyle={styles.dropdownItemText}
-                items={[
-                  { id: 1, name: "Cartons", value: "Cartons" },
-                  { id: 2, name: "Bags", value: "Bags" },
-                  { id: 3, name: "Pieces", value: "Pieces" },
-                  { id: 4, name: "Gallons", value: "Gallons" },
-                ]}
+                items={UoM}
                 defaultIndex={0}
-                placeholder="Select UoM"
+                placeholder={uom ? UoM?.find((c) => c.name === uom)?.name : 'Select UoM'}
                 placeholderTextColor="#999"
                 resetValue={false}
                 underlineColorAndroid="transparent"
@@ -438,13 +613,9 @@ export default function CreateMaterialScreen() {
                 textInputStyle={styles.dropdownInput}
                 itemStyle={styles.dropdownItem}
                 itemTextStyle={styles.dropdownItemText}
-                items={[
-                  { id: 1, name: "Fragile", value: "Fragile" },
-                  { id: 2, name: "Flammable", value: "Flammable" },
-                  { id: 3, name: "Non-Fragile", value: "Non-Fragile" },
-                ]}
+                items={sensitivity}
                 defaultIndex={0}
-                placeholder="Select Sensitivity"
+                placeholder={productSensitivity ? sensitivity?.find((c) => c.name === productSensitivity)?.name : 'Select Sensitivity'}
                 placeholderTextColor="#999"
                 resetValue={false}
                 underlineColorAndroid="transparent"
@@ -584,15 +755,21 @@ const styles = StyleSheet.create({
   originCardLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   originIcon: {
-    backgroundColor: "#E8F5E9",
+    backgroundColor: "#FFF8E1",
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: "#FFE0B2",
+  },
+  originInfo: {
+    flex: 1,
   },
   originName: {
     fontSize: 16,
@@ -602,6 +779,11 @@ const styles = StyleSheet.create({
   originDetails: {
     fontSize: 14,
     color: "#666",
+    marginTop: 4,
+  },
+  originAddress: {
+    fontSize: 12,
+    color: "#999",
     marginTop: 4,
   },
   modalContainer: {
@@ -746,6 +928,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
+  disabledInput: {
+    backgroundColor: "#F5F5F5",
+    color: "#666",
+  },
   dropdownContainer: {
     padding: 0,
   },
@@ -778,9 +964,54 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   saveButtonDisabled: {
-    backgroundColor: "#A5D6A7",
+    backgroundColor: "#FFCC80",
   },
   saveButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  coordinateContainer: {
+    width: '48%',
+  },
+  coordinateInput: {
+    backgroundColor: "#FFF",
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 16,
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  geocodeButton: {
+    backgroundColor: "#2196F3",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  geocodeButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+  locationButton: {
+    backgroundColor: "#4CAF50",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  locationButtonText: {
     color: "#FFF",
     fontWeight: "bold",
     marginLeft: 8,

@@ -12,6 +12,7 @@ const LGASelector = ({ lga, selectedLGA, setSelectedLGA }) => {
       {/* Searchable Dropdown */}
       <SearchableDropdown
         onItemSelect={(item: any) => setSelectedLGA(item)}
+        onTextChange={(text: string) => {}}
         containerStyle={styles.dropdownContainer}
         textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
@@ -21,6 +22,9 @@ const LGASelector = ({ lga, selectedLGA, setSelectedLGA }) => {
         placeholder='Select a LGA'
         resetValue={false}
         underlineColorAndroid="transparent"
+        textInputProps={{
+          autoCorrect: false,
+        }}
       />
       
       {/* Selected Item Display */}

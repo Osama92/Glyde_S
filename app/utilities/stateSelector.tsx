@@ -13,6 +13,7 @@ const StateSelector = ({ state, selectedState, setSelectedState }) => {
       <SearchableDropdown
         onItemSelect={(item: any) => setSelectedState(item)}
         containerStyle={styles.dropdownContainer}
+        onTextChange={(text: string) => {}}
         textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
         itemTextStyle={styles.dropdownItemText}
@@ -21,6 +22,9 @@ const StateSelector = ({ state, selectedState, setSelectedState }) => {
         placeholder='Select a state'
         resetValue={false}
         underlineColorAndroid="transparent"
+        textInputProps={{
+          autoCorrect: false,
+        }}
       />
       
       {/* Selected Item Display */}

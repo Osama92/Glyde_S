@@ -296,6 +296,7 @@ const saveRoute = async () => {
           <Text style={styles.sectionTitle}>Select Truck Type</Text>
           <SearchableDropdown
             onItemSelect={(item: any) => setSelectedTruck(item.name)}
+            onTextChange={(text: string) => {}}
             containerStyle={styles.dropdownContainer}
             textInputStyle={styles.dropdownInput}
             itemStyle={styles.dropdownItem}
@@ -305,6 +306,9 @@ const saveRoute = async () => {
             placeholder={selectedTruck ? truckTypes?.find((c) => c.name === selectedTruck)?.name : 'Choose a truck type'}
             resetValue={false}
             underlineColorAndroid="transparent"
+            textInputProps={{
+                autoCorrect: false,
+              }}
           />
         </View>
 

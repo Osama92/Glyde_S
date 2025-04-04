@@ -12,6 +12,7 @@ const OriginPointSelector = ({ originPoints, selectedOrigin, setSelectedOrigin }
       {/* Searchable Dropdown */}
       <SearchableDropdown
         onItemSelect={(item: any) => setSelectedOrigin(item)}
+        onTextChange={(text: string) => {}}
         containerStyle={styles.dropdownContainer}
         textInputStyle={styles.dropdownInput}
         itemStyle={styles.dropdownItem}
@@ -21,6 +22,9 @@ const OriginPointSelector = ({ originPoints, selectedOrigin, setSelectedOrigin }
         placeholder='Select Loading Point'
         resetValue={false}
         underlineColorAndroid="transparent"
+        textInputProps={{
+          autoCorrect: false,
+        }}
       />
       
       {/* Selected Item Display */}

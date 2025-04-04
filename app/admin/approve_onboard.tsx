@@ -14,12 +14,10 @@ import {
   Platform,
   UIManager,
   Alert,
-  findNodeHandle
 } from "react-native";
 import { 
   collection, 
-  query, 
-  where, 
+  query,  
   getDocs, 
   updateDoc, 
   doc, 
@@ -307,7 +305,7 @@ const MissingLoadingPointScreen = () => {
                 containerStyle={styles.dropdownContainer}
                 textInputStyle={styles.dropdownInput}
                 items={originPoints}
-                placeholder="Select Origin Point"
+                placeholder={loadingPoint ? originPoints?.find((c) => c.id === loadingPoint)?.id : 'Select Loading Point'}
                 placeholderTextColor="#888"
                 resetValue={false}
                 itemStyle={styles.dropdownItem}

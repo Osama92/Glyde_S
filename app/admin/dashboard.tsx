@@ -212,6 +212,12 @@ export default function Dashboard() {
             </TouchableOpacity>
             <Text style={styles.menuText}>Create Invoice</Text>
           </View>
+          <View style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/addRoute')}>
+              <Image source={require('../../assets/images/routing.png')} style={{width: 30, height:30}}/>
+            </TouchableOpacity>
+            <Text style={styles.menuText}>Create Invoice</Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -283,7 +289,8 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     width: "100%",
-    height: 130,
+    flexWrap: "wrap",
+    height: 400,
     backgroundColor: "#f4f4f4",
     borderRadius: 20,
     flexDirection: 'row',
@@ -302,7 +309,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: 'lightgrey',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: 10,
   },
   menuText: {
     textAlign: 'center'

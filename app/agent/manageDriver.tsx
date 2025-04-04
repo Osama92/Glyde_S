@@ -173,6 +173,7 @@ export default function ManageDriver() {
         vehicleNo,
         tonnage: selectedVehicle?.tonnage || '',
         tons: selectedVehicle?.tons || 0,
+        color: selectedVehicle?.color || '',
         transporter: transporterId, // Store transporter document ID
         transporterName: transporter, // Store transporter name for display
         driverName,

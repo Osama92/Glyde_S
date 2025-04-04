@@ -217,7 +217,7 @@ const saveRoute = async () => {
   if (!fontsLoaded) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#4A90E2" />
+        <ActivityIndicator size="large" color="orange" />
       </View>
     );
   }
@@ -240,7 +240,7 @@ const saveRoute = async () => {
         <View style={styles.section}>
           {/* <Text style={styles.sectionTitle}>Select Origin Point</Text> */}
           {fetchingOrigins ? (
-            <ActivityIndicator size="small" color="#4A90E2" />
+            <ActivityIndicator size="small" color="orange" />
           ) : (
             <OriginPointSelector 
                 originPoints={originPoints}
@@ -281,7 +281,7 @@ const saveRoute = async () => {
             <View style={styles.readOnlyField}>
               {calculatingDistance ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color="#4A90E2" style={{ marginRight: 10 }} />
+                  <ActivityIndicator size="small" color="orange" style={{ marginRight: 10 }} />
                   <Text>Calculating...</Text>
                 </View>
               ) : (
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito',
   },
   saveButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: 'orange',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',

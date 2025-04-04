@@ -171,14 +171,14 @@ export default function Dashboard() {
           title="Create Shipment"
           icon={<FontAwesome5 name="shipping-fast" size={42} color="#fff" />}
           color="#6C63FF"
-          onPress={() => router.push(`/agent/createShipment?shippingPoint=${shippingPoint}`)}
+          onPress={() => router.push(`/agent/createShipment?originPoint=${shippingPoint}`)}
         />
         
         <ActionCard
           title="Create Delivery"
           icon={<MaterialIcons name="delivery-dining" size={42} color="#fff" />}
           color="#FF6584"
-          onPress={() => router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}
+          onPress={() => router.push(`/agent/createDelivery?originPoint=${shippingPoint}`)}
         />
         
         <ActionCard

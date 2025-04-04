@@ -553,7 +553,7 @@ export default function Details() {
                       <Text style={styles.inputLabel}>Tonnage</Text>
                       <SearchableDropdown
                         onItemSelect={(item) => {
-                          setTonnageInput(item.name), setTons(item.id);
+                          setTonnageInput(item.name), setTons(item.tonnage);
                         }}
                         containerStyle={styles.dropdownContainer}
                         textInputStyle={styles.dropdownInput}

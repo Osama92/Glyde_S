@@ -55,7 +55,7 @@ export default function CreateShipment() {
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
-  const { shippingPoint } = useLocalSearchParams();
+  const { originPoint } = useLocalSearchParams();
 
   // Animation setup
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function CreateShipment() {
           const { LoadingPoint } = data;
           const [transporter, vehicleNo] = doc.id.split("-");
 
-          if (transporter && vehicleNo && LoadingPoint === shippingPoint) {
+          if (transporter && vehicleNo && LoadingPoint === originPoint) {
             transporterSet.add(transporter);
             vehicleNoData.push({ transporter, vehicleNo });
           }
@@ -115,7 +115,7 @@ export default function CreateShipment() {
     };
 
     fetchTransportersAndVehicles();
-  }, [shippingPoint]);
+  }, [originPoint]);
 
   useEffect(() => {
     if (selectedTransporter) {

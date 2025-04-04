@@ -24,7 +24,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const db = getFirestore(app);
 const storage = getStorage(app, "gs://glyde-s-eb857.firebasestorage.app");
-const GOOGLE_MAPS_API_KEY = "AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w";
+const GOOGLE_MAPS_API_KEY = "AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0";
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState({ 

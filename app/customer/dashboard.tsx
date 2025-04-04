@@ -66,7 +66,7 @@ type UserData = {
 const collections = ['deliveryDriver', 'customer', 'fieldAgent', 'transporter'] as const;
 const labels = ['Loaded', 'Dispatched', 'In-Transit', 'Delivered'] as const;
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyC0pSSZzkwCu4hftcE7GoSAF2DxKjW3B6w';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0';
 
 export default function Dashboard() {
   // State with TypeScript types

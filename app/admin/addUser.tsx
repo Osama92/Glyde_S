@@ -129,7 +129,7 @@ const AddUserScreen: React.FC = () => {
         }
       }
       
-      if (selectedCollection === 'fieldagent' || selectedCollection === 'transporter') {
+      if (selectedCollection === 'fieldagent' || selectedCollection === 'transporter' || selectedCollection === 'customer') {
         setFetchingLoadingPoints(true);
         try {
           const loadingPointRef = collection(db, 'originPoint');
@@ -186,6 +186,9 @@ const AddUserScreen: React.FC = () => {
     if (selectedCollection === 'transporter' && !loadingPoint) {
       newErrors.loadingPoint = 'Loading point is required';
     }
+    if (selectedCollection === 'customer' && !loadingPoint) {
+      newErrors.loadingPoint = 'Loading point is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -214,6 +217,10 @@ const AddUserScreen: React.FC = () => {
         LoadingPoint: loadingPoint,
       });
     } else if (selectedCollection === 'transporter') {
+      Object.assign(userData, {
+        LoadingPoint: loadingPoint,
+      });
+    }else if (selectedCollection === 'customer') {
       Object.assign(userData, {
         LoadingPoint: loadingPoint,
       });
@@ -395,6 +402,40 @@ const AddUserScreen: React.FC = () => {
 
           {/* Transporter Specific Fields */}
           {selectedCollection === 'transporter' && (
+            <>
+              <Text style={styles.label}>Loading Point</Text>
+              {fetchingLoadingPoints ? (
+                <ActivityIndicator size="small" color="#FFA500" />
+              ) : (
+                <SearchableDropdown
+                  onItemSelect={(item) => {
+                    setLoadingPoint(item.id);
+                    setErrors(prev => ({ ...prev, loadingPoint: '' }));
+                  }}
+                  containerStyle={[styles.dropdownContainer, errors.loadingPoint && styles.inputError]}
+                  textInputStyle={styles.dropdownTextInput}
+                  itemStyle={styles.dropdownItem}
+                  itemTextStyle={styles.dropdownItemText}
+                  itemsContainerStyle={[
+                    styles.dropdownItemsContainer,
+                    isSmallDevice && { maxHeight: 150 }
+                  ]}
+                  items={loadingPoints}
+                  defaultIndex={-1}
+                  resetValue={false}
+                  underlineColorAndroid="transparent"
+                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
+                  placeholderTextColor="#999"
+                  searchPlaceholder="Search loading points..."
+                  nestedScrollEnabled={true}
+                  onRemoveItem={() => setLoadingPoint('')}
+                />
+              )}
+              {errors.loadingPoint && <Text style={styles.errorText}>{errors.loadingPoint}</Text>}
+            </>
+          )}
+          {/* Customer Specific Fields */}
+          {selectedCollection === 'customer' && (
             <>
               <Text style={styles.label}>Loading Point</Text>
               {fetchingLoadingPoints ? (

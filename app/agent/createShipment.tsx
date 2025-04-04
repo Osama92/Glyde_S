@@ -27,7 +27,7 @@ const db = getFirestore(app);
 interface DropdownItem {
   id: string;
   name: string;
-  freight?: number;
+  freightCost?: number;
 }
 
 export default function CreateShipment() {
@@ -225,8 +225,8 @@ export default function CreateShipment() {
         .filter((doc) => doc.data().tonnage === tonnageValue)
         .map((doc) => ({
           id: doc.id,
-          name: doc.data().desc,
-          freight: doc.data().freight,
+          name: doc.data().description,
+          freightCost: doc.data().freightCost,
         }));
 
       setFilteredRoutes(filtered);
@@ -423,7 +423,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
                 <Text style={styles.cardTitle}>Vehicle Details</Text>
                 <Text style={styles.cardText}>
                   A {selectedVehicleDetails?.tonnage} is a commercial vehicle designed for the efficient transportation of goods, 
-                  typically handling payloads of up to {selectedVehicleDetails.tons},000 kg
+                  typically handling payloads of up to {selectedVehicleDetails.tons}kg
                 </Text>
               </View>
             )}
@@ -465,7 +465,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
                   items={filteredRoutes}
                   onItemSelect={(item: DropdownItem) => {
                     setSelectedRoute(item);
-                    setFreightCost(item.freight || null);
+                    setFreightCost(item.freightCost || null);
                   }}
                   placeholder="Select a Route"
                   placeholderTextColor="#888"
@@ -481,7 +481,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
                 {selectedRoute && (
                   <View style={styles.freightCostContainer}>
                     <Text style={styles.freightCostLabel}>Freight Cost:</Text>
-                    <Text style={styles.freightCostValue}>₦{selectedRoute.freight}</Text>
+                    <Text style={styles.freightCostValue}>₦{selectedRoute.freightCost}</Text>
                   </View>
                 )}
               </View>

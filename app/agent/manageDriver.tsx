@@ -13,7 +13,7 @@ import {
   Alert
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { doc, setDoc, getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getFirestore, collection, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app } from "../firebase"; 
 import { useFonts } from 'expo-font';
@@ -36,7 +36,7 @@ export default function ManageDriver() {
   const [uploading, setUploading] = useState(false);
   const [transporters, setTransporters] = useState<any[]>([]);
   const [loadingTransporters, setLoadingTransporters] = useState(false);
-  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<Array<{id: string;name: string;[key: string]: any;}>>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const { originPoint } = useLocalSearchParams(); // Default loading point
 
@@ -44,6 +44,8 @@ export default function ManageDriver() {
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
+
+  
 
   useEffect(() => {
     const fetchTransporters = async () => {
@@ -63,6 +65,7 @@ export default function ManageDriver() {
         }));
         
         setTransporters(transportersList);
+        console.log('Fetched transporters:', transportersList);
       } catch (error) {
         console.error('Error fetching transporters:', error);
         Alert.alert('Error', 'Failed to fetch transporters.');
@@ -76,23 +79,23 @@ export default function ManageDriver() {
 
   const fetchVehicles = async (transporterDocId: string) => {
     try {
-      // Fetch vehicles from the transporter's VehicleNo subcollection
       const vehiclesRef = collection(db, 'transporter', transporterDocId, 'VehicleNo');
       const querySnapshot = await getDocs(vehiclesRef);
       
       const vehiclesList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
+        name: doc.id, 
         ...doc.data(),
+       
       }));
       
       setVehicles(vehiclesList);
-      console.log('Fetched vehicles:', vehiclesList);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      Alert.alert('Error', 'Failed to fetch vehicles for this transporter.');
+      Alert.alert('Error', 'Failed to fetch vehicles.');
     }
   };
-
+  
   const uploadImageToStorage = async (uri: string, folder: string) => {
     try {
       setUploading(true);
@@ -330,7 +333,8 @@ export default function ManageDriver() {
             resetValue={false}
             itemStyle={styles.dropdownItem}
             underlineColorAndroid="transparent"
-            disabled={!transporterId} // Disable until transporter is selected
+            disabled={!transporterId}
+            itemTextStyle={{color:'#000'}} 
           />
 
           {selectedVehicle && (
@@ -497,7 +501,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     padding: 12,
     marginTop: 2,
-    backgroundColor: "#f9f9f9",
+    //backgroundColor: "#f9f9f9",
     borderColor: "#eee",
     borderWidth: 1,
     borderRadius: 8,

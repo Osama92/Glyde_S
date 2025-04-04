@@ -186,7 +186,7 @@ export default function Manage() {
             }
           />
         ) : (
-          <Text style={styles.cell}>{item.transporter}</Text>
+          <Text style={styles.cell}>{item.transporter.split("_")[1]}</Text>
         )}
 
         {isEditable ? (

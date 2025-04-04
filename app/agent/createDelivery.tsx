@@ -693,7 +693,6 @@ const styles = StyleSheet.create({
   deleteIcon: {
     width: 24,
     height: 24,
-    tintColor: '#ff4444',
   },
   materialsList: {
     marginTop: 15,

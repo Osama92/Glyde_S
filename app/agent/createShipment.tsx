@@ -87,34 +87,51 @@ export default function CreateShipment() {
     const fetchTransportersAndVehicles = async () => {
       setLoading(true);
       try {
-        const transporterSet = new Set<string>();
+        const transportersMap = new Map<string, string>(); // Using Map to avoid duplicates
         const vehicleNoData: { transporter: string; vehicleNo: string }[] = [];
-        const snapshot = await getDocs(collection(db, "DriverOnBoarding"));
+        
+        // Query documents where LoadingPoint matches originPoint
+        const q = query(
+          collection(db, "DriverOnBoarding"),
+          where("LoadingPoint", "==", originPoint)
+        );
+        
+        const snapshot = await getDocs(q);
 
         snapshot.forEach((doc) => {
           const data = doc.data();
-          const { LoadingPoint } = data;
-          const [transporter, vehicleNo] = doc.id.split("-");
+          const transporterName = data.transporterName; // Assuming this field exists
+          const vehicleNo = data.vehicleNo; // Assuming this field exists
 
-          if (transporter && vehicleNo && LoadingPoint === originPoint) {
-            transporterSet.add(transporter);
-            vehicleNoData.push({ transporter, vehicleNo });
+          if (transporterName && vehicleNo) {
+            transportersMap.set(transporterName, transporterName);
+            vehicleNoData.push({ 
+              transporter: transporterName, 
+              vehicleNo: vehicleNo 
+            });
           }
         });
 
+        // Convert Map to array of DropdownItems
         setTransporters(
-          Array.from(transporterSet).map((item) => ({ id: item, name: item }))
+          Array.from(transportersMap.values()).map((name) => ({ 
+            id: name, 
+            name: name 
+          }))
         );
+        
         setVehicleNumbers(vehicleNoData);
       } catch (error) {
         console.error("Error fetching data:", error);
-        Alert.alert("Error", "Failed to fetch data. Please try again.");
+        Alert.alert("Error", "Failed to fetch transporters and vehicles. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTransportersAndVehicles();
+    if (originPoint) {
+      fetchTransportersAndVehicles();
+    }
   }, [originPoint]);
 
   useEffect(() => {

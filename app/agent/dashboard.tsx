@@ -178,7 +178,7 @@ export default function Dashboard() {
           title="Create Delivery"
           icon={<MaterialIcons name="delivery-dining" size={42} color="#fff" />}
           color="#FF6584"
-          onPress={() => router.push(`/agent/createDelivery?originPoint=${shippingPoint}`)}
+          onPress={() => router.push(`/agent/createDelivery?shippingPoint=${shippingPoint}`)}
         />
         
         <ActionCard

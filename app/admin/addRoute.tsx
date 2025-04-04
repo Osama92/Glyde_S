@@ -151,15 +151,28 @@ export default function CreateRoute() {
     }
   };
 
-  // Save route to Firestore
-  const saveRoute = async () => {
+const saveRoute = async () => {
     if (!selectedOrigin || !selectedState || !selectedLGA || !selectedTruck || !freightCost) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
-
+  
+    // Validate freight cost is a valid number
+    const costValue = parseFloat(freightCost);
+    if (isNaN(costValue)) {
+      Alert.alert('Error', 'Please enter a valid freight cost');
+      return;
+    }
+  
     setLoading(true);
     try {
+      console.log('Creating route with data:', {
+        origin: selectedOrigin.name,
+        destination: selectedLGA.name,
+        truckType: selectedTruck,
+        freightCost: costValue
+      });
+  
       const routeData = {
         origin: selectedOrigin.name,
         originId: selectedOrigin.id,
@@ -170,25 +183,32 @@ export default function CreateRoute() {
         destination: selectedLGA.name,
         state: selectedState.name,
         lga: selectedLGA.name,
-        truckType: selectedTruck.name,
-        tonnage: selectedTruck.tonnage,
+        truckType: selectedTruck, // Changed from selectedTruck.name
+        tonnage: truckTypes.find(t => t.name === selectedTruck)?.tonnage || 0,
         distance: distance,
         distanceMeters: distanceMeters,
-        freightCost: parseFloat(freightCost),
+        freightCost: costValue,
         description: routeDescription,
         createdAt: new Date().toISOString(),
       };
-
+  
       // Generate a unique ID for the route
-      const routeId = `${selectedOrigin.id}_${selectedState.name}_${selectedLGA.name}_${Date.now()}`;
+      const routeId = `${selectedOrigin.id}_${selectedState.name.replace(/\s+/g, '_')}_${selectedLGA.name.replace(/\s+/g, '_')}_${Date.now()}`;
       
+      console.log('Saving to Firestore with ID:', routeId);
+      console.log('Full route data:', routeData);
+  
       await setDoc(doc(db, 'routes', routeId), routeData);
       
       Alert.alert('Success', 'Route created successfully!');
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving route:', error);
-      Alert.alert('Error', 'Failed to save route');
+      Alert.alert(
+        'Error', 
+        `Failed to save route: ${error.message}`,
+        [{ text: 'OK', onPress: () => console.log('Error acknowledged') }]
+      );
     } finally {
       setLoading(false);
     }

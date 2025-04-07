@@ -1315,9 +1315,9 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Modal, TextInput, Pressable } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions, Modal, TextInput, Pressable, Alert } from 'react-native';
 import { BarChart, PieChart, LineChart } from 'react-native-gifted-charts';
-import { collection, getDocs, query, where, getFirestore, addDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, getFirestore, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { app } from "../firebase";
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
@@ -1387,6 +1387,10 @@ const AnalyticsScreen: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     vehicleNo: ''
   });
+
+  const [isSavingExpense, setIsSavingExpense] = useState(false);
+const [showConfirmModal, setShowConfirmModal] = useState(false);
+const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const { transporterName } = useLocalSearchParams();
 
@@ -1589,6 +1593,7 @@ const AnalyticsScreen: React.FC = () => {
 
   const handleAddExpense = async () => {
     try {
+      setIsSavingExpense(true);
       if (!newExpense.amount || !newExpense.description) {
         alert('Please fill all required fields');
         return;
@@ -1608,14 +1613,28 @@ const AnalyticsScreen: React.FC = () => {
       const transporterDocId = transporterSnapshot.docs[0].id;
       const expenseRef = collection(db, 'transporter', transporterDocId, 'Expenses');
       
-      await addDoc(expenseRef, {
-        ...newExpense,
-        amount: Number(newExpense.amount),
-        date: new Date(newExpense.date).toISOString(),
-        createdAt: new Date().toISOString()
-      });
+      if (editingExpense && editingExpense.id) {
+        // Update existing expense
+        await updateDoc(doc(expenseRef, editingExpense.id), {
+          amount: Number(newExpense.amount),
+          description: newExpense.description,
+          category: newExpense.category,
+          date: new Date(newExpense.date).toISOString(),
+          vehicleNo: newExpense.vehicleNo
+        });
+      } else {
+        // Add new expense
+        await addDoc(expenseRef, {
+          ...newExpense,
+          amount: Number(newExpense.amount),
+          date: new Date(newExpense.date).toISOString(),
+          createdAt: new Date().toISOString()
+        });
+      }
 
       setShowAddExpenseModal(false);
+      setShowConfirmModal(false);
+      setEditingExpense(null);
       setNewExpense({
         amount: 0,
         description: '',
@@ -1625,10 +1644,85 @@ const AnalyticsScreen: React.FC = () => {
       });
       
       fetchAnalyticsData();
+      Alert.alert('Success', `Expense ${editingExpense ? 'updated' : 'added'} successfully!`);
     } catch (error: any) {
       console.error('Error adding expense:', error);
       alert(`Failed to add expense: ${error.message}`);
+    } finally {
+      setIsSavingExpense(false);
     }
+  };
+
+  const analyzeExpenses = (expenseData: Expense[], shipmentData: Shipment[]) => {
+    const byCategory: Record<string, number> = {};
+    const byVehicle: Record<string, number> = {};
+    const revenueVsExpense: { month: string; revenue: number; expense: number }[] = [];
+    
+    // Group revenue by month
+    const revenueByMonth: Record<string, number> = {};
+    shipmentData.forEach(shipment => {
+      const date = new Date(shipment.createdAt);
+      if (isNaN(date.getTime())) return;
+      
+      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      revenueByMonth[monthYear] = (revenueByMonth[monthYear] || 0) + (shipment.freightCost || 0);
+    });
+  
+    // Group expenses by month
+    const expenseByMonth: Record<string, number> = {};
+    expenseData.forEach(expense => {
+      const date = new Date(expense.date);
+      if (isNaN(date.getTime())) return;
+      
+      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      expenseByMonth[monthYear] = (expenseByMonth[monthYear] || 0) + (expense.amount || 0);
+    });
+  
+    // Combine all months
+    const allMonths = new Set([
+      ...Object.keys(revenueByMonth),
+      ...Object.keys(expenseByMonth)
+    ]);
+  
+    // Create the data array
+    Array.from(allMonths).forEach(month => {
+      revenueVsExpense.push({
+        month,
+        revenue: revenueByMonth[month] || 0,
+        expense: expenseByMonth[month] || 0
+      });
+    });
+  
+    // Sort by date
+    revenueVsExpense.sort((a, b) => {
+      return new Date(a.month).getTime() - new Date(b.month).getTime();
+    });
+  
+    return {
+      byCategory: Object.keys(byCategory).map(category => ({
+        value: byCategory[category],
+        label: category,
+        color: getCategoryColor(category)
+      })),
+      byVehicle: Object.keys(byVehicle).map(vehicle => ({
+        value: byVehicle[vehicle],
+        label: vehicle,
+        color: getVehicleColor(vehicle)
+      })),
+      revenueVsExpense
+    };
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setNewExpense({
+      amount: expense.amount,
+      description: expense.description,
+      category: expense.category,
+      date: expense.date.split('T')[0],
+      vehicleNo: expense.vehicleNo || ''
+    });
+    setShowAddExpenseModal(true);
   };
 
   const renderChart = () => {
@@ -1899,50 +1993,83 @@ const AnalyticsScreen: React.FC = () => {
       
       {/* Revenue vs Expenses Chart */}
       <View style={styles.analyticsCard}>
-        <Text style={styles.analyticsTitle}>Revenue vs Expenses</Text>
-        <BarChart
-    data={expenseAnalysis.revenueVsExpense.map(item => ({
-      value: item.revenue,
-      label: item.month,
-      frontColor: '#3A82F6',
-      topLabelComponent: () => (
-        <Text style={{ color: '#3A82F6', fontSize: 10 }}>
-          ₦{item.revenue.toLocaleString()}
-        </Text>
-      )
-    }))}
-    lineData2={expenseAnalysis.revenueVsExpense.map(item => ({
-      value: item.expense,
-      frontColor: '#EF4444',
-      topLabelComponent: () => (
-        <Text style={{ color: '#EF4444', fontSize: 10 }}>
-          ₦{item.expense.toLocaleString()}
-        </Text>
-      )
-    }))}
-    barWidth={20}
-    spacing={30}
-    height={200}
-    noOfSections={5}
-    yAxisThickness={0}
-    xAxisThickness={0}
-    yAxisTextStyle={{ color: '#6B7280' }}
-    xAxisLabelTextStyle={{ color: '#6B7280', fontSize: 10 }}
-    showReferenceLine1
-    referenceLine1Position={0}
-    referenceLine1Config={{ color: 'gray', dashWidth: 2, dashGap: 3 }}
-  />
-        <View style={styles.legendContainer}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#3A82F6' }]} />
-            <Text style={styles.legendText}>Revenue</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#EF4444' }]} />
-            <Text style={styles.legendText}>Expenses</Text>
-          </View>
-        </View>
+  <Text style={styles.analyticsTitle}>Revenue vs Expenses</Text>
+  {expenseAnalysis.revenueVsExpense.length > 0 ? (
+    <BarChart
+      data={expenseAnalysis.revenueVsExpense.map(item => ({
+        value: item.revenue,
+        label: item.month,
+        frontColor: '#3A82F6',
+        topLabelComponent: () => (
+          <Text style={{ color: '#3A82F6', fontSize: 10 }}>
+            ₦{item.revenue.toLocaleString()}
+          </Text>
+        ),
+        labelTextStyle: { color: '#6B7280', fontSize: 10 }
+      }))}
+        lineData2={expenseAnalysis.revenueVsExpense.map(item => ({
+        value: item.expense,
+        frontColor: '#EF4444',
+        topLabelComponent: () => (
+          <Text style={{ color: '#EF4444', fontSize: 10 }}>
+            ₦{item.expense.toLocaleString()}
+          </Text>
+        )
+      }))}
+      barWidth={20}
+      spacing={30}
+      height={200}
+      noOfSections={5}
+      yAxisThickness={0}
+      xAxisThickness={0}
+      yAxisTextStyle={{ color: '#6B7280' }}
+      xAxisLabelTextStyle={{ color: '#6B7280', fontSize: 10 }}
+      showReferenceLine1
+      referenceLine1Position={0}
+      referenceLine1Config={{ color: 'gray', dashWidth: 2, dashGap: 3 }}
+      initialSpacing={10}
+    />
+  ) : (
+    <View style={styles.noDataContainer}>
+      <Text style={styles.noDataText}>No revenue/expense data available</Text>
+    </View>
+  )}
+  <View style={styles.legendContainer}>
+    <View style={styles.legendItem}>
+      <View style={[styles.legendColor, { backgroundColor: '#3A82F6' }]} />
+      <Text style={styles.legendText}>Revenue</Text>
+    </View>
+    <View style={styles.legendItem}>
+      <View style={[styles.legendColor, { backgroundColor: '#EF4444' }]} />
+      <Text style={styles.legendText}>Expenses</Text>
+    </View>
+  </View>
+</View>
+      <View style={styles.expenseListContainer}>
+  <Text style={styles.sectionTitle}>Recent Expenses</Text>
+  {expenses.slice(0, 5).map((expense) => (
+    <TouchableOpacity 
+      key={expense.id} 
+      style={styles.expenseItem}
+      onPress={() => handleEditExpense(expense)}
+    >
+      <View style={styles.expenseItemLeft}>
+        <Text style={styles.expenseCategory}>{expense.category}</Text>
+        <Text style={styles.expenseDescription}>{expense.description}</Text>
+        {expense.vehicleNo && (
+          <Text style={styles.expenseVehicle}>Vehicle: {expense.vehicleNo}</Text>
+        )}
       </View>
+      <View style={styles.expenseItemRight}>
+        <Text style={styles.expenseAmount}>₦{expense.amount.toLocaleString()}</Text>
+        <Text style={styles.expenseDate}>
+          {new Date(expense.date).toLocaleDateString()}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  ))}
+</View>
+
 
       {/* Expenses by Category */}
       <View style={styles.analyticsCard}>
@@ -2031,11 +2158,13 @@ const AnalyticsScreen: React.FC = () => {
         animationType="slide"
         transparent={true}
         visible={showAddExpenseModal}
-        onRequestClose={() => setShowAddExpenseModal(false)}
+        onRequestClose={() => {setShowAddExpenseModal(false); setEditingExpense(null);}}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Expense</Text>
+          <Text style={styles.modalTitle}>
+        {editingExpense ? 'Edit Expense' : 'Add New Expense'}
+      </Text>
             
             <Text style={styles.inputLabel}>Amount (₦)</Text>
             <TextInput
@@ -2092,22 +2221,81 @@ const AnalyticsScreen: React.FC = () => {
             />
             
             <View style={styles.modalButtonContainer}>
-              <Pressable
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowAddExpenseModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={handleAddExpense}
-              >
-                <Text style={styles.modalButtonText}>Add Expense</Text>
-              </Pressable>
-            </View>
+        <Pressable
+          style={[styles.modalButton, styles.cancelButton]}
+          onPress={() => {
+            setShowAddExpenseModal(false);
+            setEditingExpense(null);
+          }}
+          disabled={isSavingExpense}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.modalButton, styles.submitButton]}
+          onPress={() => setShowConfirmModal(true)}
+          disabled={isSavingExpense}
+        >
+          {isSavingExpense ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.modalButtonText}>
+              {editingExpense ? 'Update' : 'Save'}
+            </Text>
+          )}
+        </Pressable>
+      </View>
           </View>
         </View>
       </Modal>
+
+      <Modal
+  animationType="fade"
+  transparent={true}
+  visible={showConfirmModal}
+  onRequestClose={() => setShowConfirmModal(false)}
+>
+  <View style={styles.confirmModalContainer}>
+    <View style={styles.confirmModalContent}>
+      <Text style={styles.confirmModalTitle}>Confirm Expense</Text>
+      <Text style={styles.confirmModalText}>
+        {`Are you sure you want to ${editingExpense ? 'update' : 'add'} this expense?`}
+      </Text>
+      <View style={styles.confirmDetails}>
+        <Text style={styles.confirmDetailLabel}>Amount:</Text>
+        <Text style={styles.confirmDetailValue}>₦{newExpense.amount.toLocaleString()}</Text>
+        
+        <Text style={styles.confirmDetailLabel}>Category:</Text>
+        <Text style={styles.confirmDetailValue}>{newExpense.category}</Text>
+        
+        <Text style={styles.confirmDetailLabel}>Description:</Text>
+        <Text style={styles.confirmDetailValue}>{newExpense.description}</Text>
+      </View>
+      
+      <View style={styles.confirmButtonContainer}>
+        <Pressable
+          style={[styles.confirmButton, styles.confirmCancelButton]}
+          onPress={() => setShowConfirmModal(false)}
+        >
+          <Text style={styles.confirmButtonText}>Cancel</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.confirmButton, styles.confirmSubmitButton]}
+          onPress={handleAddExpense}
+          disabled={isSavingExpense}
+        >
+          {isSavingExpense ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.confirmButtonText}>
+              {editingExpense ? 'Update' : 'Confirm'}
+            </Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  </View>
+</Modal>
     </ScrollView>
   );
 };
@@ -2405,7 +2593,128 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  }
+  },
+  expenseListContainer: {
+    marginBottom: 20,
+  },
+  expenseItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  expenseItemLeft: {
+    flex: 1,
+  },
+  expenseItemRight: {
+    alignItems: 'flex-end',
+  },
+  expenseCategory: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  expenseDescription: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  expenseVehicle: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
+  expenseAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  expenseDate: {
+    fontSize: 10,
+    color: '#6B7280',
+  },
+  confirmModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  confirmModalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  confirmModalText: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  confirmDetails: {
+    marginBottom: 20,
+  },
+  confirmDetailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  confirmDetailValue: {
+    fontSize: 14,
+    color: '#111827',
+  },
+  confirmButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmCancelButton: {
+    backgroundColor: '#F3F4F6',
+    marginRight: 8,
+  },
+  confirmSubmitButton: {
+    backgroundColor: '#3B82F6',
+    marginLeft: 8,
+  },
+  confirmButtonText: {
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  noDataContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noDataText: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  
 });
 
 export default AnalyticsScreen;

@@ -258,7 +258,7 @@ export default function CreateShipment() {
         transporter: selectedT,
         vehicleNo: selectedItem,
         tonnage: selectedVehicleDetails?.tonnage,
-        tons: selectedVehicleDetails.tons,
+        remaining_tons: selectedVehicleDetails.tons,
         mobileNumber,
         driverName,
         route: selectedRoute.name,

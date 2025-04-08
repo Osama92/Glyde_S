@@ -710,10 +710,26 @@ const SupplierManagementScreen = () => {
   };
 
   // Open PDF invoice
+  // const openPdfInvoice = async (pdfUrl: string) => {
+  //   try {
+  //     const url = await getDownloadURL(ref(storage, pdfUrl));
+  //     await Linking.openURL(url);
+  //   } catch (error) {
+  //     console.error('Error opening PDF:', error);
+  //     Alert.alert('Error', 'Could not open invoice PDF');
+  //   }
+  // };
   const openPdfInvoice = async (pdfUrl: string) => {
     try {
-      const url = await getDownloadURL(ref(storage, pdfUrl));
-      await Linking.openURL(url);
+      // Check if it's already a download URL
+      if (pdfUrl.startsWith('https://')) {
+        await Linking.openURL(pdfUrl);
+      } else {
+        // If it's a storage path, get the download URL first
+        const storageRef = ref(storage, pdfUrl);
+        const url = await getDownloadURL(storageRef);
+        await Linking.openURL(url);
+      }
     } catch (error) {
       console.error('Error opening PDF:', error);
       Alert.alert('Error', 'Could not open invoice PDF');

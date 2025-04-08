@@ -1029,7 +1029,7 @@ const SupplierManagementScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Supplier Management</Text>
         <TouchableOpacity 
@@ -1369,13 +1369,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#3498db',
+    //backgroundColor: '#3498db',
     elevation: 4,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: '#000',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,
@@ -1391,6 +1391,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop:5
   },
   searchContainer: {
     padding: 16,

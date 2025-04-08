@@ -168,7 +168,7 @@ const TransporterScreen = () => {
         showsVerticalScrollIndicator={false}
         style={styles.tabContainer}
       >
-        {["Overview", "Shipping", "Tracking", "Invoice", "Routes"].map((item) => (
+        {["Overview", "Shipping", "Tracking", "Invoice", "Manage"].map((item) => (
           <TouchableOpacity
             key={item}
             style={styles.tabButton}

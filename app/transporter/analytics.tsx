@@ -1766,13 +1766,13 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
             isAnimated 
             onPress={(item) => alert(`${item.label}: ${item.value} times used`)}
             barBorderRadius={4}
-            frontColor="#10B981"
             yAxisThickness={0}
             xAxisThickness={0}
             noOfSections={4}
             yAxisTextStyle={{ color: '#6B7280' }}
             xAxisLabelTextStyle={{ color: '#6B7280', textAlign: 'center' }}
             labelWidth={80}
+            frontColor="#3A82F6"
           />
         );
       case 'status':
@@ -2007,7 +2007,7 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
         ),
         labelTextStyle: { color: '#6B7280', fontSize: 10 }
       }))}
-        lineData2={expenseAnalysis.revenueVsExpense.map(item => ({
+      secondaryData={expenseAnalysis.revenueVsExpense.map(item => ({
         value: item.expense,
         frontColor: '#EF4444',
         topLabelComponent: () => (

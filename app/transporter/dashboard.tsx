@@ -172,7 +172,7 @@ const TransporterScreen = () => {
           <TouchableOpacity
             key={item}
             style={styles.tabButton}
-            onPress={() => router.push(`/transporter/${item.toLowerCase()}`)}
+            onPress={() => router.push(`/transporter/${item.toLowerCase()}?transporterName=${transporterName}`)}
           >
             <Text style={styles.tabButtonText}>{item}</Text>
           </TouchableOpacity>

@@ -82,6 +82,53 @@ const InvoiceScreen = () => {
     return `INV-${new Date().getFullYear()}-${randomNumber}`;
   }
 
+// useEffect(() => {
+//   const fetchSuppliers = async () => {
+//     try {
+//       const suppliersCollection = collection(db, 'transporter');
+//       const q = query(suppliersCollection);
+//       const querySnapshot = await getDocs(q);
+      
+//       const suppliersData: Supplier[] = [];
+      
+//       // Process all transporter documents
+//       for (const transporterDoc of querySnapshot.docs) {
+//         const transporterData = transporterDoc.data();
+        
+//         // Check suppliers in the document map
+//         if (transporterData.suppliers) {
+//           Object.entries(transporterData.suppliers).forEach(([id, supplier]: [string, any]) => {
+//             suppliersData.push({
+//               id,
+//               name: supplier.name,
+//               address: supplier.address
+//             });
+//           });
+//         }
+        
+//         // Check suppliers subcollection
+//         const suppliersSubcollection = collection(db, `transporter/${transporterName}/suppliers`);
+//         const suppliersSubSnapshot = await getDocs(suppliersSubcollection);
+//         suppliersSubSnapshot.forEach((supplierDoc) => {
+//           const supplierData = supplierDoc.data();
+//           suppliersData.push({
+//             id: supplierDoc.id,
+//             name: supplierData.name,
+//             address: supplierData.address
+//           });
+//         });
+//       }
+      
+//       setSuppliers(suppliersData);
+//     } catch (error) {
+//       console.error("Error fetching suppliers:", error);
+//       Alert.alert("Error", "Failed to fetch suppliers");
+//     }
+//   };
+
+//   fetchSuppliers();
+// }, []); // Empty dependency array means this runs once when component mounts
+
 useEffect(() => {
   const fetchSuppliers = async () => {
     try {
@@ -91,28 +138,25 @@ useEffect(() => {
       
       const suppliersData: Supplier[] = [];
       
-      // Process all transporter documents
       for (const transporterDoc of querySnapshot.docs) {
         const transporterData = transporterDoc.data();
         
-        // Check suppliers in the document map
         if (transporterData.suppliers) {
-          Object.entries(transporterData.suppliers).forEach(([id, supplier]: [string, any]) => {
+          Object.entries(transporterData.suppliers).forEach(([_, supplier]: [string, any]) => {
             suppliersData.push({
-              id,
+              id: supplier.name, // Now using name as ID
               name: supplier.name,
               address: supplier.address
             });
           });
         }
         
-        // Check suppliers subcollection
         const suppliersSubcollection = collection(db, `transporter/${transporterName}/suppliers`);
         const suppliersSubSnapshot = await getDocs(suppliersSubcollection);
         suppliersSubSnapshot.forEach((supplierDoc) => {
           const supplierData = supplierDoc.data();
           suppliersData.push({
-            id: supplierDoc.id,
+            id: supplierData.name, // Using name as ID
             name: supplierData.name,
             address: supplierData.address
           });
@@ -127,7 +171,7 @@ useEffect(() => {
   };
 
   fetchSuppliers();
-}, []); // Empty dependency array means this runs once when component mounts
+}, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -148,23 +192,59 @@ useEffect(() => {
     };
   }, []);
 
+  // const uploadPdfToFirebase = async (pdfUri: string, invoiceNumber: string) => {
+  //   try {
+  //     const storage = getStorage();
+  //     const storageRef = ref(storage, `invoices/${invoiceNumber}.pdf`);
+      
+  //     // Read the PDF file
+  //     const pdfBlob = await FileSystem.readAsStringAsync(pdfUri, {
+  //       encoding: FileSystem.EncodingType.Base64,
+  //     });
+      
+  //     // Convert to Blob
+  //     const blob = new Blob([pdfBlob], { type: 'application/pdf' });
+      
+  //     // Upload to Firebase Storage
+  //     await uploadBytes(storageRef, blob);
+      
+  //     // Get download URL
+  //     const downloadUrl = await getDownloadURL(storageRef);
+      
+  //     return downloadUrl;
+  //   } catch (error) {
+  //     console.error("Error uploading PDF:", error);
+  //     throw error;
+  //   }
+  // };
+
   const uploadPdfToFirebase = async (pdfUri: string, invoiceNumber: string) => {
     try {
-      const storage = getStorage();
-      const storageRef = ref(storage, `invoices/${invoiceNumber}.pdf`);
-      
-      // Read the PDF file
-      const pdfBlob = await FileSystem.readAsStringAsync(pdfUri, {
+      // 1. Check if file exists
+      const fileInfo = await FileSystem.getInfoAsync(pdfUri);
+      if (!fileInfo.exists) {
+        throw new Error("PDF file does not exist");
+      }
+  
+      // 2. Read the file as base64
+      const base64Data = await FileSystem.readAsStringAsync(pdfUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      
-      // Convert to Blob
-      const blob = new Blob([pdfBlob], { type: 'application/pdf' });
-      
-      // Upload to Firebase Storage
+  
+      // 3. Create a reference to Firebase Storage
+      const storage = getStorage();
+      const storageRef = ref(storage, `invoices/${invoiceNumber}.pdf`);
+  
+      // 4. Create a Blob compatible with React Native
+      // For React Native, we need to use the react-native-blob-util library
+      // or convert to a format Firebase can accept directly
+      const response = await fetch(`data:application/pdf;base64,${base64Data}`);
+      const blob = await response.blob();
+  
+      // 5. Upload the blob
       await uploadBytes(storageRef, blob);
-      
-      // Get download URL
+  
+      // 6. Get the download URL
       const downloadUrl = await getDownloadURL(storageRef);
       
       return downloadUrl;
@@ -173,7 +253,6 @@ useEffect(() => {
       throw error;
     }
   };
-
   // Filter suppliers based on search query
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -335,6 +414,8 @@ useEffect(() => {
       if (!selectedSupplier) {
         Alert.alert("Error", "Selected supplier not found");
         return;
+      } else{
+        console.log("Selected Supplier:", selectedSupplier);
       }
   
       // Create a reference to the supplier's invoices collection
@@ -361,6 +442,52 @@ useEffect(() => {
       throw error;
     }
   };
+  // const saveInvoiceToFirebase = async (pdfUrl: string) => {
+  //   try {
+  //     if (!billTo) {
+  //       Alert.alert("Error", "Please select a supplier before saving");
+  //       return;
+  //     }
+  
+  //     // Create a sanitized version of the supplier name for the path
+  //     const sanitizedSupplierName = billTo
+  //       .replace(/[^a-zA-Z0-9]/g, '-') // Replace special chars with hyphens
+  //       .toLowerCase()
+  //       .substring(0, 50); // Limit length
+  
+  //     // Create a reference using the supplier name instead of ID
+  //     const invoiceRef = doc(db, 
+  //       `transporter/${transporterName}/suppliers/${sanitizedSupplierName}/invoices/${invoiceNumber}`);
+      
+  //     // Prepare invoice data
+  //     const invoiceData = {
+  //       invoiceNumber,
+  //       date: date.toISOString(),
+  //       billerName,
+  //       billTo,
+  //       billToAddress,
+  //       items,
+  //       ...calculateGrandTotals(),
+  //       pdfUrl,
+  //       createdAt: new Date().toISOString(),
+  //       status: 'unpaid'
+  //     };
+  
+  //     await setDoc(invoiceRef, invoiceData);
+  //   } catch (error) {
+  //     console.error("Error saving invoice:", error);
+  //     throw error;
+  //   }
+  // };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount).replace('NGN', '₦');
+  };
 
   // Generate HTML for PDF
   const generateInvoiceHTML = () => {
@@ -371,157 +498,319 @@ useEffect(() => {
       day: 'numeric'
     });
     
-    const itemsHTML = items
-      .map(
-        (item, index) => `
-        <tr>
-          <td style="text-align: center;">${index + 1}</td>
-          <td>${item.shipmentNo || "-"}</td>
-          <td>${item.route || "-"}</td>
-          <td>${item.truckType || "-"}</td>
-          <td style="text-align: right;">₦${item.freightCost.toFixed(2) || "0.00"}</td>
-          <td style="text-align: right;">₦${item.serviceCharge.toFixed(2) || "0.00"}</td>
-          <td style="text-align: right;">₦${(item.total - item.vat).toFixed(2)}</td>
-          <td style="text-align: right;">₦${item.vat.toFixed(2)}</td>
-          <td style="text-align: right; font-weight: bold;">₦${item.total.toFixed(2)}</td>
-        </tr>
-      `
-      )
-      .join("");
-
+    const itemsHTML = items.map((item, index) => `
+      <tr>
+        <td class="text-center">${index + 1}</td>
+        <td>${item.shipmentNo || "-"}</td>
+        <td>${item.route || "-"}</td>
+        <td>${item.truckType || "-"}</td>
+        <td class="text-right">${formatCurrency(item.freightCost)}</td>
+        <td class="text-right">${formatCurrency(item.serviceCharge)}</td>
+        <td class="text-right">${formatCurrency(item.total - item.vat)}</td>
+        <td class="text-right">${formatCurrency(item.vat)}</td>
+        <td class="text-right font-bold">${formatCurrency(item.total)}</td>
+      </tr>
+    `).join("");
+  
     return `
-      <html>
-        <head>
-          <style>
-            body { 
-              font-family: 'Helvetica Neue', Arial, sans-serif; 
-              margin: 0; 
-              padding: 20px; 
-              color: #333;
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Invoice #${invoiceNumber}</title>
+        <style>
+          /* Modern CSS Reset */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          /* Base Styles */
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                         'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f8fafc;
+            padding: 2rem;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          /* Invoice Container */
+          .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+          }
+          
+          /* Header Section */
+          .invoice-header {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            height:15%;
+          }
+          
+          @media (min-width: 768px) {
+            .invoice-header {
+              flex-direction: row;
+              justify-content: space-between;
+              align-items: flex-start;
             }
-            .invoice { 
-              width: 100%; 
-              max-width: 800px; 
-              margin: 0 auto; 
-              border: 1px solid #e0e0e0;
-              border-radius: 8px;
-              padding: 30px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            }
-            .header { 
-              display: flex; 
-              justify-content: space-between; 
-              margin-bottom: 30px;
-              border-bottom: 1px solid #e0e0e0;
-              padding-bottom: 20px;
-            }
-            .logo { 
-              width: 120px; 
-              height: auto;
-              margin-bottom: 10px;
-            }
-            .biller-info { 
-              flex: 1; 
-              margin-right: 20px; 
-            }
-            .invoice-info { 
-              text-align: right;
-            }
-            .invoice-title {
-              font-size: 24px;
-              font-weight: bold;
-              color: #2c3e50;
-              margin-bottom: 5px;
-            }
-            .invoice-number {
-              font-size: 16px;
-              color: #7f8c8d;
-              margin-bottom: 5px;
-            }
-            .invoice-date {
-              font-size: 14px;
-              color: #7f8c8d;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-top: 20px;
-              font-size: 14px;
-            }
-            th { 
-              background-color: #f8f9fa;
-              color: #2c3e50;
-              font-weight: 600;
-              padding: 12px 10px;
+          }
+          
+          .company-info h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+          }
+          
+          .company-info p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+          }
+          
+          .invoice-meta {
+            text-align: right;
+          }
+          
+          @media (max-width: 767px) {
+            .invoice-meta {
               text-align: left;
-              border-bottom: 2px solid #e0e0e0;
             }
-            td { 
-              padding: 10px;
-              border-bottom: 1px solid #e0e0e0;
+          }
+          
+          .invoice-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+          }
+          
+          .invoice-number {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+          }
+          
+          .invoice-date {
+            font-size: 0.9rem;
+            opacity: 0.9;
+          }
+          
+          .logo {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 1rem;
+          }
+          
+          /* Client Info Section */
+          .client-info {
+            padding: 1.5rem 2.5rem;
+            background: #f1f5f9;
+          }
+          
+          .client-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+          }
+          
+          .client-details p {
+            margin-bottom: 0.25rem;
+          }
+          
+          .client-name {
+            font-weight: 600;
+          }
+          
+          /* Items Table */
+          .invoice-items {
+            padding: 0 2.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+          }
+          
+          thead {
+            background-color: #f1f5f9;
+          }
+          
+          th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #334155;
+            border-bottom: 2px solid #e2e8f0;
+          }
+          
+          td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          
+          .text-center {
+            text-align: center;
+          }
+          
+          .text-right {
+            text-align: right;
+          }
+          
+          .font-bold {
+            font-weight: 700;
+          }
+          
+          /* Totals Section */
+          .invoice-totals {
+            padding: 0 2.5rem 2.5rem;
+            margin-top: 1rem;
+          }
+          
+          .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-width: 400px;
+            margin-left: auto;
+          }
+          
+          .total-row {
+            display: contents;
+          }
+          
+          .total-label {
+            text-align: right;
+            padding: 0.5rem;
+            font-weight: 600;
+            color: #475569;
+          }
+          
+          .total-value {
+            text-align: right;
+            padding: 0.5rem;
+            font-family: 'Roboto Mono', monospace;
+          }
+          
+          .grand-total {
+            grid-column: 1 / -1;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+            border-top: 2px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+          }
+          
+          .vat-note {
+            grid-column: 1 / -1;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: right;
+            font-style: italic;
+            margin-top: 0.5rem;
+          }
+          
+          /* Footer Section */
+          .invoice-footer {
+            padding: 2rem 2.5rem;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+          }
+          
+          .payment-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1e293b;
+          }
+          
+          .payment-details p {
+            margin-bottom: 0.5rem;
+          }
+          
+          .thank-you {
+            margin-top: 1.5rem;
+            font-weight: 500;
+            color: #334155;
+          }
+          
+          /* Responsive Adjustments */
+          @media (max-width: 640px) {
+            body {
+              padding: 1rem;
             }
-            .invoice-total { 
-              text-align: right; 
-              margin-top: 20px;
-              background-color: #f8f9fa;
-              padding: 15px;
-              border-radius: 5px;
+            
+            .invoice-header,
+            .client-info,
+            .invoice-items,
+            .invoice-totals,
+            .invoice-footer {
+              padding: 1.5rem;
             }
-            .invoice-total p { 
-              margin: 8px 0;
-              font-size: 15px;
+            
+            table {
+              font-size: 0.8rem;
             }
-            .total-label { 
-              font-weight: bold;
-              display: inline-block;
-              width: 150px;
+            
+            th, td {
+              padding: 0.5rem;
             }
-            .grand-total { 
-              font-size: 18px; 
-              font-weight: bold;
-              color: #2c3e50;
-              margin-top: 10px;
-              padding-top: 10px;
-              border-top: 1px solid #e0e0e0;
+          }
+          
+          /* Print Styles */
+          @media print {
+            body {
+              padding: 0;
+              background: none;
             }
-            .terms { 
-              margin-top: 40px; 
-              border-top: 1px solid #e0e0e0; 
-              padding-top: 20px;
-              font-size: 13px;
-              color: #7f8c8d;
+            
+            .invoice-container {
+              box-shadow: none;
+              border-radius: 0;
             }
-            .terms-title {
-              font-size: 16px;
-              font-weight: bold;
-              color: #2c3e50;
-              margin-bottom: 10px;
-            }
-            .vat-note {
-              font-size: 12px;
-              color: #7f8c8d;
-              margin-top: 5px;
-              font-style: italic;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice">
-            <div class="header">
-              <div class="biller-info">
-                <h2 style="color: #2c3e50; margin-bottom: 5px;">${billerName || "Biller Name"}</h2>
-                <p style="color: #7f8c8d; margin-bottom: 15px;">${billerAddress || "Biller Address"}</p>
-                <h3 style="color: #2c3e50; margin-bottom: 5px;">BILL TO</h3>
-                <p style="font-weight: 500;">${billTo || "Customer Name"}</p>
-                <p style="color: #7f8c8d;">${billToAddress || "Customer Address"}</p>
-              </div>
-              <div class="invoice-info">
-                ${logoBase64 ? `<img src="${logoBase64}" class="logo" alt="Company Logo" />` : ""}
-                <div class="invoice-title">INVOICE</div>
-                <div class="invoice-number">#${invoiceNumber}</div>
-                <div class="invoice-date">Date: ${formattedDate}</div>
-              </div>
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="invoice-header">
+            <div class="company-info">
+              ${logoBase64 ? `<img src="${logoBase64}" class="logo" alt="Company Logo" />` : ""}
+              <h2>${billerName || "Biller Name"}</h2>
+              <p>${billerAddress || "Biller Address"}</p>
             </div>
+            
+            <div class="invoice-meta">
+              <h1 class="invoice-title">INVOICE</h1>
+              <p class="invoice-number">#${invoiceNumber}</p>
+              <p class="invoice-date">${formattedDate}</p>
+            </div>
+          </div>
+          
+          <div class="client-info">
+            <h3>BILL TO</h3>
+            <div class="client-details">
+              <p class="client-name">${billTo || "Customer Name"}</p>
+              <p>${billToAddress || "Customer Address"}</p>
+            </div>
+          </div>
+          
+          <div class="invoice-items">
             <table>
               <thead>
                 <tr>
@@ -540,26 +829,83 @@ useEffect(() => {
                 ${itemsHTML}
               </tbody>
             </table>
-            <div class="invoice-total">
-              <p><span class="total-label">Subtotal:</span> ₦${subtotal}</p>
-              <p><span class="total-label">Total VAT:</span> ₦${totalVat}</p>
-              <p class="grand-total"><span class="total-label">Grand Total:</span> ₦${grandTotal}</p>
-              <div class="vat-note">${isVATInclusive ? "Prices include VAT" : "VAT added to subtotal"}</div>
-            </div>
-            <div class="terms">
-              <div class="terms-title">PAYMENT INFORMATION</div>
-              <p>Please make payment to:</p>
-              <p><strong>Bank Name:</strong> ${bankName || "Bank Name"}</p>
-              <p><strong>Account Name:</strong> ${accountName || "Account Name"}</p>
-              <p><strong>Account Number:</strong> ${accountNumber || "Account Number"}</p>
-              <p style="margin-top: 15px;">Thank you for your business!</p>
+          </div>
+          
+          <div class="invoice-totals">
+            <div class="totals-grid">
+              <div class="total-row">
+                <span class="total-label">Subtotal:</span>
+                <span class="total-value">${formatCurrency(Number(subtotal))}</span>
+              </div>
+              <div class="total-row">
+                <span class="total-label">Total VAT:</span>
+                <span class="total-value">${formatCurrency(Number(totalVat))}</span>
+              </div>
+              <div class="total-row">
+                <span class="total-label grand-total">Grand Total:</span>
+                <span class="total-value grand-total">${formatCurrency(Number(grandTotal))}</span>
+              </div>
+              <div class="vat-note">
+                ${isVATInclusive ? "Prices include VAT" : "VAT added to subtotal"}
+              </div>
             </div>
           </div>
-        </body>
+          
+          <div class="invoice-footer">
+            <div class="payment-info">
+              <h3>PAYMENT INFORMATION</h3>
+              <div class="payment-details">
+                <p><strong>Bank Name:</strong> ${bankName || "Bank Name"}</p>
+                <p><strong>Account Name:</strong> ${accountName || "Account Name"}</p>
+                <p><strong>Account Number:</strong> ${accountNumber || "Account Number"}</p>
+              </div>
+            </div>
+            
+            <p class="thank-you">Thank you for your business!</p>
+          </div>
+        </div>
+      </body>
       </html>
     `;
   };
 
+  // const generatePDF = async () => {
+  //   // Validate required fields
+  //   if (!billTo || !billToAddress) {
+  //     Alert.alert("Validation Error", "Please select a supplier before generating invoice");
+  //     return;
+  //   }
+  
+  //   setIsGenerating(true);
+  //   try {
+  //     const { uri } = await Print.printToFileAsync({
+  //       html: generateInvoiceHTML(),
+  //     });
+      
+  //     // Upload PDF to Firebase Storage
+  //     const pdfUrl = await uploadPdfToFirebase(uri, invoiceNumber);
+      
+  //     // Save invoice data to Firestore with PDF URL
+  //     await saveInvoiceToFirebase(pdfUrl);
+  
+  //     if (await Sharing.isAvailableAsync()) {
+  //       await Sharing.shareAsync(uri, { 
+  //         mimeType: "application/pdf", 
+  //         dialogTitle: `Share Invoice ${invoiceNumber}`,
+  //         UTI: "com.adobe.pdf"
+  //       });
+  //     } else {
+  //       Alert.alert("Success", "Invoice generated and saved successfully!");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error generating PDF:", error);
+  //     Alert.alert("Error", "Failed to generate invoice");
+  //   } finally {
+  //     Alert.alert("Success", "Invoice generated and saved successfully!");
+  //     router.push('/transporter/dashboard')
+  //     setIsGenerating(false);
+  //   }
+  // };
   const generatePDF = async () => {
     // Validate required fields
     if (!billTo || !billToAddress) {
@@ -569,34 +915,53 @@ useEffect(() => {
   
     setIsGenerating(true);
     try {
+      // 1. First generate the PDF
+      // const { uri } = await Print.printToFileAsync({
+      //   html: generateInvoiceHTML(),
+      // });
       const { uri } = await Print.printToFileAsync({
         html: generateInvoiceHTML(),
+        width: 595,   // A4 width in points (210mm)
+        height: 842,  // A4 height in points (297mm)
+        margins: {
+          left: 30,
+          right: 30,
+          top: 30,
+          bottom: 30
+        }
       });
-      
-      // Upload PDF to Firebase Storage
+      // 2. Verify PDF was created
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        throw new Error("PDF file was not generated properly");
+      }
+  
+      // 3. Upload to Firebase Storage
       const pdfUrl = await uploadPdfToFirebase(uri, invoiceNumber);
       
-      // Save invoice data to Firestore with PDF URL
+      // 4. Save invoice data to Firestore
       await saveInvoiceToFirebase(pdfUrl);
   
+      // 5. Share the local PDF file
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { 
           mimeType: "application/pdf", 
           dialogTitle: `Share Invoice ${invoiceNumber}`,
           UTI: "com.adobe.pdf"
         });
-      } else {
-        Alert.alert("Success", "Invoice generated and saved successfully!");
       }
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      Alert.alert("Error", "Failed to generate invoice");
-    } finally {
+  
+      // 6. Only show success and navigate if everything worked
       Alert.alert("Success", "Invoice generated and saved successfully!");
-      router.push('/transporter/dashboard')
+      router.push('/transporter/dashboard');
+    } catch (error: any) {
+      console.error("Error generating PDF:", error);
+      Alert.alert("Error", `Failed to generate invoice: ${error.message}`);
+    } finally {
       setIsGenerating(false);
     }
   };
+
   const renderBillToSection = () => (
     <>
       <Text style={styles.sectionLabel}>Bill To *</Text>

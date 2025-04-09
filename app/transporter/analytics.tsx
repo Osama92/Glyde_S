@@ -1391,6 +1391,7 @@ const AnalyticsScreen: React.FC = () => {
   const [isSavingExpense, setIsSavingExpense] = useState(false);
 const [showConfirmModal, setShowConfirmModal] = useState(false);
 const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+const [totalInvoiceRevenue, setTotalInvoiceRevenue] = useState<number>(0);
 
   const { transporterName } = useLocalSearchParams();
 
@@ -1400,27 +1401,223 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     }, [timeFilter])
   );
 
+  // const fetchAnalyticsData = async () => {
+  //   try {
+  //     setRefreshing(true);
+  //     setLoading(true);
+      
+  //     // Fetch shipments
+  //     const shipmentRef = query(collection(db, 'Shipment'), where('transporter', '==', transporterName));
+  //     const shipmentSnapshot = await getDocs(shipmentRef);
+  //     const shipmentData = shipmentSnapshot.docs.map(doc => doc.data() as Shipment);
+  //     setShipments(shipmentData);
+
+  //     // Calculate total freight revenue
+  //     const totalRevenue = shipmentData.reduce((acc, curr) => acc + (curr.freightCost || 0), 0);
+  //     setTotalFreightRevenue(totalRevenue);
+
+  //     // Fetch expenses from the correct transporter document
+  //     const transporterQuery = query(collection(db, 'transporter'), where('name', '==', transporterName));
+  //     const transporterSnapshot = await getDocs(transporterQuery);
+      
+  //     if (!transporterSnapshot.empty) {
+  //       const transporterDocId = transporterSnapshot.docs[0].id;
+  //       const expenseRef = collection(db, 'transporter', transporterDocId, 'Expenses');
+  //       const expenseSnapshot = await getDocs(expenseRef);
+        
+  //       const expenseData = expenseSnapshot.docs.map(doc => {
+  //         const data = doc.data();
+  //         let createdAt = new Date().toISOString();
+          
+  //         if (data.createdAt) {
+  //           if (typeof data.createdAt.toDate === 'function') {
+  //             createdAt = data.createdAt.toDate().toISOString();
+  //           } else if (typeof data.createdAt === 'string') {
+  //             createdAt = data.createdAt;
+  //           }
+  //         }
+          
+  //         return {
+  //           id: doc.id,
+  //           ...data,
+  //           createdAt
+  //         } as Expense;
+  //       });
+        
+  //       setExpenses(expenseData);
+  //       const totalExp = expenseData.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+  //       setTotalExpenses(totalExp);
+  //       setNetRevenue(totalRevenue - totalExp);
+
+  //       // Analyze expenses
+  //       const byCategory: Record<string, number> = {};
+  //       const byVehicle: Record<string, number> = {};
+  //       const revenueVsExpense: { month: string; revenue: number; expense: number; profit: number }[] = [];
+        
+  //       // Process expenses
+  //       expenseData.forEach(expense => {
+  //         // By category
+  //         byCategory[expense.category] = (byCategory[expense.category] || 0) + expense.amount;
+          
+  //         // By vehicle
+  //         if (expense.vehicleNo) {
+  //           byVehicle[expense.vehicleNo] = (byVehicle[expense.vehicleNo] || 0) + expense.amount;
+  //         }
+  //       });
+        
+  //       // Process revenue by month
+  //       const revenueByMonth: Record<string, number> = {};
+  //       shipmentData.forEach(shipment => {
+  //         const date = new Date(shipment.createdAt);
+  //         const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  //         revenueByMonth[monthYear] = (revenueByMonth[monthYear] || 0) + (shipment.freightCost || 0);
+  //       });
+        
+  //       // Process expenses by month
+  //       const expenseByMonth: Record<string, number> = {};
+  //       expenseData.forEach(expense => {
+  //         const date = new Date(expense.createdAt);
+  //         const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  //         expenseByMonth[monthYear] = (expenseByMonth[monthYear] || 0) + (expense.amount || 0);
+  //       });
+        
+  //       // Combine data
+  //       expenseData.forEach(expense => {
+  //         const date = new Date(expense.createdAt);
+  //         const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  //         expenseByMonth[monthYear] = (expenseByMonth[monthYear] || 0) + (expense.amount || 0);
+  //       });
+  //       setExpenseAnalysis(prev => ({
+  //         ...prev,
+  //         revenueVsExpense,
+  //         byCategory: Object.keys(byCategory).map(category => ({
+  //           value: byCategory[category],
+  //           label: category,
+  //           color: getCategoryColor(category)
+  //         })),
+  //         byVehicle: Object.keys(byVehicle).map(vehicle => ({
+  //           value: byVehicle[vehicle],
+  //           label: vehicle,
+  //           color: getVehicleColor(vehicle)
+  //         }))
+  //       }));
+  //     }
+
+  //     // Rest of your analytics calculations
+  //     const routeCounts: Record<string, number> = {};
+  //     shipmentData.forEach(({ route }) => {
+  //       routeCounts[route] = (routeCounts[route] || 0) + 1;
+  //     });
+      
+  //     setRouteFrequency(
+  //       Object.keys(routeCounts).map(route => ({
+  //         value: Number(routeCounts[route]) || 0,
+  //         label: route
+  //       }))
+  //     );
+
+  //     const vehicleCounts: Record<string, number> = {};
+  //     shipmentData.forEach(({ vehicleNo }) => {
+  //       vehicleCounts[vehicleNo] = (vehicleCounts[vehicleNo] || 0) + 1;
+  //     });
+      
+  //     setVehicleUsage(
+  //       Object.keys(vehicleCounts).map(vehicle => ({
+  //         value: Number(vehicleCounts[vehicle]) || 0,
+  //         label: vehicle
+  //       }))
+  //     );
+      
+  //     const statusCounts = { 'Completed': 0, 'Pending': 0, 'Delayed': 0 };
+  //     shipmentData.forEach(({ statusId }) => {
+  //       if (statusId === 4) statusCounts['Completed']++;
+  //       else if (statusId <=3) statusCounts['Pending']++;
+  //       else statusCounts['Delayed']++;
+  //     });
+  //     setStatusData([
+  //       { value: statusCounts['Completed'], color: statusColors.Completed, label: 'Completed' },
+  //       { value: statusCounts['Pending'], color: statusColors.Pending, label: 'Pending' },
+  //       { value: statusCounts['Delayed'], color: statusColors.Delayed, label: 'Delayed' },
+  //     ]);
+
+  //     const filteredData = shipmentData.filter(({ createdAt }) => {
+  //       const date = new Date(createdAt);
+  //       const now = new Date();
+  //       if (timeFilter === 'week') {
+  //         return date >= new Date(now.setDate(now.getDate() - 7));
+  //       } else if (timeFilter === 'month') {
+  //         return date >= new Date(now.setMonth(now.getMonth() - 1));
+  //       }
+  //       return true;
+  //     });
+      
+  //     const revenueTrend: Record<string, number> = {};
+  //     filteredData.forEach(({ createdAt, freightCost }) => {
+  //       const dateLabel = new Date(createdAt).toLocaleDateString('en-US', {
+  //         month: 'short',
+  //         day: 'numeric'
+  //       });
+  //       revenueTrend[dateLabel] = (revenueTrend[dateLabel] || 0) + freightCost;
+  //     });
+      
+  //     setTrendData(
+  //       Object.keys(revenueTrend).map(date => ({
+  //         value: Number(revenueTrend[date]) || 0,
+  //         label: date
+  //       }))
+  //     );
+  //   } catch (error) {
+  //     console.error('Error fetching analytics data:', error);
+  //   } finally {
+  //     setRefreshing(false);
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchAnalyticsData = async () => {
     try {
       setRefreshing(true);
       setLoading(true);
       
-      // Fetch shipments
+      // 1. FETCH SHIPMENTS (existing logic)
       const shipmentRef = query(collection(db, 'Shipment'), where('transporter', '==', transporterName));
       const shipmentSnapshot = await getDocs(shipmentRef);
-      const shipmentData = shipmentSnapshot.docs.map(doc => doc.data() as Shipment);
+      const shipmentData = shipmentSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Shipment[];
       setShipments(shipmentData);
-
-      // Calculate total freight revenue
-      const totalRevenue = shipmentData.reduce((acc, curr) => acc + (curr.freightCost || 0), 0);
-      setTotalFreightRevenue(totalRevenue);
-
-      // Fetch expenses from the correct transporter document
+  
+      // 2. FETCH INVOICE REVENUE (new logic)
       const transporterQuery = query(collection(db, 'transporter'), where('name', '==', transporterName));
       const transporterSnapshot = await getDocs(transporterQuery);
       
       if (!transporterSnapshot.empty) {
         const transporterDocId = transporterSnapshot.docs[0].id;
+        
+        // 2a. Get all clients
+        const clientsRef = collection(db, 'transporter', transporterDocId, 'clients');
+        const clientsSnapshot = await getDocs(clientsRef);
+        
+        let totalInvoiceRevenue = 0;
+        
+        // 2b. Fetch invoices from each client
+        for (const clientDoc of clientsSnapshot.docs) {
+          const invoicesRef = collection(db, 'transporter', transporterDocId, 'clients', clientDoc.id, 'invoices');
+          const invoicesSnapshot = await getDocs(invoicesRef);
+          
+          invoicesSnapshot.forEach(invoiceDoc => {
+            const invoice = invoiceDoc.data();
+            // Calculate revenue from invoice (subtotal + VAT)
+            const invoiceRevenue = (Number(invoice.subtotal) || 0) + (Number(invoice.totalVat) || 0);
+            totalInvoiceRevenue += invoiceRevenue;
+          });
+        }
+        
+        // Update invoice revenue state
+        setTotalInvoiceRevenue(totalInvoiceRevenue);
+  
+        // 3. FETCH EXPENSES (existing logic)
         const expenseRef = collection(db, 'transporter', transporterDocId, 'Expenses');
         const expenseSnapshot = await getDocs(expenseRef);
         
@@ -1443,17 +1640,23 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
           } as Expense;
         });
         
-        setExpenses(expenseData);
+        // 4. CALCULATE TOTALS
+        const totalFreightRevenue = shipmentData.reduce((acc, curr) => acc + (curr.freightCost || 0), 0);
+        // const totalRevenue = totalFreightRevenue + totalInvoiceRevenue; // Combined revenue
+        const totalRevenue = totalInvoiceRevenue;
         const totalExp = expenseData.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        
+        // 5. UPDATE STATE
+        setTotalFreightRevenue(totalFreightRevenue);
+        setExpenses(expenseData);
         setTotalExpenses(totalExp);
         setNetRevenue(totalRevenue - totalExp);
-
-        // Analyze expenses
+  
+        // 6. ANALYZE DATA
+        // 6a. Expense Analysis (existing)
         const byCategory: Record<string, number> = {};
         const byVehicle: Record<string, number> = {};
-        const revenueVsExpense: { month: string; revenue: number; expense: number; profit: number }[] = [];
         
-        // Process expenses
         expenseData.forEach(expense => {
           // By category
           byCategory[expense.category] = (byCategory[expense.category] || 0) + expense.amount;
@@ -1464,8 +1667,12 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
           }
         });
         
-        // Process revenue by month
+        // 6b. Revenue vs Expense by Month (updated)
         const revenueByMonth: Record<string, number> = {};
+        const expenseByMonth: Record<string, number> = {};
+        const revenueVsExpense: { month: string; revenue: number; expense: number; profit: number }[] = [];
+        
+        // Process shipment revenue by month
         shipmentData.forEach(shipment => {
           const date = new Date(shipment.createdAt);
           const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -1473,7 +1680,6 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
         });
         
         // Process expenses by month
-        const expenseByMonth: Record<string, number> = {};
         expenseData.forEach(expense => {
           const date = new Date(expense.createdAt);
           const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -1481,11 +1687,20 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
         });
         
         // Combine data
-        expenseData.forEach(expense => {
-          const date = new Date(expense.createdAt);
-          const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-          expenseByMonth[monthYear] = (expenseByMonth[monthYear] || 0) + (expense.amount || 0);
+        const allMonths = new Set([...Object.keys(revenueByMonth), ...Object.keys(expenseByMonth)]);
+        allMonths.forEach(month => {
+          revenueVsExpense.push({
+            month,
+            revenue: revenueByMonth[month] || 0,
+            expense: expenseByMonth[month] || 0,
+            profit: (revenueByMonth[month] || 0) - (expenseByMonth[month] || 0)
+          });
         });
+        
+        // Sort by month
+        revenueVsExpense.sort((a, b) => a.month.localeCompare(b.month));
+        
+        // 6c. Update expense analysis state
         setExpenseAnalysis(prev => ({
           ...prev,
           revenueVsExpense,
@@ -1500,79 +1715,84 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
             color: getVehicleColor(vehicle)
           }))
         }));
-      }
-
-      // Rest of your analytics calculations
-      const routeCounts: Record<string, number> = {};
-      shipmentData.forEach(({ route }) => {
-        routeCounts[route] = (routeCounts[route] || 0) + 1;
-      });
-      
-      setRouteFrequency(
-        Object.keys(routeCounts).map(route => ({
-          value: Number(routeCounts[route]) || 0,
-          label: route
-        }))
-      );
-
-      const vehicleCounts: Record<string, number> = {};
-      shipmentData.forEach(({ vehicleNo }) => {
-        vehicleCounts[vehicleNo] = (vehicleCounts[vehicleNo] || 0) + 1;
-      });
-      
-      setVehicleUsage(
-        Object.keys(vehicleCounts).map(vehicle => ({
-          value: Number(vehicleCounts[vehicle]) || 0,
-          label: vehicle
-        }))
-      );
-      
-      const statusCounts = { 'Completed': 0, 'Pending': 0, 'Delayed': 0 };
-      shipmentData.forEach(({ statusId }) => {
-        if (statusId === 4) statusCounts['Completed']++;
-        else if (statusId <=3) statusCounts['Pending']++;
-        else statusCounts['Delayed']++;
-      });
-      setStatusData([
-        { value: statusCounts['Completed'], color: statusColors.Completed, label: 'Completed' },
-        { value: statusCounts['Pending'], color: statusColors.Pending, label: 'Pending' },
-        { value: statusCounts['Delayed'], color: statusColors.Delayed, label: 'Delayed' },
-      ]);
-
-      const filteredData = shipmentData.filter(({ createdAt }) => {
-        const date = new Date(createdAt);
-        const now = new Date();
-        if (timeFilter === 'week') {
-          return date >= new Date(now.setDate(now.getDate() - 7));
-        } else if (timeFilter === 'month') {
-          return date >= new Date(now.setMonth(now.getMonth() - 1));
-        }
-        return true;
-      });
-      
-      const revenueTrend: Record<string, number> = {};
-      filteredData.forEach(({ createdAt, freightCost }) => {
-        const dateLabel = new Date(createdAt).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric'
+  
+        // 7. SHIPMENT ANALYTICS (existing logic)
+        // 7a. Route Frequency
+        const routeCounts: Record<string, number> = {};
+        shipmentData.forEach(({ route }) => {
+          routeCounts[route] = (routeCounts[route] || 0) + 1;
         });
-        revenueTrend[dateLabel] = (revenueTrend[dateLabel] || 0) + freightCost;
-      });
-      
-      setTrendData(
-        Object.keys(revenueTrend).map(date => ({
-          value: Number(revenueTrend[date]) || 0,
-          label: date
-        }))
-      );
+        
+        setRouteFrequency(
+          Object.keys(routeCounts).map(route => ({
+            value: Number(routeCounts[route]) || 0,
+            label: route
+          }))
+        );
+  
+        // 7b. Vehicle Usage
+        const vehicleCounts: Record<string, number> = {};
+        shipmentData.forEach(({ vehicleNo }) => {
+          vehicleCounts[vehicleNo] = (vehicleCounts[vehicleNo] || 0) + 1;
+        });
+        
+        setVehicleUsage(
+          Object.keys(vehicleCounts).map(vehicle => ({
+            value: Number(vehicleCounts[vehicle]) || 0,
+            label: vehicle
+          }))
+        );
+        
+        // 7c. Status Distribution
+        const statusCounts = { 'Completed': 0, 'Pending': 0, 'Delayed': 0 };
+        shipmentData.forEach(({ statusId }) => {
+          if (statusId === 4) statusCounts['Completed']++;
+          else if (statusId <=3) statusCounts['Pending']++;
+          else statusCounts['Delayed']++;
+        });
+        
+        setStatusData([
+          { value: statusCounts['Completed'], color: statusColors.Completed, label: 'Completed' },
+          { value: statusCounts['Pending'], color: statusColors.Pending, label: 'Pending' },
+          { value: statusCounts['Delayed'], color: statusColors.Delayed, label: 'Delayed' },
+        ]);
+  
+        // 7d. Revenue Trend (filtered by time)
+        const filteredData = shipmentData.filter(({ createdAt }) => {
+          const date = new Date(createdAt);
+          const now = new Date();
+          if (timeFilter === 'week') {
+            return date >= new Date(now.setDate(now.getDate() - 7));
+          } else if (timeFilter === 'month') {
+            return date >= new Date(now.setMonth(now.getMonth() - 1));
+          }
+          return true;
+        });
+        
+        const revenueTrend: Record<string, number> = {};
+        filteredData.forEach(({ createdAt, freightCost }) => {
+          const dateLabel = new Date(createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+          });
+          revenueTrend[dateLabel] = (revenueTrend[dateLabel] || 0) + freightCost;
+        });
+        
+        setTrendData(
+          Object.keys(revenueTrend).map(date => ({
+            value: Number(revenueTrend[date]) || 0,
+            label: date
+          }))
+        );
+      }
     } catch (error) {
       console.error('Error fetching analytics data:', error);
+      Alert.alert('Error', 'Failed to load analytics data. Please try again.');
     } finally {
       setRefreshing(false);
       setLoading(false);
     }
   };
-
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       'Fuel': '#F59E0B',
@@ -1867,7 +2087,13 @@ const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
             <MaterialIcons name="attach-money" size={20} color="white" />
             <Text style={styles.cardTitle}>Total Revenue</Text>
           </View>
-          <Text style={styles.cardAmount}>₦{totalFreightRevenue.toLocaleString()}</Text>
+          {/* <Text style={styles.cardAmount}>₦{totalFreightRevenue.toLocaleString()}</Text> */}
+          {/* <Text style={styles.cardAmount}>₦{(totalFreightRevenue + totalInvoiceRevenue).toLocaleString()}</Text> */}
+          <Text style={styles.cardAmount}>₦{(totalInvoiceRevenue).toLocaleString()}</Text>
+          {/* <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+    <Text style={styles.revenueBreakdown}>Freight: ₦{totalFreightRevenue.toLocaleString()}</Text>
+    <Text style={styles.revenueBreakdown}>Invoices: ₦{totalInvoiceRevenue.toLocaleString()}</Text>
+  </View> */}
         </LinearGradient>
 
         {/* Expenses Card */}
@@ -2713,6 +2939,11 @@ const styles = StyleSheet.create({
   noDataText: {
     color: '#6B7280',
     fontSize: 14,
+  },
+  revenueBreakdown: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 10,
+    marginTop: 4,
   },
   
 });

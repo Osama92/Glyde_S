@@ -37,7 +37,7 @@ type Item = {
   vat: number;
 };
 
-type Supplier = {
+type Client = {
   id: string;
   name: string;
   address: string;
@@ -57,7 +57,7 @@ const InvoiceScreen = () => {
   const [logoUri, setLogoUri] = useState<string | null>(null);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [clients, setclients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isVATInclusive, setIsVATInclusive] = useState(true);
   const { transporterName } = useLocalSearchParams();
@@ -83,109 +83,109 @@ const InvoiceScreen = () => {
   }
 
 // useEffect(() => {
-//   const fetchSuppliers = async () => {
+//   const fetchclients = async () => {
 //     try {
-//       const suppliersCollection = collection(db, 'transporter');
-//       const q = query(suppliersCollection);
+//       const clientsCollection = collection(db, 'transporter');
+//       const q = query(clientsCollection);
 //       const querySnapshot = await getDocs(q);
       
-//       const suppliersData: Supplier[] = [];
+//       const clientsData: client[] = [];
       
 //       // Process all transporter documents
 //       for (const transporterDoc of querySnapshot.docs) {
 //         const transporterData = transporterDoc.data();
         
-//         // Check suppliers in the document map
-//         if (transporterData.suppliers) {
-//           Object.entries(transporterData.suppliers).forEach(([id, supplier]: [string, any]) => {
-//             suppliersData.push({
+//         // Check clients in the document map
+//         if (transporterData.clients) {
+//           Object.entries(transporterData.clients).forEach(([id, client]: [string, any]) => {
+//             clientsData.push({
 //               id,
-//               name: supplier.name,
-//               address: supplier.address
+//               name: client.name,
+//               address: client.address
 //             });
 //           });
 //         }
         
-//         // Check suppliers subcollection
-//         const suppliersSubcollection = collection(db, `transporter/${transporterName}/suppliers`);
-//         const suppliersSubSnapshot = await getDocs(suppliersSubcollection);
-//         suppliersSubSnapshot.forEach((supplierDoc) => {
-//           const supplierData = supplierDoc.data();
-//           suppliersData.push({
-//             id: supplierDoc.id,
-//             name: supplierData.name,
-//             address: supplierData.address
+//         // Check clients subcollection
+//         const clientsSubcollection = collection(db, `transporter/${transporterName}/clients`);
+//         const clientsSubSnapshot = await getDocs(clientsSubcollection);
+//         clientsSubSnapshot.forEach((clientDoc) => {
+//           const clientData = clientDoc.data();
+//           clientsData.push({
+//             id: clientDoc.id,
+//             name: clientData.name,
+//             address: clientData.address
 //           });
 //         });
 //       }
       
-//       setSuppliers(suppliersData);
+//       setclients(clientsData);
 //     } catch (error) {
-//       console.error("Error fetching suppliers:", error);
-//       Alert.alert("Error", "Failed to fetch suppliers");
+//       console.error("Error fetching clients:", error);
+//       Alert.alert("Error", "Failed to fetch clients");
 //     }
 //   };
 
-//   fetchSuppliers();
+//   fetchclients();
 // }, []); // Empty dependency array means this runs once when component mounts
 
 useEffect(() => {
-  const fetchSuppliers = async () => {
+  const fetchclients = async () => {
     try {
-      const suppliersCollection = collection(db, 'transporter');
-      const q = query(suppliersCollection);
+      const clientsCollection = collection(db, 'transporter');
+      const q = query(clientsCollection);
       const querySnapshot = await getDocs(q);
       
-      const suppliersData: Supplier[] = [];
+      const clientsData: Client[] = [];
       
       for (const transporterDoc of querySnapshot.docs) {
         const transporterData = transporterDoc.data();
         
-        if (transporterData.suppliers) {
-          Object.entries(transporterData.suppliers).forEach(([_, supplier]: [string, any]) => {
-            suppliersData.push({
-              id: supplier.name, // Now using name as ID
-              name: supplier.name,
-              address: supplier.address
+        if (transporterData.clients) {
+          Object.entries(transporterData.clients).forEach(([_, client]: [string, any]) => {
+            clientsData.push({
+              id: client.name, // Now using name as ID
+              name: client.name,
+              address: client.address
             });
           });
         }
         
-        const suppliersSubcollection = collection(db, `transporter/${transporterName}/suppliers`);
-        const suppliersSubSnapshot = await getDocs(suppliersSubcollection);
-        suppliersSubSnapshot.forEach((supplierDoc) => {
-          const supplierData = supplierDoc.data();
-          suppliersData.push({
-            id: supplierData.name, // Using name as ID
-            name: supplierData.name,
-            address: supplierData.address
+        const clientsSubcollection = collection(db, `transporter/${transporterName}/clients`);
+        const clientsSubSnapshot = await getDocs(clientsSubcollection);
+        clientsSubSnapshot.forEach((clientDoc) => {
+          const clientData = clientDoc.data();
+          clientsData.push({
+            id: clientData.name, // Using name as ID
+            name: clientData.name,
+            address: clientData.address
           });
         });
       }
       
-      setSuppliers(suppliersData);
+      setclients(clientsData);
     } catch (error) {
-      console.error("Error fetching suppliers:", error);
-      Alert.alert("Error", "Failed to fetch suppliers");
+      console.error("Error fetching clients:", error);
+      Alert.alert("Error", "Failed to fetch clients");
     }
   };
 
-  fetchSuppliers();
+  fetchclients();
 }, []);
 
   useEffect(() => {
     let isMounted = true;
     
-    const fetchSuppliers = async () => {
+    const fetchclients = async () => {
       try {
         // fetch logic
-        if (isMounted) setSuppliers(suppliers);
+        if (isMounted) setclients(clients);
       } catch (error) {
         if (isMounted) console.error(error);
       }
     };
     
-    fetchSuppliers();
+    fetchclients();
     
     return () => {
       isMounted = false;
@@ -253,10 +253,10 @@ useEffect(() => {
       throw error;
     }
   };
-  // Filter suppliers based on search query
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.address.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter clients based on search query
+  const filteredclients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calculate item totals whenever freightCost or serviceCharge changes
@@ -405,21 +405,21 @@ useEffect(() => {
   const saveInvoiceToFirebase = async (pdfUrl: string) => {
     try {
       if (!billTo) {
-        Alert.alert("Error", "Please select a supplier before saving");
+        Alert.alert("Error", "Please select a client before saving");
         return;
       }
   
-      // Find the selected supplier
-      const selectedSupplier = suppliers.find(s => s.name === billTo);
-      if (!selectedSupplier) {
-        Alert.alert("Error", "Selected supplier not found");
+      // Find the selected client
+      const selectedclient = clients.find(s => s.name === billTo);
+      if (!selectedclient) {
+        Alert.alert("Error", "Selected client not found");
         return;
       } else{
-        console.log("Selected Supplier:", selectedSupplier);
+        console.log("Selected client:", selectedclient);
       }
   
-      // Create a reference to the supplier's invoices collection
-      const invoiceRef = doc(db, `transporter/${transporterName}/suppliers/${selectedSupplier.id}/invoices/${invoiceNumber}`);
+      // Create a reference to the client's invoices collection
+      const invoiceRef = doc(db, `transporter/${transporterName}/clients/${selectedclient.id}/invoices/${invoiceNumber}`);
       
       // Prepare invoice data
       const invoiceData = {
@@ -445,19 +445,19 @@ useEffect(() => {
   // const saveInvoiceToFirebase = async (pdfUrl: string) => {
   //   try {
   //     if (!billTo) {
-  //       Alert.alert("Error", "Please select a supplier before saving");
+  //       Alert.alert("Error", "Please select a client before saving");
   //       return;
   //     }
   
-  //     // Create a sanitized version of the supplier name for the path
-  //     const sanitizedSupplierName = billTo
+  //     // Create a sanitized version of the client name for the path
+  //     const sanitizedclientName = billTo
   //       .replace(/[^a-zA-Z0-9]/g, '-') // Replace special chars with hyphens
   //       .toLowerCase()
   //       .substring(0, 50); // Limit length
   
-  //     // Create a reference using the supplier name instead of ID
+  //     // Create a reference using the client name instead of ID
   //     const invoiceRef = doc(db, 
-  //       `transporter/${transporterName}/suppliers/${sanitizedSupplierName}/invoices/${invoiceNumber}`);
+  //       `transporter/${transporterName}/clients/${sanitizedclientName}/invoices/${invoiceNumber}`);
       
   //     // Prepare invoice data
   //     const invoiceData = {
@@ -553,8 +553,8 @@ useEffect(() => {
           .invoice-header {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
-            padding: 2.5rem;
+            gap: 0.5rem;
+            padding: 2.0rem;
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             height:15%;
@@ -872,7 +872,7 @@ useEffect(() => {
   // const generatePDF = async () => {
   //   // Validate required fields
   //   if (!billTo || !billToAddress) {
-  //     Alert.alert("Validation Error", "Please select a supplier before generating invoice");
+  //     Alert.alert("Validation Error", "Please select a client before generating invoice");
   //     return;
   //   }
   
@@ -909,7 +909,7 @@ useEffect(() => {
   const generatePDF = async () => {
     // Validate required fields
     if (!billTo || !billToAddress) {
-      Alert.alert("Validation Error", "Please select a supplier before generating invoice");
+      Alert.alert("Validation Error", "Please select a client before generating invoice");
       return;
     }
   
@@ -968,8 +968,8 @@ useEffect(() => {
       <View style={styles.searchableDropdownContainer}>
         <SearchableDropdown
           onTextChange={(text) => setSearchQuery(text)}
-          onItemSelect={(item: Supplier) => {
-            setBillTo(item.name);
+          onItemSelect={(item: Client) => {
+            setBillTo(item.id);
             setBillToAddress(item.address);
           }}
           containerStyle={styles.dropdownContainer}
@@ -977,8 +977,8 @@ useEffect(() => {
           itemStyle={styles.dropdownItem}
           itemTextStyle={styles.dropdownItemText}
           itemsContainerStyle={styles.dropdownItemsContainer}
-          items={filteredSuppliers}
-          placeholder="Search supplier..."
+          items={filteredclients}
+          placeholder="Search client..."
           resetValue={false}
           underlineColorAndroid="transparent"
           textInputProps={{
@@ -1555,18 +1555,22 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   dropdownContainer: {
-    paddingHorizontal: 10,
+    padding: 0,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+    minHeight: 50,
   },
   dropdownTextInput: {
-    height: 50,
-    borderWidth: 0,
-    paddingLeft: 40,
-    color: '#2c3e50',
-    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#D5DBE1',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#FFF',
+    fontSize: 14,
+    color: '#2C3E50',
   },
   dropdownItemsContainer: {
     maxHeight: 200,
@@ -1574,11 +1578,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    shadowColor: '#000',
+    //shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   dropdownIcon: {
     position: 'absolute',

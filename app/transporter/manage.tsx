@@ -28,7 +28,7 @@
 // import { app } from '../firebase';
 // import { router, useLocalSearchParams } from 'expo-router';
 
-// type Supplier = {
+// type client = {
 //   id: string;
 //   name: string;
 //   address: string;
@@ -39,17 +39,17 @@
 //   createdAt?: any;
 // };
 
-// const SupplierManagementScreen = () => {
-//   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+// const clientManagementScreen = () => {
+//   const [clients, setclients] = useState<client[]>([]);
 //   const [searchQuery, setSearchQuery] = useState('');
 //   const [refreshing, setRefreshing] = useState(false);
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [editMode, setEditMode] = useState(false);
-//   const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
+//   const [currentclient, setCurrentclient] = useState<client | null>(null);
 
 //   // Form fields
-//   const [supplierName, setSupplierName] = useState('');
-//   const [supplierAddress, setSupplierAddress] = useState('');
+//   const [clientName, setclientName] = useState('');
+//   const [clientAddress, setclientAddress] = useState('');
 //   const [contactPerson, setContactPerson] = useState('');
 //   const [phoneNumber, setPhoneNumber] = useState('');
 //   const [email, setEmail] = useState('');
@@ -59,18 +59,18 @@
 //   const { transporterName } = useLocalSearchParams();
 //   const transporterNameStr = Array.isArray(transporterName) ? transporterName[0] : transporterName ?? '';
 
-//   // Fetch suppliers
-//   const fetchSuppliers = async () => {
+//   // Fetch clients
+//   const fetchclients = async () => {
 //     setRefreshing(true);
 //     try {
 //       const transporterRef = doc(db, 'transporter', transporterNameStr);
-//       const suppliersRef = collection(transporterRef, 'suppliers');
-//       const querySnapshot = await getDocs(suppliersRef);
+//       const clientsRef = collection(transporterRef, 'clients');
+//       const querySnapshot = await getDocs(clientsRef);
       
-//       const suppliersData: Supplier[] = [];
+//       const clientsData: client[] = [];
 //       querySnapshot.forEach((doc) => {
 //         const data = doc.data();
-//         suppliersData.push({
+//         clientsData.push({
 //           id: doc.id,
 //           name: data.name || 'Unknown',
 //           address: data.address || 'Unknown',
@@ -82,41 +82,41 @@
 //         });
 //       });
       
-//       setSuppliers(suppliersData);
+//       setclients(clientsData);
 //     } catch (error) {
-//       console.error('Error fetching suppliers:', error);
-//       Alert.alert('Error', 'Failed to fetch suppliers');
+//       console.error('Error fetching clients:', error);
+//       Alert.alert('Error', 'Failed to fetch clients');
 //     } finally {
 //       setRefreshing(false);
 //     }
 //   };
 
 //   useEffect(() => {
-//     fetchSuppliers();
+//     fetchclients();
 //   }, []);
 
-//   // Filter suppliers based on search query
-//   const filteredSuppliers = suppliers.filter(supplier =>
-//     supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//     supplier.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//     (supplier.contactPerson && supplier.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()))
+//   // Filter clients based on search query
+//   const filteredclients = clients.filter(client =>
+//     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//     client.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//     (client.contactPerson && client.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()))
 //   );
 
 //   // Reset form
 //   const resetForm = () => {
-//     setSupplierName('');
-//     setSupplierAddress('');
+//     setclientName('');
+//     setclientAddress('');
 //     setContactPerson('');
 //     setPhoneNumber('');
 //     setEmail('');
 //     setTaxId('');
-//     setCurrentSupplier(null);
+//     setCurrentclient(null);
 //     setEditMode(false);
 //   };
 
-//   // Handle create/update supplier
-//   const handleSubmitSupplier = async () => {
-//     if (!supplierName || !supplierAddress) {
+//   // Handle create/update client
+//   const handleSubmitclient = async () => {
+//     if (!clientName || !clientAddress) {
 //       Alert.alert('Validation Error', 'Please fill in all required fields (Name and Address)');
 //       return;
 //     }
@@ -124,11 +124,11 @@
 //     setIsLoading(true);
 //     try {
 //       const transporterRef = doc(db, 'transporter', transporterNameStr);
-//       const suppliersRef = collection(transporterRef, 'suppliers');
+//       const clientsRef = collection(transporterRef, 'clients');
       
-//       const supplierData = {
-//         name: supplierName,
-//         address: supplierAddress,
+//       const clientData = {
+//         name: clientName,
+//         address: clientAddress,
 //         contactPerson,
 //         phoneNumber,
 //         email,
@@ -136,49 +136,49 @@
 //         updatedAt: serverTimestamp()
 //       };
 
-//       if (editMode && currentSupplier) {
-//         // Update existing supplier
-//         await updateDoc(doc(suppliersRef, currentSupplier.id), {
-//           ...supplierData,
-//           createdAt: currentSupplier.createdAt || serverTimestamp()
+//       if (editMode && currentclient) {
+//         // Update existing client
+//         await updateDoc(doc(clientsRef, currentclient.id), {
+//           ...clientData,
+//           createdAt: currentclient.createdAt || serverTimestamp()
 //         });
-//         Alert.alert('Success', 'Supplier updated successfully!');
+//         Alert.alert('Success', 'client updated successfully!');
 //       } else {
-//         // Create new supplier
-//         await addDoc(suppliersRef, {
-//           ...supplierData,
+//         // Create new client
+//         await addDoc(clientsRef, {
+//           ...clientData,
 //           createdAt: serverTimestamp()
 //         });
-//         Alert.alert('Success', 'Supplier created successfully!');
+//         Alert.alert('Success', 'client created successfully!');
 //       }
 
 //       resetForm();
-//       fetchSuppliers();
+//       fetchclients();
 //     } catch (error) {
-//       console.error('Error saving supplier:', error);
-//       Alert.alert('Error', 'Failed to save supplier. Please try again.');
+//       console.error('Error saving client:', error);
+//       Alert.alert('Error', 'Failed to save client. Please try again.');
 //     } finally {
 //       setIsLoading(false);
 //     }
 //   };
 
-//   // Handle edit supplier
-//   const handleEditSupplier = (supplier: Supplier) => {
-//     setCurrentSupplier(supplier);
-//     setSupplierName(supplier.name);
-//     setSupplierAddress(supplier.address);
-//     setContactPerson(supplier.contactPerson || '');
-//     setPhoneNumber(supplier.phoneNumber || '');
-//     setEmail(supplier.email || '');
-//     setTaxId(supplier.taxId || '');
+//   // Handle edit client
+//   const handleEditclient = (client: client) => {
+//     setCurrentclient(client);
+//     setclientName(client.name);
+//     setclientAddress(client.address);
+//     setContactPerson(client.contactPerson || '');
+//     setPhoneNumber(client.phoneNumber || '');
+//     setEmail(client.email || '');
+//     setTaxId(client.taxId || '');
 //     setEditMode(true);
 //   };
 
-//   // Handle delete supplier
-//   const handleDeleteSupplier = async (supplierId: string) => {
+//   // Handle delete client
+//   const handleDeleteclient = async (clientId: string) => {
 //     Alert.alert(
 //       'Confirm Delete',
-//       'Are you sure you want to delete this supplier?',
+//       'Are you sure you want to delete this client?',
 //       [
 //         { text: 'Cancel', style: 'cancel' },
 //         {
@@ -187,13 +187,13 @@
 //           onPress: async () => {
 //             try {
 //               const transporterRef = doc(db, 'transporter', transporterNameStr);
-//               const supplierRef = doc(collection(transporterRef, 'suppliers'), supplierId);
-//               await deleteDoc(supplierRef);
-//               fetchSuppliers();
-//               Alert.alert('Success', 'Supplier deleted successfully');
+//               const clientRef = doc(collection(transporterRef, 'clients'), clientId);
+//               await deleteDoc(clientRef);
+//               fetchclients();
+//               Alert.alert('Success', 'client deleted successfully');
 //             } catch (error) {
-//               console.error('Error deleting supplier:', error);
-//               Alert.alert('Error', 'Failed to delete supplier');
+//               console.error('Error deleting client:', error);
+//               Alert.alert('Error', 'Failed to delete client');
 //             }
 //           }
 //         }
@@ -201,29 +201,29 @@
 //     );
 //   };
 
-//   // Render supplier item
-//   const renderSupplierItem = ({ item }: { item: Supplier }) => (
-//     <Card style={styles.supplierCard}>
+//   // Render client item
+//   const renderclientItem = ({ item }: { item: client }) => (
+//     <Card style={styles.clientCard}>
 //       <Card.Content>
-//         <View style={styles.supplierHeader}>
-//           <View style={styles.supplierInfo}>
-//             <Text style={styles.supplierName}>{item.name}</Text>
-//             <Text style={styles.supplierAddress}>{item.address}</Text>
+//         <View style={styles.clientHeader}>
+//           <View style={styles.clientInfo}>
+//             <Text style={styles.clientName}>{item.name}</Text>
+//             <Text style={styles.clientAddress}>{item.address}</Text>
 //             {item.contactPerson && (
-//               <Text style={styles.supplierContact}>Contact: {item.contactPerson}</Text>
+//               <Text style={styles.clientContact}>Contact: {item.contactPerson}</Text>
 //             )}
 //           </View>
-//           <View style={styles.supplierActions}>
+//           <View style={styles.clientActions}>
 //             <IconButton
 //               icon="pencil"
 //               size={20}
-//               onPress={() => handleEditSupplier(item)}
+//               onPress={() => handleEditclient(item)}
 //               style={styles.actionButton}
 //             />
 //             <IconButton
 //               icon="delete"
 //               size={20}
-//               onPress={() => handleDeleteSupplier(item.id)}
+//               onPress={() => handleDeleteclient(item.id)}
 //               style={styles.actionButton}
 //             />
 //           </View>
@@ -236,20 +236,20 @@
 //     <ScrollView 
 //       style={styles.container}
 //       refreshControl={
-//         <RefreshControl refreshing={refreshing} onRefresh={fetchSuppliers} />
+//         <RefreshControl refreshing={refreshing} onRefresh={fetchclients} />
 //       }
 //     >
 //       <View style={styles.topSection}>
 //         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
 //           <Ionicons name="arrow-back" size={24} color="#2c3e50" />
 //         </TouchableOpacity>
-//         <Text style={styles.screenTitle}>Supplier Management</Text>
+//         <Text style={styles.screenTitle}>client Management</Text>
 //         <View style={{ width: 24 }} />
 //       </View>
 
 //       {/* Search Bar */}
 //       <Searchbar
-//         placeholder="Search suppliers..."
+//         placeholder="Search clients..."
 //         onChangeText={setSearchQuery}
 //         value={searchQuery}
 //         style={styles.searchBar}
@@ -257,21 +257,21 @@
 //         inputStyle={styles.searchInput}
 //       />
 
-//       {/* Supplier Form */}
+//       {/* client Form */}
 //       <Card style={styles.card}>
 //         <Card.Content>
 //           <Text style={styles.sectionLabel}>
-//             {editMode ? 'Edit Supplier' : 'Add New Supplier'}
+//             {editMode ? 'Edit client' : 'Add New client'}
 //           </Text>
           
 //           <View style={styles.inputContainer}>
 //             <MaterialIcons name="business" size={20} color="#7f8c8d" style={styles.inputIcon} />
 //             <TextInput
 //               style={styles.input}
-//               placeholder="Supplier Name *"
+//               placeholder="client Name *"
 //               placeholderTextColor="#95a5a6"
-//               value={supplierName}
-//               onChangeText={setSupplierName}
+//               value={clientName}
+//               onChangeText={setclientName}
 //             />
 //           </View>
 
@@ -281,8 +281,8 @@
 //               style={[styles.input, styles.multilineInput]}
 //               placeholder="Address *"
 //               placeholderTextColor="#95a5a6"
-//               value={supplierAddress}
-//               onChangeText={setSupplierAddress}
+//               value={clientAddress}
+//               onChangeText={setclientAddress}
 //               multiline
 //             />
 //           </View>
@@ -346,7 +346,7 @@
 //             </Button>
 //             <Button
 //               mode="contained"
-//               onPress={handleSubmitSupplier}
+//               onPress={handleSubmitclient}
 //               style={styles.submitButton}
 //               labelStyle={styles.buttonText}
 //               disabled={isLoading}
@@ -354,20 +354,20 @@
 //               {isLoading ? (
 //                 <ActivityIndicator color="#fff" />
 //               ) : (
-//                 editMode ? 'Update Supplier' : 'Create Supplier'
+//                 editMode ? 'Update client' : 'Create client'
 //               )}
 //             </Button>
 //           </View>
 //         </Card.Content>
 //       </Card>
 
-//       {/* Suppliers List */}
-//       <Text style={styles.listHeader}>Suppliers ({filteredSuppliers.length})</Text>
+//       {/* clients List */}
+//       <Text style={styles.listHeader}>clients ({filteredclients.length})</Text>
       
-//       {filteredSuppliers.length === 0 ? (
+//       {filteredclients.length === 0 ? (
 //         <View style={styles.emptyState}>
 //           <MaterialIcons name="business" size={40} color="#bdc3c7" />
-//           <Text style={styles.emptyText}>No suppliers found</Text>
+//           <Text style={styles.emptyText}>No clients found</Text>
 //           {searchQuery && (
 //             <Button
 //               mode="text"
@@ -380,8 +380,8 @@
 //         </View>
 //       ) : (
 //         <FlatList
-//           data={filteredSuppliers}
-//           renderItem={renderSupplierItem}
+//           data={filteredclients}
+//           renderItem={renderclientItem}
 //           keyExtractor={(item) => item.id}
 //           scrollEnabled={false} // Since we're inside a ScrollView
 //           contentContainerStyle={styles.listContainer}
@@ -489,34 +489,34 @@
 //   listContainer: {
 //     paddingBottom: 20,
 //   },
-//   supplierCard: {
+//   clientCard: {
 //     marginBottom: 10,
 //     borderRadius: 8,
 //     elevation: 2,
 //   },
-//   supplierHeader: {
+//   clientHeader: {
 //     flexDirection: 'row',
 //     justifyContent: 'space-between',
 //   },
-//   supplierInfo: {
+//   clientInfo: {
 //     flex: 1,
 //   },
-//   supplierName: {
+//   clientName: {
 //     fontSize: 16,
 //     fontWeight: '600',
 //     color: '#2c3e50',
 //     marginBottom: 5,
 //   },
-//   supplierAddress: {
+//   clientAddress: {
 //     fontSize: 14,
 //     color: '#7f8c8d',
 //     marginBottom: 5,
 //   },
-//   supplierContact: {
+//   clientContact: {
 //     fontSize: 14,
 //     color: '#3498db',
 //   },
-//   supplierActions: {
+//   clientActions: {
 //     flexDirection: 'row',
 //     alignItems: 'center',
 //   },
@@ -540,7 +540,7 @@
 //   },
 // });
 
-// export default SupplierManagementScreen;
+// export default clientManagementScreen;
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -586,13 +586,14 @@ import {
   query,
   where,
   deleteDoc,
-  onSnapshot
+  onSnapshot,
+  setDoc
 } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { app } from '../firebase';
 import { router, useLocalSearchParams } from 'expo-router';
 
-type Supplier = {
+type client = {
   id: string;
   name: string;
   address: string;
@@ -616,21 +617,21 @@ type Invoice = {
   billToAddress?: string;
 };
 
-const SupplierManagementScreen = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+const clientManagementScreen = () => {
+  const [clients, setclients] = useState<client[]>([]);
   const [invoices, setInvoices] = useState<Record<string, Invoice[]>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
-  const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
+  const [currentclient, setCurrentclient] = useState<client | null>(null);
   const [currentInvoices, setCurrentInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   // Form fields
-  const [supplierName, setSupplierName] = useState('');
-  const [supplierAddress, setSupplierAddress] = useState('');
+  const [clientName, setclientName] = useState('');
+  const [clientAddress, setclientAddress] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -642,26 +643,26 @@ const SupplierManagementScreen = () => {
   const { transporterName } = useLocalSearchParams();
   const transporterNameStr = Array.isArray(transporterName) ? transporterName[0] : transporterName ?? '';
 
-  // Fetch suppliers and invoices
+  // Fetch clients and invoices
   const fetchData = async () => {
     setRefreshing(true);
     try {
       const transporterRef = doc(db, 'transporter', transporterNameStr);
       
-      // Fetch suppliers
-      const suppliersRef = collection(transporterRef, 'suppliers');
-      const suppliersSnapshot = await getDocs(suppliersRef);
-      const suppliersData = suppliersSnapshot.docs.map(doc => ({
+      // Fetch clients
+      const clientsRef = collection(transporterRef, 'clients');
+      const clientsSnapshot = await getDocs(clientsRef);
+      const clientsData = clientsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })) as Supplier[];
+      })) as client[];
       
-      // Fetch invoices for each supplier
+      // Fetch invoices for each client
       const invoicesData: Record<string, Invoice[]> = {};
-      const invoicePromises = suppliersData.map(async supplier => {
-        const invoicesRef = collection(transporterRef, `suppliers/${supplier.id}/invoices`);
+      const invoicePromises = clientsData.map(async client => {
+        const invoicesRef = collection(transporterRef, `clients/${client.id}/invoices`);
         const invoicesSnapshot = await getDocs(invoicesRef);
-        invoicesData[supplier.id] = invoicesSnapshot.docs.map(doc => ({
+        invoicesData[client.id] = invoicesSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Invoice[];
@@ -669,7 +670,7 @@ const SupplierManagementScreen = () => {
       
       await Promise.all(invoicePromises);
       
-      setSuppliers(suppliersData);
+      setclients(clientsData);
       setInvoices(invoicesData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -684,23 +685,23 @@ const SupplierManagementScreen = () => {
     
     // Set up real-time listener for invoices
     const transporterRef = doc(db, 'transporter', transporterNameStr);
-    const unsubscribe = onSnapshot(collection(transporterRef, 'suppliers'), async () => {
+    const unsubscribe = onSnapshot(collection(transporterRef, 'clients'), async () => {
       fetchData();
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Filter suppliers based on search query
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    supplier.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (supplier.contactPerson && supplier.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Filter clients based on search query
+  const filteredclients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (client.contactPerson && client.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Get invoices for a specific supplier
-  const getSupplierInvoices = (supplierId: string) => {
-    return invoices[supplierId] || [];
+  // Get invoices for a specific client
+  const getclientInvoices = (clientId: string) => {
+    return invoices[clientId] || [];
   };
 
   // View invoice details
@@ -738,58 +739,108 @@ const SupplierManagementScreen = () => {
 
   // Reset form
   const resetForm = () => {
-    setSupplierName('');
-    setSupplierAddress('');
+    setclientName('');
+    setclientAddress('');
     setContactPerson('');
     setPhoneNumber('');
     setEmail('');
     setTaxId('');
     setStatus('active');
-    setCurrentSupplier(null);
+    setCurrentclient(null);
     setModalVisible(false);
   };
 
-  // Open modal for new supplier
-  const openNewSupplierModal = () => {
+  // Open modal for new client
+  const openNewclientModal = () => {
     resetForm();
     setModalVisible(true);
   };
 
-  // Open modal for editing supplier
-  const openEditSupplierModal = (supplier: Supplier) => {
-    setCurrentSupplier(supplier);
-    setSupplierName(supplier.name);
-    setSupplierAddress(supplier.address);
-    setContactPerson(supplier.contactPerson || '');
-    setPhoneNumber(supplier.phoneNumber || '');
-    setEmail(supplier.email || '');
-    setTaxId(supplier.taxId || '');
-    setStatus(supplier.status || 'active');
+  // Open modal for editing client
+  const openEditclientModal = (client: client) => {
+    setCurrentclient(client);
+    setclientName(client.name);
+    setclientAddress(client.address);
+    setContactPerson(client.contactPerson || '');
+    setPhoneNumber(client.phoneNumber || '');
+    setEmail(client.email || '');
+    setTaxId(client.taxId || '');
+    setStatus(client.status || 'active');
     setModalVisible(true);
   };
 
-  // View all invoices for a supplier
-  const viewSupplierInvoices = (supplier: Supplier) => {
-    setCurrentSupplier(supplier);
-    setCurrentInvoices(getSupplierInvoices(supplier.id));
+  // View all invoices for a client
+  const viewclientInvoices = (client: client) => {
+    setCurrentclient(client);
+    setCurrentInvoices(getclientInvoices(client.id));
     setInvoiceModalVisible(true);
   };
 
-  // Handle create/update supplier
-  const handleSubmitSupplier = async () => {
-    if (!supplierName || !supplierAddress) {
+  // Handle create/update client
+  // const handleSubmitclient = async () => {
+  //   if (!clientName || !clientAddress) {
+  //     Alert.alert('Validation Error', 'Please fill in all required fields (Name and Address)');
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const transporterRef = doc(db, 'transporter', transporterNameStr);
+  //     const clientsRef = collection(transporterRef, 'clients');
+      
+  //     const clientData = {
+  //       name: clientName,
+  //       address: clientAddress,
+  //       contactPerson,
+  //       phoneNumber,
+  //       email,
+  //       taxId,
+  //       status,
+  //       updatedAt: serverTimestamp()
+  //     };
+
+  //     if (currentclient) {
+  //       // Update existing client
+  //       await updateDoc(doc(clientsRef, currentclient.id), {
+  //         ...clientData,
+  //         createdAt: currentclient.createdAt || serverTimestamp()
+  //       });
+  //       Alert.alert('Success', 'client updated successfully!');
+  //     } else {
+  //       // Create new client
+  //       await addDoc(clientsRef, {
+  //         ...clientData,
+  //         createdAt: serverTimestamp()
+  //       });
+  //       Alert.alert('Success', 'client created successfully!');
+  //     }
+
+  //     resetForm();
+  //     fetchData();
+  //   } catch (error) {
+  //     console.error('Error saving client:', error);
+  //     Alert.alert('Error', 'Failed to save client. Please try again.');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+  const handleSubmitclient = async () => {
+    if (!clientName || !clientAddress) {
       Alert.alert('Validation Error', 'Please fill in all required fields (Name and Address)');
       return;
     }
-
+  
     setIsLoading(true);
     try {
+      // Sanitize the client name to create a valid document ID
+      const clientId = clientName
+  
       const transporterRef = doc(db, 'transporter', transporterNameStr);
-      const suppliersRef = collection(transporterRef, 'suppliers');
+      const clientRef = doc(collection(transporterRef, 'clients'), clientId);
       
-      const supplierData = {
-        name: supplierName,
-        address: supplierAddress,
+      const clientData = {
+        name: clientName,
+        address: clientAddress,
         contactPerson,
         phoneNumber,
         email,
@@ -797,38 +848,46 @@ const SupplierManagementScreen = () => {
         status,
         updatedAt: serverTimestamp()
       };
-
-      if (currentSupplier) {
-        // Update existing supplier
-        await updateDoc(doc(suppliersRef, currentSupplier.id), {
-          ...supplierData,
-          createdAt: currentSupplier.createdAt || serverTimestamp()
-        });
-        Alert.alert('Success', 'Supplier updated successfully!');
+  
+      if (currentclient) {
+        // Update existing client - use the existing ID
+        await setDoc(doc(transporterRef, 'clients', currentclient.id), {
+          ...clientData,
+          createdAt: currentclient.createdAt || serverTimestamp()
+        }, { merge: true });
+        Alert.alert('Success', 'client updated successfully!');
       } else {
-        // Create new supplier
-        await addDoc(suppliersRef, {
-          ...supplierData,
+        // Create new client with name as ID
+        await setDoc(clientRef, {
+          ...clientData,
           createdAt: serverTimestamp()
         });
-        Alert.alert('Success', 'Supplier created successfully!');
+        Alert.alert('Success', 'client created successfully!');
       }
-
+  
       resetForm();
       fetchData();
-    } catch (error) {
-      console.error('Error saving supplier:', error);
-      Alert.alert('Error', 'Failed to save supplier. Please try again.');
+    } catch (error: any) {
+      console.error('Error saving client:', error);
+      let errorMessage = 'Failed to save client. Please try again.';
+      
+      // Handle specific Firestore errors
+      if (error.code === 'permission-denied') {
+        errorMessage = 'You do not have permission to perform this operation.';
+      } else if (error.code === 'already-exists') {
+        errorMessage = 'A client with this name already exists.';
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Handle delete supplier
-  const handleDeleteSupplier = async (supplierId: string) => {
+  // Handle delete client
+  const handleDeleteclient = async (clientId: string) => {
     Alert.alert(
       'Confirm Delete',
-      'Are you sure you want to delete this supplier? This will also delete all associated invoices.',
+      'Are you sure you want to delete this client? This will also delete all associated invoices.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -837,20 +896,20 @@ const SupplierManagementScreen = () => {
           onPress: async () => {
             try {
               const transporterRef = doc(db, 'transporter', transporterNameStr);
-              const supplierRef = doc(collection(transporterRef, 'suppliers'), supplierId);
-              await deleteDoc(supplierRef);
+              const clientRef = doc(collection(transporterRef, 'clients'), clientId);
+              await deleteDoc(clientRef);
               
-              // Also delete all invoices for this supplier
-              const invoicesRef = collection(transporterRef, `suppliers/${supplierId}/invoices`);
+              // Also delete all invoices for this client
+              const invoicesRef = collection(transporterRef, `clients/${clientId}/invoices`);
               const invoicesSnapshot = await getDocs(invoicesRef);
               const deletePromises = invoicesSnapshot.docs.map(doc => deleteDoc(doc.ref));
               await Promise.all(deletePromises);
               
               fetchData();
-              Alert.alert('Success', 'Supplier and associated invoices deleted successfully');
+              Alert.alert('Success', 'client and associated invoices deleted successfully');
             } catch (error) {
-              console.error('Error deleting supplier:', error);
-              Alert.alert('Error', 'Failed to delete supplier');
+              console.error('Error deleting client:', error);
+              Alert.alert('Error', 'Failed to delete client');
             }
           }
         }
@@ -861,17 +920,17 @@ const SupplierManagementScreen = () => {
   // Update invoice status
   const updateInvoiceStatus = async (invoiceId: string, newStatus: 'paid' | 'unpaid' | 'overdue') => {
     try {
-      // Find which supplier this invoice belongs to
-      const supplierId = Object.keys(invoices).find(key => 
+      // Find which client this invoice belongs to
+      const clientId = Object.keys(invoices).find(key => 
         invoices[key].some(inv => inv.id === invoiceId)
       );
       
-      if (!supplierId) {
-        throw new Error('Supplier not found for this invoice');
+      if (!clientId) {
+        throw new Error('client not found for this invoice');
       }
       
       const transporterRef = doc(db, 'transporter', transporterNameStr);
-      const invoiceRef = doc(transporterRef, `suppliers/${supplierId}/invoices/${invoiceId}`);
+      const invoiceRef = doc(transporterRef, `clients/${clientId}/invoices/${invoiceId}`);
       
       await updateDoc(invoiceRef, {
         status: newStatus,
@@ -886,20 +945,20 @@ const SupplierManagementScreen = () => {
     }
   };
 
-  // Render supplier item
-  const renderSupplierItem = ({ item }: { item: Supplier }) => {
-    const supplierInvoices = getSupplierInvoices(item.id);
-    const unpaidInvoices = supplierInvoices.filter(i => i.status === 'unpaid');
-    const paidInvoices = supplierInvoices.filter(i => i.status === 'paid');
-    const overdueInvoices = supplierInvoices.filter(i => i.status === 'overdue');
+  // Render client item
+  const renderclientItem = ({ item }: { item: client }) => {
+    const clientInvoices = getclientInvoices(item.id);
+    const unpaidInvoices = clientInvoices.filter(i => i.status === 'unpaid');
+    const paidInvoices = clientInvoices.filter(i => i.status === 'paid');
+    const overdueInvoices = clientInvoices.filter(i => i.status === 'overdue');
 
     return (
-      <Card style={styles.supplierCard}>
+      <Card style={styles.clientCard}>
         <Card.Content>
-          <View style={styles.supplierHeader}>
-            <View style={styles.supplierInfo}>
-              <View style={styles.supplierTitleRow}>
-                <Text style={styles.supplierName}>{item.name}</Text>
+          <View style={styles.clientHeader}>
+            <View style={styles.clientInfo}>
+              <View style={styles.clientTitleRow}>
+                <Text style={styles.clientName}>{item.name}</Text>
                 <Badge 
                   style={[
                     styles.statusBadge,
@@ -909,41 +968,41 @@ const SupplierManagementScreen = () => {
                   {item.status === 'active' ? 'Active' : 'Inactive'}
                 </Badge>
               </View>
-              <Text style={styles.supplierAddress}>{item.address}</Text>
+              <Text style={styles.clientAddress}>{item.address}</Text>
               
               {item.contactPerson && (
                 <View style={styles.contactRow}>
                   <MaterialIcons name="person" size={16} color="#7f8c8d" />
-                  <Text style={styles.supplierContact}>{item.contactPerson}</Text>
+                  <Text style={styles.clientContact}>{item.contactPerson}</Text>
                 </View>
               )}
               
               {item.phoneNumber && (
                 <View style={styles.contactRow}>
                   <FontAwesome name="phone" size={16} color="#7f8c8d" />
-                  <Text style={styles.supplierContact}>{item.phoneNumber}</Text>
+                  <Text style={styles.clientContact}>{item.phoneNumber}</Text>
                 </View>
               )}
             </View>
             
-            <View style={styles.supplierActions}>
+            <View style={styles.clientActions}>
               <IconButton
                 icon="file-document-outline"
                 size={20}
-                onPress={() => viewSupplierInvoices(item)}
+                onPress={() => viewclientInvoices(item)}
                 style={styles.actionButton}
-                disabled={supplierInvoices.length === 0}
+                disabled={clientInvoices.length === 0}
               />
               <IconButton
                 icon="pencil"
                 size={20}
-                onPress={() => openEditSupplierModal(item)}
+                onPress={() => openEditclientModal(item)}
                 style={styles.actionButton}
               />
               <IconButton
                 icon="delete"
                 size={20}
-                onPress={() => handleDeleteSupplier(item.id)}
+                onPress={() => handleDeleteclient(item.id)}
                 style={styles.actionButton}
               />
             </View>
@@ -953,7 +1012,7 @@ const SupplierManagementScreen = () => {
           <View style={styles.invoiceStatusContainer}>
             <View style={styles.invoiceStatusHeader}>
               <Text style={styles.invoiceStatusTitle}>Invoices</Text>
-              <Text style={styles.invoiceCount}>{supplierInvoices.length} total</Text>
+              <Text style={styles.invoiceCount}>{clientInvoices.length} total</Text>
             </View>
             <View style={styles.invoiceStatusRow}>
               <View style={styles.invoiceStatusItem}>
@@ -1031,9 +1090,9 @@ const SupplierManagementScreen = () => {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Supplier Management</Text>
+        <Text style={styles.headerTitle}>Client Management</Text>
         <TouchableOpacity 
-          onPress={openNewSupplierModal}
+          onPress={openNewclientModal}
           style={styles.addButton}
         >
           <AntDesign name="plus" size={20} color="#fff" />
@@ -1043,7 +1102,7 @@ const SupplierManagementScreen = () => {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Searchbar
-          placeholder="Search suppliers..."
+          placeholder="Search client..."
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchBar}
@@ -1053,10 +1112,10 @@ const SupplierManagementScreen = () => {
         />
       </View>
 
-      {/* Suppliers List */}
+      {/* clients List */}
       <FlatList
-        data={filteredSuppliers}
-        renderItem={renderSupplierItem}
+        data={filteredclients}
+        renderItem={renderclientItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -1069,7 +1128,7 @@ const SupplierManagementScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <MaterialIcons name="business" size={48} color="#bdc3c7" />
-            <Text style={styles.emptyText}>No suppliers found</Text>
+            <Text style={styles.emptyText}>No client found</Text>
             {searchQuery ? (
               <Button
                 mode="text"
@@ -1082,18 +1141,18 @@ const SupplierManagementScreen = () => {
             ) : (
               <Button
                 mode="contained"
-                onPress={openNewSupplierModal}
+                onPress={openNewclientModal}
                 style={styles.addFirstButton}
                 labelStyle={styles.addFirstButtonText}
               >
-                Add Your First Supplier
+                Add Your First Client
               </Button>
             )}
           </View>
         }
       />
 
-      {/* Supplier Form Modal */}
+      {/* client Form Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -1104,7 +1163,7 @@ const SupplierManagementScreen = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {currentSupplier ? 'Edit Supplier' : 'New Supplier'}
+                {currentclient ? 'Edit Client' : 'New Client'}
               </Text>
               <TouchableOpacity onPress={resetForm}>
                 <AntDesign name="close" size={24} color="#7f8c8d" />
@@ -1116,10 +1175,10 @@ const SupplierManagementScreen = () => {
                 <MaterialIcons name="business" size={20} color="#7f8c8d" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Supplier Name *"
+                  placeholder="Client Name *"
                   placeholderTextColor="#95a5a6"
-                  value={supplierName}
-                  onChangeText={setSupplierName}
+                  value={clientName}
+                  onChangeText={setclientName}
                 />
               </View>
 
@@ -1129,8 +1188,8 @@ const SupplierManagementScreen = () => {
                   style={[styles.input, styles.multilineInput]}
                   placeholder="Address *"
                   placeholderTextColor="#95a5a6"
-                  value={supplierAddress}
-                  onChangeText={setSupplierAddress}
+                  value={clientAddress}
+                  onChangeText={setclientAddress}
                   multiline
                 />
               </View>
@@ -1228,13 +1287,13 @@ const SupplierManagementScreen = () => {
               </Button>
               <Button
                 mode="contained"
-                onPress={handleSubmitSupplier}
+                onPress={handleSubmitclient}
                 style={styles.submitButton}
                 labelStyle={styles.buttonText}
                 loading={isLoading}
                 disabled={isLoading}
               >
-                {currentSupplier ? 'Update Supplier' : 'Create Supplier'}
+                {currentclient ? 'Update' : 'Create'}
               </Button>
             </View>
           </View>
@@ -1252,7 +1311,7 @@ const SupplierManagementScreen = () => {
           <View style={[styles.modalContent, styles.invoiceModalContent]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {selectedInvoice ? 'Invoice Details' : `${currentSupplier?.name}'s Invoices`}
+                {selectedInvoice ? 'Invoice Details' : `${currentclient?.name}'s Invoices`}
               </Text>
               <TouchableOpacity onPress={() => {
                 setSelectedInvoice(null);
@@ -1347,7 +1406,7 @@ const SupplierManagementScreen = () => {
                 ListEmptyComponent={
                   <View style={styles.emptyInvoicesState}>
                     <Feather name="file-text" size={48} color="#bdc3c7" />
-                    <Text style={styles.emptyInvoicesText}>No invoices found for this supplier</Text>
+                    <Text style={styles.emptyInvoicesText}>No invoices found for this client</Text>
                   </View>
                 }
               />
@@ -1413,35 +1472,35 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  supplierCard: {
+  clientCard: {
     marginBottom: 16,
     borderRadius: 12,
     elevation: 2,
     backgroundColor: '#fff',
     overflow: 'hidden',
   },
-  supplierHeader: {
+  clientHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  supplierInfo: {
+  clientInfo: {
     flex: 1,
   },
-  supplierTitleRow: {
+  clientTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
-  supplierName: {
+  clientName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2c3e50',
     marginRight: 8,
   },
-  supplierAddress: {
+  clientAddress: {
     fontSize: 14,
     color: '#7f8c8d',
     marginBottom: 8,
@@ -1451,12 +1510,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  supplierContact: {
+  clientContact: {
     fontSize: 14,
     color: '#7f8c8d',
     marginLeft: 8,
   },
-  supplierActions: {
+  clientActions: {
     flexDirection: 'row',
   },
   actionButton: {
@@ -1756,4 +1815,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SupplierManagementScreen;
+export default clientManagementScreen;

@@ -607,8 +607,8 @@ useEffect(() => {
           }
           
           .logo {
-            max-width: 120px;
-            height: auto;
+            max-width: 90px;
+            height: 90px;
             margin-bottom: 1rem;
           }
           

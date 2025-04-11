@@ -94,6 +94,27 @@ export default function Details() {
     Nunito: require("../../assets/fonts/Nunito-Regular.ttf"),
   });
 
+  useEffect(() => {
+    const setupNotifications = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Notifications permission not granted');
+        return;
+      }
+
+      // Clear any existing notifications
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      // Get the notification token
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log('Notification token:', token);
+    };
+
+    setupNotifications();
+  }, []);
+
+
+
  
   const isExpiringSoon = (expiryDate: string) => {
     if (expiryDate === "N/A") return false;
@@ -112,41 +133,140 @@ export default function Details() {
 
   // Notification function
   const sendNotification = async (title: string, body: string) => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: true,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
-      },
-      trigger: null, // Send immediately
-    });
-    console.log(`Notification sent: ${title} - ${body}`);
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          vibrate: [0, 250, 250, 250],
+        },
+        trigger: null, // Send immediately
+      });
+      console.log(`Notification scheduled: ${title} - ${body}`);
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
+    }
   };
 
+
   // Check for expiring documents
-  const checkExpiryDates = () => {
-    vehicles.forEach(vehicle => {
+  const checkExpiryDates = async () => {
+    if (!vehicles.length) return;
+
+    console.log('Checking for expiring documents...');
+    
+    // Create a map to track which notifications we've sent
+    const sentNotifications = new Map<string, boolean>();
+
+    // Check each vehicle's documents
+    for (const vehicle of vehicles) {
+      const notifications: { id: string; title: string; body: string }[] = [];
+
       if (isExpiringSoon(vehicle.insuranceExpiry)) {
-        sendNotification(
-          `Insurance for ${vehicle.vehicleNo} expires soon!`,
-          `Expires on ${vehicle.insuranceExpiry}`
-        );
+        notifications.push({
+          id: `${vehicle.vehicleNo}-insurance`,
+          title: `Insurance for ${vehicle.vehicleNo} expires soon!`,
+          body: `Expires on ${vehicle.insuranceExpiry}`
+        });
       }
+
       if (isExpiringSoon(vehicle.roadWorthinessExpiry)) {
-        sendNotification(
-          `Road Worthiness for ${vehicle.vehicleNo} expires soon!`,
-          `Expires on ${vehicle.roadWorthinessExpiry}`
-        );
+        notifications.push({
+          id: `${vehicle.vehicleNo}-roadworthy`,
+          title: `Road Worthiness for ${vehicle.vehicleNo} expires soon!`,
+          body: `Expires on ${vehicle.roadWorthinessExpiry}`
+        });
       }
+
       if (isExpiringSoon(vehicle.hackneyPermitExpiry)) {
-        sendNotification(
-          `Hackney Permit for ${vehicle.vehicleNo} expires soon!`,
-          `Expires on ${vehicle.hackneyPermitExpiry}`
-        );
+        notifications.push({
+          id: `${vehicle.vehicleNo}-hackney`,
+          title: `Hackney Permit for ${vehicle.vehicleNo} expires soon!`,
+          body: `Expires on ${vehicle.hackneyPermitExpiry}`
+        });
       }
-    });
+
+      // Send notifications if not already sent today
+      for (const notification of notifications) {
+        if (!sentNotifications.get(notification.id)) {
+          await sendNotification(notification.title, notification.body);
+          sentNotifications.set(notification.id, true);
+        }
+      }
+    }
   };
+
+  useEffect(() => {
+    if (!vehicles.length) return;
+
+    // Initial check
+    checkExpiryDates();
+
+    // Set up interval for checking (every 12 hours = twice a day)
+    const interval = setInterval(checkExpiryDates, 12 * 60 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [vehicles]);
+  
+
+
+  // useEffect(() => {
+  //   const fetchPhoneNumber = async () => {
+  //     const storedPhoneNumber = await AsyncStorage.getItem("phoneNumber");
+  //     if (storedPhoneNumber) setPhoneNumber(storedPhoneNumber);
+  //   };
+  //   fetchPhoneNumber();
+  //   (async () => {
+  //     const { status } = await Notifications.requestPermissionsAsync();
+  //     if (status !== 'granted') {
+  //       Alert.alert('Notifications permission not granted');
+  //     }
+  //   })();
+  // }, []);
+
+  // useEffect(() => {
+  //   if (!phoneNumber) return;
+
+  //   const fetchTransporterData = async () => {
+  //     const transporterRef = collection(db, "transporter");
+  //     const transporterSnapshot = await getDocs(transporterRef);
+  //     let foundTransporter: string | null = null;
+
+  //     transporterSnapshot.forEach((doc) => {
+  //       if (doc.id.startsWith(`${phoneNumber}_`)) {
+  //         foundTransporter = doc.id;
+  //       }
+  //     });
+
+  //     if (!foundTransporter) return;
+  //     setTransporterName(foundTransporter);
+
+  //     const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
+  //     const vehicleSnapshot = await getDocs(vehicleRef);
+  //     const vehiclesData = vehicleSnapshot.docs.map((doc) => ({
+  //       vehicleNo: doc.id,
+  //       tonnage: doc.data().tonnage || "N/A",
+  //       tons: doc.data().tons || 0,
+  //       brand: doc.data().brand || "N/A",
+  //       color: doc.data().color || "N/A",
+  //       insuranceExpiry: doc.data().insuranceExpiry?.toDate().toDateString() || "N/A",
+  //       roadWorthinessExpiry: doc.data().roadWorthinessExpiry?.toDate().toDateString() || "N/A",
+  //       hackneyPermitExpiry: doc.data().hackneyPermitExpiry?.toDate().toDateString() || "N/A",
+  //     }));
+  //     setVehicles(vehiclesData);
+  //     setLoading(false);
+
+  //     // Check for expiring documents after loading vehicles
+  //     checkExpiryDates();
+  //   };
+  //   fetchTransporterData();
+
+  //   // Set up daily check for expiring documents
+  //   const interval = setInterval(checkExpiryDates, 24 * 60 * 60 * 1000);
+  //   return () => clearInterval(interval);
+  // }, [phoneNumber]);
 
 
   useEffect(() => {
@@ -155,56 +275,71 @@ export default function Details() {
       if (storedPhoneNumber) setPhoneNumber(storedPhoneNumber);
     };
     fetchPhoneNumber();
-    (async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Notifications permission not granted');
-      }
-    })();
   }, []);
 
   useEffect(() => {
     if (!phoneNumber) return;
 
     const fetchTransporterData = async () => {
-      const transporterRef = collection(db, "transporter");
-      const transporterSnapshot = await getDocs(transporterRef);
-      let foundTransporter: string | null = null;
+      try {
+        setLoading(true);
+        const transporterRef = collection(db, "transporter");
+        const transporterSnapshot = await getDocs(transporterRef);
+        let foundTransporter: string | null = null;
 
-      transporterSnapshot.forEach((doc) => {
-        if (doc.id.startsWith(`${phoneNumber}_`)) {
-          foundTransporter = doc.id;
+        transporterSnapshot.forEach((doc) => {
+          if (doc.id.startsWith(`${phoneNumber}_`)) {
+            foundTransporter = doc.id;
+          }
+        });
+
+        if (!foundTransporter) {
+          setLoading(false);
+          return;
         }
-      });
 
-      if (!foundTransporter) return;
-      setTransporterName(foundTransporter);
+        setTransporterName(foundTransporter);
 
-      const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
-      const vehicleSnapshot = await getDocs(vehicleRef);
-      const vehiclesData = vehicleSnapshot.docs.map((doc) => ({
-        vehicleNo: doc.id,
-        tonnage: doc.data().tonnage || "N/A",
-        tons: doc.data().tons || 0,
-        brand: doc.data().brand || "N/A",
-        color: doc.data().color || "N/A",
-        insuranceExpiry: doc.data().insuranceExpiry?.toDate().toDateString() || "N/A",
-        roadWorthinessExpiry: doc.data().roadWorthinessExpiry?.toDate().toDateString() || "N/A",
-        hackneyPermitExpiry: doc.data().hackneyPermitExpiry?.toDate().toDateString() || "N/A",
-      }));
-      setVehicles(vehiclesData);
-      setLoading(false);
+        const vehicleRef = collection(db, "transporter", foundTransporter, "VehicleNo");
+        const vehicleSnapshot = await getDocs(vehicleRef);
+        
+        const vehiclesData = vehicleSnapshot.docs.map((doc) => {
+          const data = doc.data();
+          
+          // Improved date handling
+          const formatDate = (date: any) => {
+            if (!date) return "N/A";
+            try {
+              return date.toDate ? date.toDate().toDateString() : new Date(date).toDateString();
+            } catch (error) {
+              console.error('Error formatting date:', date, error);
+              return "N/A";
+            }
+          };
 
-      // Check for expiring documents after loading vehicles
-      checkExpiryDates();
+          return {
+            vehicleNo: doc.id,
+            tonnage: data.tonnage || "N/A",
+            tons: data.tons || 0,
+            brand: data.brand || "N/A",
+            color: data.color || "N/A",
+            insuranceExpiry: formatDate(data.insuranceExpiry),
+            roadWorthinessExpiry: formatDate(data.roadWorthinessExpiry),
+            hackneyPermitExpiry: formatDate(data.hackneyPermitExpiry),
+          };
+        });
+
+        setVehicles(vehiclesData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching vehicle data:', error);
+        setLoading(false);
+      }
     };
+
     fetchTransporterData();
-
-    // Set up daily check for expiring documents
-    const interval = setInterval(checkExpiryDates, 24 * 60 * 60 * 1000);
-    return () => clearInterval(interval);
   }, [phoneNumber]);
-
+  
   const addVehicle = async () => {
     if (!transporterName || !vehicleInput.trim() || !tonnageInput.trim()) {
       Alert.alert("Error", "Please enter both vehicle number and tonnage.");
@@ -426,21 +561,6 @@ export default function Details() {
           </Text>
         </View>
         
-        {/* <View style={styles.expiryItem}>
-          <View style={styles.expiryLabelContainer}>
-            <Text style={styles.expiryLabel}>Hackney Permit</Text>
-            {(isExpiringSoon(item.hackneyPermitExpiry) || isExpired(item.hackneyPermitExpiry)) && (
-              <Ionicons name="warning" size={16} color="#FF5252" style={styles.warningIcon} />
-            )}
-          </View>
-          <Text style={[
-            styles.expiryDate,
-            isExpired(item.hackneyPermitExpiry) && styles.expiredDate,
-            isExpiringSoon(item.hackneyPermitExpiry) && styles.expiringSoonDate
-          ]}>
-            {item.hackneyPermitExpiry}
-          </Text>
-        </View> */}
       </View>
     </TouchableOpacity>
   );

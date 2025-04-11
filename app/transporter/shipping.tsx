@@ -322,11 +322,13 @@ const styles = StyleSheet.create({
   statusFilterContainer: {
     paddingHorizontal: 15,
     paddingBottom: 10,
-    height: 10,
+    height: 50,
   },
   statusFilterButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    //paddingHorizontal: 15,
+    //paddingVertical: 8,
+    width: 85,
+    height: 40,
     borderRadius: 20,
     backgroundColor: "#f0f0f0",
     marginRight: 10,
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statusFilterText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#555",
     fontWeight: "500",
   },

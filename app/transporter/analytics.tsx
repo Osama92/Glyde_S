@@ -1891,7 +1891,7 @@ const AnalyticsScreen: React.FC = () => {
                 width: isSmallDevice ? 60 : 80 
               }}
               labelWidth={isSmallDevice ? 60 : 80}
-              topLabelComponentStyle={{ color: chartColors.primary }}
+              //topLabelComponentStyle={{ color: chartColors.primary }}
               barStyle={{
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
@@ -2252,7 +2252,7 @@ const AnalyticsScreen: React.FC = () => {
               `Amount: ₦${item.value.toLocaleString()}`
             )}
             focusOnPress
-            innerRadius={isSmallDevice ? 30 : 40}
+            //innerRadius={isSmallDevice ? 30 : 40}
           />
           <View style={[styles.legendContainer, { 
             flex: 1,
@@ -2306,7 +2306,6 @@ const AnalyticsScreen: React.FC = () => {
               width: isSmallDevice ? 60 : 80
             }}
             frontColor={chartColors.info}
-            gradientColor={chartColors.primary}
             onPress={(item) => Alert.alert(
               `${item.label}`, 
               `Amount: ₦${item.value.toLocaleString()}`
@@ -2429,10 +2428,12 @@ const AnalyticsScreen: React.FC = () => {
               ))}
             </View>
             
-            <Text style={styles.inputLabel}>Vehicle (optional)</Text>
+            <Text style={styles.inputLabel}>Vehicle Number</Text>
             <TextInput
               style={styles.input}
-              placeholder="Vehicle number if applicable"
+              placeholder="Vehicle number Number"
+              autoCapitalize="characters"
+              autoCorrect={false}
               value={newExpense.vehicleNo}
               onChangeText={(text) => setNewExpense({...newExpense, vehicleNo: text})}
             />

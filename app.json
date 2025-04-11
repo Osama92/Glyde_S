@@ -47,10 +47,33 @@
         }
       ],
       [
-        "@rnmapbox/maps",
+        "expo-notifications",
         {
-          "RNMapboxMapsDownloadToken": "pk.eyJ1IjoiZ2x5ZGUtZ2x5ZGVyIiwiYSI6ImNtOHp3OG8xbzBmZnUybnNpOW9jcTE4aWEifQ.ahL12-w_gWqdmq0FIC76-g",
-          "RNMapboxMapsVersion": "10.0.0"
+          "icon": "./assets/images/Glyde.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/sounds/notifSound.wav"],
+          "notification": {
+            "iosDisplayInForeground": true,
+            "androidMode": "default",
+            "androidCollapsedTitle": "$(Glyde Systems) Notification"
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(Glyde Systems) to access your photos."
+        }
+      ],
+      [
+        "expo-dev-client",
+        {
+          "ios": {
+            "bundleIdentifier": "glyde"
+          },
+          "android": {
+            "package": "com.osama92.Glyde_S"
+          }
         }
       ]
     ],

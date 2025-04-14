@@ -216,7 +216,7 @@ export default function Dashboard() {
             <TouchableOpacity style={styles.menuIcon} onPress={()=>router.push('/admin/addRoute')}>
               <Image source={require('../../assets/images/routing.png')} style={{width: 30, height:30}}/>
             </TouchableOpacity>
-            <Text style={styles.menuText}>Create Invoice</Text>
+            <Text style={styles.menuText}>Create Route</Text>
           </View>
         </View>
       </ScrollView>

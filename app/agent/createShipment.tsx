@@ -16,7 +16,7 @@ import {
   Easing
 } from "react-native";
 import SearchableDropdown from "react-native-searchable-dropdown";
-import { collection, getDocs, getFirestore, doc, setDoc, serverTimestamp, where, query } from "firebase/firestore";
+import { collection, getDocs, getFirestore, doc, setDoc, serverTimestamp, where, query, Timestamp } from "firebase/firestore";
 import { app } from "../firebase";
 import { useFonts } from "expo-font";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -264,7 +264,7 @@ export default function CreateShipment() {
         route: selectedRoute.name,
         freightCost: freightCost,
         statusId: 0, // 0 = Pending status
-        createdAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
       };
   
       // Save the shipment

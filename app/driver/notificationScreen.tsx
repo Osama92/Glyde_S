@@ -59,7 +59,7 @@ type Shipment = {
   transporter?: string;
   vehicleNo?: string;
   tonnage?: string;
-  freightCost?: string;
+  route?: string;
   createdAt?: string;
 };
 
@@ -1094,7 +1094,7 @@ const DriverDashboard = () => {
                   </View>
                   <View style={styles.detailRow}>
                     <MaterialIcons name="attach-money" size={20} color="#FF6347" />
-                    <Text style={styles.detailText}>{shipment.freightCost}</Text>
+                    <Text style={styles.detailText}>{shipment.route}</Text>
                   </View>
                 </View>
               </View>
@@ -1143,7 +1143,7 @@ const DriverDashboard = () => {
                   <View style={styles.historyDetails}>
                     <Text style={styles.historyDetail}>{shipment.vehicleNo}</Text>
                     <Text style={styles.historyDetail}>{shipment.tonnage}</Text>
-                    <Text style={styles.historyDetail}>{shipment.freightCost}</Text>
+                    <Text style={styles.historyDetail}>{shipment.route}</Text>
                   </View>
                 </View>
               ))

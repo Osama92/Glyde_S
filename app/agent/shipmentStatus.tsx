@@ -1,3 +1,374 @@
+// import React, { useState, useEffect, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   FlatList,
+//   TouchableOpacity,
+//   Modal,
+//   StyleSheet,
+//   ActivityIndicator,
+//   RefreshControl,
+//   Image,
+//   TextInput,
+//   ScrollView,
+//   Alert,
+// } from "react-native";
+// import {
+//   getFirestore,
+//   collection,
+//   getDocs,
+//   doc,
+//   updateDoc,
+//   setDoc,
+// } from "firebase/firestore";
+// import { router } from "expo-router";
+
+// const db = getFirestore();
+
+// type Shipment = {
+//   id: string;
+//   deliveries?: Delivery[];
+//   statusId?: number;
+//   [key: string]: any;
+//   vehicleNo: string;
+// };
+
+// type Delivery = {
+//   id: string;
+//   [key: string]: any;
+// };
+
+// type StatusOption = {
+//   id: number;
+//   status: string;
+//   color: string;
+// };
+
+// // Define the complete status flow
+// const statusFlow: Record<number, number[]> = {
+//   0: [1],       // Pending → Loaded
+//   1: [2],       // Loaded → Dispatched
+//   2: [3, 4],    // Dispatched → In Transit or Delivered
+//   3: [4],       // In Transit → Delivered
+//   4: []         // Delivered (final)
+// };
+
+// const statusOptions: StatusOption[] = [
+//   { id: 0, status: "Pending", color: "#9E9E9E" },
+//   { id: 1, status: "Loaded", color: "#FFA500" },
+//   { id: 2, status: "Dispatched", color: "#4CAF50" },
+//   { id: 3, status: "In Transit", color: "#2196F3" },
+//   { id: 4, status: "Delivered", color: "#9C27B0" }
+// ];
+
+// export default function ShipmentsScreen() {
+//   const [shipments, setShipments] = useState<Shipment[]>([]);
+//   const [filteredShipments, setFilteredShipments] = useState<Shipment[]>([]);
+//   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+//   const [modalVisible, setModalVisible] = useState<boolean>(false);
+//   const [loading, setLoading] = useState<boolean>(false);
+//   const [refreshing, setRefreshing] = useState<boolean>(false);
+//   const [searchText, setSearchText] = useState<string>("");
+
+//   // Helper function to get status name
+//   const getStatusName = (statusId: number): string => {
+//     return statusOptions.find(s => s.id === statusId)?.status || `Status ${statusId}`;
+//   };
+
+//   // Validate status transitions
+//   const isValidStatusTransition = (currentStatus: number, newStatus: number): boolean => {
+//     if (currentStatus === undefined || currentStatus === null) {
+//       return newStatus === 0 || newStatus === 1;
+//     }
+//     return statusFlow[currentStatus]?.includes(newStatus) || false;
+//   };
+
+//   useEffect(() => {
+//     fetchShipments();
+//   }, []);
+
+//   useEffect(() => {
+//     if (searchText) {
+//       const filtered = shipments.filter((shipment) =>
+//         shipment.id.toLowerCase().includes(searchText.toLowerCase()) ||
+//         shipment.vehicleNo.toLowerCase().includes(searchText.toLowerCase())
+//       );
+//       setFilteredShipments(filtered);
+//     } else {
+//       setFilteredShipments(shipments);
+//     }
+//   }, [searchText, shipments]);
+
+//   const fetchShipments = async () => {
+//     setLoading(true);
+//     try {
+//       const shipmentsRef = collection(db, "Shipment");
+//       const querySnapshot = await getDocs(shipmentsRef);
+
+//       const shipmentsWithDeliveries = await Promise.all(
+//         querySnapshot.docs.map(async (doc) => {
+//           const deliveriesRef = collection(db, "Shipment", doc.id, "deliveries");
+//           const deliveriesSnapshot = await getDocs(deliveriesRef);
+
+//           const deliveries = deliveriesSnapshot.docs.map((deliveryDoc) => ({
+//             id: deliveryDoc.id,
+//             ...deliveryDoc.data(),
+//           }));
+
+//           return {
+//             id: doc.id,
+//             ...doc.data(),
+//             deliveries,
+//             vehicleNo: doc.data().vehicleNo,
+//           };
+//         })
+//       );
+
+//       setShipments(shipmentsWithDeliveries);
+//       setFilteredShipments(shipmentsWithDeliveries);
+//     } catch (error) {
+//       console.error("Error fetching shipments:", error);
+//       Alert.alert("Error", "Failed to fetch shipments. Please try again.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const updateShipmentStatus = async (shipmentId: string, newStatusId?: number) => {
+//     if (!newStatusId) return;
+
+//     try {
+//       setLoading(true);
+
+//       const shipmentDoc = doc(db, "Shipment", shipmentId);
+//       const shipmentData = shipments.find((shipment) => shipment.id === shipmentId);
+
+//       if (!shipmentData) {
+//         console.error("Shipment data not found.");
+//         return;
+//       }
+
+//       // Validate status transition
+//       const currentStatus = shipmentData.statusId || 0;
+//       if (!isValidStatusTransition(currentStatus, newStatusId)) {
+//         Alert.alert(
+//           "Invalid Status Change",
+//           `Cannot change status from ${getStatusName(currentStatus)} to ${getStatusName(newStatusId)}`
+//         );
+//         return;
+//       }
+
+//       // Proceed with update if validation passes
+//       await updateDoc(shipmentDoc, { statusId: newStatusId });
+
+//       // Additional logic for specific status changes
+//       if (newStatusId === 2) {
+//         const dispatchedDoc = doc(db, "Dispatched", shipmentId);
+//         await setDoc(dispatchedDoc, shipmentData);
+//       }
+
+//       // Update all deliveries
+//       const deliveriesRef = collection(db, "Shipment", shipmentId, "deliveries");
+//       const deliveriesSnapshot = await getDocs(deliveriesRef);
+
+//       const updatePromises = deliveriesSnapshot.docs.map((deliveryDoc) =>
+//         updateDoc(doc(db, "Shipment", shipmentId, "deliveries", deliveryDoc.id), {
+//           statusId: newStatusId,
+//         })
+//       );
+
+//       await Promise.all(updatePromises);
+//       await fetchShipments();
+//       setModalVisible(false);
+//     } catch (error) {
+//       console.error("Error updating status:", error);
+//       Alert.alert("Error", "Failed to update status. Please try again.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const openStatusModal = (shipmentId: string) => {
+//     const selectedShipment = shipments.find((shipment) => shipment.id === shipmentId);
+//     setSelectedShipment({
+//       id: shipmentId,
+//       statusId: selectedShipment?.statusId || 0,
+//       vehicleNo: selectedShipment?.vehicleNo || "",
+//     });
+//     setModalVisible(true);
+//   };
+
+//   const onRefresh = useCallback(() => {
+//     setRefreshing(true);
+//     fetchShipments().finally(() => setRefreshing(false));
+//   }, []);
+
+//   const getStatusColor = (statusId: number) => {
+//     const status = statusOptions.find(s => s.id === statusId);
+//     return status ? status.color : "#9E9E9E";
+//   };
+
+//   const StatusUpdateModal = () => {
+//     if (!selectedShipment) return null;
+
+//     const availableStatuses = statusOptions.filter(option => 
+//       isValidStatusTransition(selectedShipment.statusId || 0, option.id)
+//     );
+
+//     return (
+//       <Modal visible={modalVisible} transparent animationType="fade">
+//         <View style={styles.modalBackdrop}>
+//           <View style={styles.modalContainer}>
+//             <Text style={styles.modalTitle}>Update Shipment Status</Text>
+//             <Text style={styles.modalSubtitle}>{selectedShipment.id}</Text>
+//             <Text style={styles.currentStatus}>
+//               Current: {getStatusName(selectedShipment.statusId || 0)}
+//             </Text>
+
+//             <View style={styles.statusOptionsContainer}>
+//               {availableStatuses.map((status) => (
+//                 <TouchableOpacity
+//                   key={status.id}
+//                   style={[
+//                     styles.statusOption,
+//                     { backgroundColor: status.color }
+//                   ]}
+//                   onPress={() => updateShipmentStatus(selectedShipment.id, status.id)}
+//                 >
+//                   <Text style={styles.statusOptionText}>{status.status}</Text>
+//                 </TouchableOpacity>
+//               ))}
+//             </View>
+
+//             {availableStatuses.length === 0 && (
+//               <Text style={styles.noUpdatesText}>
+//                 No further status updates available
+//               </Text>
+//             )}
+
+//             <TouchableOpacity
+//               style={styles.modalCloseButton}
+//               onPress={() => setModalVisible(false)}
+//             >
+//               <Text style={styles.modalCloseText}>Close</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//       </Modal>
+//     );
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       {/* Header */}
+//       <View style={styles.header}>
+//         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+//           <Image
+//             source={require("../../assets/images/Back.png")}
+//             resizeMode="contain"
+//             style={styles.backIcon}
+//           />
+//         </TouchableOpacity>
+//         <Text style={styles.headerTitle}>Shipment Management</Text>
+//         <View style={{ width: 30 }} /> 
+//       </View>
+
+//       {/* Search Bar */}
+//       <View style={styles.searchContainer}>
+//         <Image
+//           source={require("../../assets/images/search.png")}
+//           style={styles.searchIcon}
+//         />
+//         <TextInput
+//           style={styles.searchInput}
+//           placeholder="Search by Shipment ID or Vehicle No"
+//           placeholderTextColor="#888"
+//           value={searchText}
+//           onChangeText={setSearchText}
+//         />
+//       </View>
+
+//       {/* Content */}
+//       {loading && !refreshing ? (
+//         <View style={styles.loadingContainer}>
+//           <ActivityIndicator size="large" color="#FFA500" />
+//         </View>
+//       ) : (
+//         <FlatList
+//           data={filteredShipments}
+//           keyExtractor={(item) => item.id}
+//           refreshControl={
+//             <RefreshControl
+//               refreshing={refreshing}
+//               onRefresh={onRefresh}
+//               colors={["#FFA500"]}
+//               tintColor="#FFA500"
+//             />
+//           }
+//           contentContainerStyle={styles.listContent}
+//           ListEmptyComponent={
+//             <View style={styles.emptyContainer}>
+//               <Image
+//                 source={require("../../assets/images/empty.png")}
+//                 style={styles.emptyIcon}
+//               />
+//               <Text style={styles.emptyText}>No shipments found</Text>
+//             </View>
+//           }
+//           renderItem={({ item }) => (
+//             <View style={styles.shipmentCard}>
+//               <View style={styles.cardHeader}>
+//                 <Text style={styles.shipmentId}>{item.id}</Text>
+//                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.statusId || 0) }]}>
+//                   <Text style={styles.statusText}>
+//                     {getStatusName(item.statusId || 0)}
+//                   </Text>
+//                 </View>
+//               </View>
+
+//               <View style={styles.detailRow}>
+//                 <Image
+//                   source={require("../../assets/images/transport.png")}
+//                   style={styles.detailIcon}
+//                 />
+//                 <Text style={styles.detailText}>{item.vehicleNo}</Text>
+//               </View>
+
+//               {item.deliveries && item.deliveries.length > 0 ? (
+//                 <View style={styles.deliveriesContainer}>
+//                   <Text style={styles.deliveriesTitle}>Deliveries:</Text>
+//                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+//                     {item.deliveries.map((delivery) => (
+//                       <View key={delivery.id} style={styles.deliveryBadge}>
+//                         <Text style={styles.deliveryText}>{delivery.id}</Text>
+//                       </View>
+//                     ))}
+//                   </ScrollView>
+//                 </View>
+//               ) : (
+//                 <View style={styles.noDeliveries}>
+//                   <Text style={styles.noDeliveriesText}>No deliveries assigned</Text>
+//                 </View>
+//               )}
+
+//               <TouchableOpacity
+//                 style={styles.actionButton}
+//                 onPress={() => openStatusModal(item.id)}
+//                 disabled={item.statusId === 4} // Disable if delivered
+//               >
+//                 <Text style={styles.actionButtonText}>
+//                   {item.statusId === 4 ? "Completed" : "Update Status"}
+//                 </Text>
+//               </TouchableOpacity>
+//             </View>
+//           )}
+//         />
+//       )}
+
+//       <StatusUpdateModal />
+//     </View>
+//   );
+// }
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -20,6 +391,8 @@ import {
   doc,
   updateDoc,
   setDoc,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import { router } from "expo-router";
 
@@ -31,6 +404,7 @@ type Shipment = {
   statusId?: number;
   [key: string]: any;
   vehicleNo: string;
+  createdAt?: string;
 };
 
 type Delivery = {
@@ -44,21 +418,24 @@ type StatusOption = {
   color: string;
 };
 
-// Define the complete status flow
+// Updated status flow with all 5 statuses
 const statusFlow: Record<number, number[]> = {
   0: [1],       // Pending → Loaded
   1: [2],       // Loaded → Dispatched
-  2: [3, 4],    // Dispatched → In Transit or Delivered
-  3: [4],       // In Transit → Delivered
-  4: []         // Delivered (final)
+  2: [3, 5],    // Dispatched → In Transit or Cancelled
+  3: [4, 5],    // In Transit → Delivered or Cancelled
+  4: [],        // Delivered (final)
+  5: []         // Cancelled (final)
 };
 
+// Updated status options with all 5 statuses
 const statusOptions: StatusOption[] = [
   { id: 0, status: "Pending", color: "#9E9E9E" },
   { id: 1, status: "Loaded", color: "#FFA500" },
   { id: 2, status: "Dispatched", color: "#4CAF50" },
-  // { id: 3, status: "In Transit", color: "#2196F3" },
-  // { id: 4, status: "Delivered", color: "#9C27B0" }
+  { id: 3, status: "In Transit", color: "#2196F3" },
+  { id: 4, status: "Delivered", color: "#9C27B0" },
+  { id: 5, status: "Cancelled", color: "#F44336" }
 ];
 
 export default function ShipmentsScreen() {
@@ -83,6 +460,23 @@ export default function ShipmentsScreen() {
     return statusFlow[currentStatus]?.includes(newStatus) || false;
   };
 
+  // Sort shipments with active statuses (0,1,2) first, then completed (3,4,5)
+  const sortShipments = (shipments: Shipment[]) => {
+    return [...shipments].sort((a, b) => {
+      // Active shipments first (status 0,1,2)
+      const aIsActive = [0, 1, 2].includes(a.statusId || 0);
+      const bIsActive = [0, 1, 2].includes(b.statusId || 0);
+      
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+      
+      // Then sort by date (newest first)
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bDate - aDate; // Sort descending (newest first)
+    });
+  };
+
   useEffect(() => {
     fetchShipments();
   }, []);
@@ -103,29 +497,33 @@ export default function ShipmentsScreen() {
     setLoading(true);
     try {
       const shipmentsRef = collection(db, "Shipment");
-      const querySnapshot = await getDocs(shipmentsRef);
-
+      const q = query(shipmentsRef, orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+  
       const shipmentsWithDeliveries = await Promise.all(
         querySnapshot.docs.map(async (doc) => {
           const deliveriesRef = collection(db, "Shipment", doc.id, "deliveries");
           const deliveriesSnapshot = await getDocs(deliveriesRef);
-
+  
           const deliveries = deliveriesSnapshot.docs.map((deliveryDoc) => ({
             id: deliveryDoc.id,
             ...deliveryDoc.data(),
           }));
-
+  
           return {
             id: doc.id,
             ...doc.data(),
+            // Ensure createdAt exists, fallback to current time if missing
+            createdAt: doc.data().createdAt || new Date().toISOString(),
             deliveries,
             vehicleNo: doc.data().vehicleNo,
           };
         })
       );
-
-      setShipments(shipmentsWithDeliveries);
-      setFilteredShipments(shipmentsWithDeliveries);
+  
+      const sortedShipments = sortShipments(shipmentsWithDeliveries);
+      setShipments(sortedShipments);
+      setFilteredShipments(sortedShipments);
     } catch (error) {
       console.error("Error fetching shipments:", error);
       Alert.alert("Error", "Failed to fetch shipments. Please try again.");
@@ -352,12 +750,16 @@ export default function ShipmentsScreen() {
               )}
 
               <TouchableOpacity
-                style={styles.actionButton}
+                style={[
+                  styles.actionButton,
+                  (item.statusId === 4 || item.statusId === 5) && styles.actionButtonDisabled
+                ]}
                 onPress={() => openStatusModal(item.id)}
-                disabled={item.statusId === 4} // Disable if delivered
+                disabled={item.statusId === 4 || item.statusId === 5} // Disable if delivered or cancelled
               >
                 <Text style={styles.actionButtonText}>
-                  {item.statusId === 4 ? "Completed" : "Update Status"}
+                  {item.statusId === 4 ? "Completed" : 
+                   item.statusId === 5 ? "Cancelled" : "Update Status"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -374,6 +776,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  actionButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
   header: {
     flexDirection: "row",
@@ -521,9 +926,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: "center",
   },
-  actionButtonDisabled: {
-    backgroundColor: "#CCCCCC",
-  },
+
   actionButtonText: {
     fontSize: 16,
     fontWeight: "600",

@@ -51,7 +51,6 @@
         {
           "icon": "./assets/images/Glyde.png",
           "color": "#ffffff",
-          "sounds": ["./assets/sounds/notifSound.wav"],
           "notification": {
             "iosDisplayInForeground": true,
             "androidMode": "default",

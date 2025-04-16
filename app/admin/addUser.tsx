@@ -13,7 +13,7 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import { getFirestore, doc, setDoc, collection, getDocs} from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import SearchableDropdown from 'react-native-searchable-dropdown';
 import { app } from '../firebase';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -82,7 +82,7 @@ const AddUserScreen: React.FC = () => {
         const deliveryDriversSnapshot = await getDocs(deliveryDriversRef);
         const assignedVanNumbers = deliveryDriversSnapshot.docs
           .map(doc => doc.data().AssignedVanNo)
-          .filter(vanNo => vanNo); // Filter out undefined/null values
+          .filter(vanNo => vanNo);
 
         // Then, get all vehicle numbers from the selected transporter
         const transporterDocRef = doc(db, 'transporter', transporter);
@@ -92,7 +92,7 @@ const AddUserScreen: React.FC = () => {
         const availableVansData = transporterDoc.docs
           .map(doc => ({
             id: doc.id,
-            name: doc.data().number || doc.id, // Assuming there's a 'number' field, fallback to doc.id
+            name: doc.data().number || doc.id,
           }))
           .filter(van => !assignedVanNumbers.includes(van.id));
 
@@ -111,9 +111,9 @@ const AddUserScreen: React.FC = () => {
   // Fetch data based on selected collection
   useEffect(() => {
     const fetchData = async () => {
-      if (selectedCollection === 'deliverydriver' || selectedCollection === 'transporter') {
-        setFetchingTransporters(true);
-        try {
+      try {
+        if (selectedCollection === 'deliverydriver' || selectedCollection === 'transporter') {
+          setFetchingTransporters(true);
           const transporterRef = collection(db, 'transporter');
           const transporterSnapshot = await getDocs(transporterRef);
           const transporterData = transporterSnapshot.docs.map((doc) => ({
@@ -121,17 +121,10 @@ const AddUserScreen: React.FC = () => {
             name: doc.data().name || `Transporter ${doc.id.substring(0, 4)}`,
           }));
           setTransporters(transporterData);
-        } catch (error) {
-          console.error('Error fetching transporters:', error);
-          showAlert('Error', 'Failed to fetch transporters');
-        } finally {
-          setFetchingTransporters(false);
         }
-      }
-      
-      if (selectedCollection === 'fieldagent' || selectedCollection === 'transporter' || selectedCollection === 'customer') {
-        setFetchingLoadingPoints(true);
-        try {
+        
+        if (['fieldagent', 'transporter', 'customer'].includes(selectedCollection || '')) {
+          setFetchingLoadingPoints(true);
           const loadingPointRef = collection(db, 'originPoint');
           const loadingPointSnapshot = await getDocs(loadingPointRef);
           const loadingPointData = loadingPointSnapshot.docs.map((doc) => ({
@@ -139,16 +132,19 @@ const AddUserScreen: React.FC = () => {
             name: doc.data().name || `Loading Point ${doc.id.substring(0, 4)}`,
           }));
           setLoadingPoints(loadingPointData);
-        } catch (error) {
-          console.error('Error fetching loading points:', error);
-          showAlert('Error', 'Failed to fetch loading points');
-        } finally {
-          setFetchingLoadingPoints(false);
         }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        showAlert('Error', 'Failed to fetch required data');
+      } finally {
+        setFetchingTransporters(false);
+        setFetchingLoadingPoints(false);
       }
     };
 
-    fetchData();
+    if (selectedCollection) {
+      fetchData();
+    }
   }, [selectedCollection]);
 
   const showAlert = (title: string, message: string) => {
@@ -164,6 +160,8 @@ const AddUserScreen: React.FC = () => {
 
     if (!phoneNumber) {
       newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d{10,15}$/.test(phoneNumber)) {
+      newErrors.phoneNumber = 'Please enter a valid phone number';
     }
 
     if (!name) {
@@ -172,6 +170,8 @@ const AddUserScreen: React.FC = () => {
 
     if (!password) {
       newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     if (selectedCollection === 'deliverydriver') {
@@ -179,14 +179,7 @@ const AddUserScreen: React.FC = () => {
       if (!transporter) newErrors.transporter = 'Transporter is required';
     }
 
-    if (selectedCollection === 'fieldagent' && !loadingPoint) {
-      newErrors.loadingPoint = 'Loading point is required';
-    }
-
-    if (selectedCollection === 'transporter' && !loadingPoint) {
-      newErrors.loadingPoint = 'Loading point is required';
-    }
-    if (selectedCollection === 'customer' && !loadingPoint) {
+    if (['fieldagent', 'transporter', 'customer'].includes(selectedCollection || '') && !loadingPoint) {
       newErrors.loadingPoint = 'Loading point is required';
     }
 
@@ -195,9 +188,9 @@ const AddUserScreen: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm() || !selectedCollection) return;
 
-    const uid = `${phoneNumber}_${name}`;
+    const uid = `${phoneNumber}_${name}`.replace(/\s+/g, '_');
     const userData: Record<string, any> = { 
       uid,
       phoneNumber,
@@ -208,43 +201,81 @@ const AddUserScreen: React.FC = () => {
 
     // Collection-specific fields
     if (selectedCollection === 'deliverydriver') {
-      Object.assign(userData, {
-        AssignedVanNo: assignedVanNo,
-        Transporter: transporter,
-      });
-    } else if (selectedCollection === 'fieldagent') {
-      Object.assign(userData, {
-        LoadingPoint: loadingPoint,
-      });
-    } else if (selectedCollection === 'transporter') {
-      Object.assign(userData, {
-        LoadingPoint: loadingPoint,
-      });
-    }else if (selectedCollection === 'customer') {
-      Object.assign(userData, {
-        LoadingPoint: loadingPoint,
-      });
+      userData.AssignedVanNo = assignedVanNo;
+      userData.Transporter = transporter;
+    } else if (['fieldagent', 'transporter', 'customer'].includes(selectedCollection)) {
+      userData.LoadingPoint = loadingPoint;
     }
 
     setIsLoading(true);
     try {
-      await setDoc(doc(db, selectedCollection!, uid), userData);
+      await setDoc(doc(db, selectedCollection, uid), userData);
       showAlert('Success', 'User added successfully');
-      // Reset form
-      setSelectedCollection(null);
-      setAssignedVanNo('');
-      setPhoneNumber('');
-      setName('');
-      setTransporter('');
-      setLoadingPoint('');
-      setPassword('');
-      setErrors({});
+      resetForm();
     } catch (error) {
-      showAlert('Error', 'Failed to add user');
-      console.error(error);
+      console.error('Error saving user:', error);
+      showAlert('Error', 'Failed to add user. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setSelectedCollection(null);
+    setAssignedVanNo('');
+    setPhoneNumber('');
+    setName('');
+    setTransporter('');
+    setLoadingPoint('');
+    setPassword('');
+    setErrors({});
+  };
+
+  const renderLoadingPointDropdown = () => {
+    if (!['fieldagent', 'transporter', 'customer'].includes(selectedCollection || '')) {
+      return null;
+    }
+
+    return (
+      <>
+        <Text style={styles.label}>Loading Point</Text>
+        {fetchingLoadingPoints ? (
+          <ActivityIndicator size="small" color="#FFA500" />
+        ) : (
+          <>
+            <SearchableDropdown
+              onItemSelect={(item) => {
+                setLoadingPoint(item.id);
+                setErrors(prev => ({ ...prev, loadingPoint: '' }));
+              }}
+              containerStyle={[
+                styles.dropdownContainer,
+                errors.loadingPoint && styles.inputError
+              ]}
+              textInputStyle={styles.dropdownTextInput}
+              itemStyle={styles.dropdownItem}
+              itemTextStyle={styles.dropdownItemText}
+              itemsContainerStyle={[
+                styles.dropdownItemsContainer,
+                isSmallDevice && { maxHeight: 150 }
+              ]}
+              items={loadingPoints}
+              defaultIndex={-1}
+              resetValue={false}
+              underlineColorAndroid="transparent"
+              placeholder={loadingPoint 
+                ? loadingPoints.find(c => c.id === loadingPoint)?.name || 'Loading Point Selected'
+                : 'Select Loading Point'}
+              placeholderTextColor="#999"
+              searchPlaceholder="Search loading points..."
+              nestedScrollEnabled={true}
+              onRemoveItem={() => setLoadingPoint('')}
+            />
+            {errors.loadingPoint && <Text style={styles.errorText}>{errors.loadingPoint}</Text>}
+          </>
+        )}
+      </>
+    );
   };
 
   return (
@@ -261,16 +292,14 @@ const AddUserScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with Back Button */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={()=>router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#2C3E50" />
           </TouchableOpacity>
           <Text style={styles.title}>Create New User</Text>
-          <View style={{ width: 24 }} /> {/* Spacer for alignment */}
+          <View style={{ width: 24 }} />
         </View>
 
-        {/* Form Content */}
         <View style={styles.formContainer}>
           <Text style={styles.label}>Select Access Level</Text>
           <SearchableDropdown
@@ -290,7 +319,9 @@ const AddUserScreen: React.FC = () => {
             defaultIndex={-1}
             resetValue={false}
             underlineColorAndroid="transparent"
-            placeholder={selectedCollection ? collections?.find((c) => c.id === selectedCollection)?.name : 'Select User Type'}
+            placeholder={selectedCollection 
+              ? collections.find(c => c.id === selectedCollection)?.name 
+              : 'Select User Type'}
             placeholderTextColor="#999"
             searchPlaceholder="Search user types..."
             nestedScrollEnabled={true}
@@ -305,169 +336,82 @@ const AddUserScreen: React.FC = () => {
               {fetchingTransporters ? (
                 <ActivityIndicator size="small" color="#FFA500" />
               ) : (
-                <SearchableDropdown
-                  onItemSelect={(item) => {
-                    setTransporter(item.id);
-                    setErrors(prev => ({ ...prev, transporter: '' }));
-                    setAssignedVanNo(''); // Reset van number when transporter changes
-                  }}
-                  containerStyle={[styles.dropdownContainer, errors.transporter && styles.inputError]}
-                  textInputStyle={styles.dropdownTextInput}
-                  itemStyle={styles.dropdownItem}
-                  itemTextStyle={styles.dropdownItemText}
-                  itemsContainerStyle={[
-                    styles.dropdownItemsContainer,
-                    isSmallDevice && { maxHeight: 150 }
-                  ]}
-                  items={transporters}
-                  defaultIndex={-1}
-                  resetValue={false}
-                  underlineColorAndroid="transparent"
-                  placeholder={transporter ? transporters?.find((c) => c.id === transporter)?.name : 'Select Transporter'}
-                  placeholderTextColor="#999"
-                  searchPlaceholder="Search transporters..."
-                  nestedScrollEnabled={true}
-                  onRemoveItem={() => setTransporter('')}
-                />
-              )}
-              {errors.transporter && <Text style={styles.errorText}>{errors.transporter}</Text>}
+                <>
+                  <SearchableDropdown
+                    onItemSelect={(item) => {
+                      setTransporter(item.id);
+                      setErrors(prev => ({ ...prev, transporter: '' }));
+                      setAssignedVanNo('');
+                    }}
+                    containerStyle={[
+                      styles.dropdownContainer,
+                      errors.transporter && styles.inputError
+                    ]}
+                    textInputStyle={styles.dropdownTextInput}
+                    itemStyle={styles.dropdownItem}
+                    itemTextStyle={styles.dropdownItemText}
+                    itemsContainerStyle={[
+                      styles.dropdownItemsContainer,
+                      isSmallDevice && { maxHeight: 150 }
+                    ]}
+                    items={transporters}
+                    defaultIndex={-1}
+                    resetValue={false}
+                    underlineColorAndroid="transparent"
+                    placeholder={transporter 
+                      ? transporters.find(c => c.id === transporter)?.name 
+                      : 'Select Transporter'}
+                    placeholderTextColor="#999"
+                    searchPlaceholder="Search transporters..."
+                    nestedScrollEnabled={true}
+                    onRemoveItem={() => setTransporter('')}
+                  />
+                  {errors.transporter && <Text style={styles.errorText}>{errors.transporter}</Text>}
 
-              <Text style={styles.label}>Assigned Van Number</Text>
-              {fetchingVans ? (
-                <ActivityIndicator size="small" color="#FFA500" />
-              ) : (
-                <SearchableDropdown
-                  onItemSelect={(item) => {
-                    setAssignedVanNo(item.id);
-                    setErrors(prev => ({ ...prev, assignedVanNo: '' }));
-                  }}
-                  containerStyle={[styles.dropdownContainer, errors.assignedVanNo && styles.inputError]}
-                  textInputStyle={styles.dropdownTextInput}
-                  itemStyle={styles.dropdownItem}
-                  itemTextStyle={styles.dropdownItemText}
-                  itemsContainerStyle={[
-                    styles.dropdownItemsContainer,
-                    isSmallDevice && { maxHeight: 150 }
-                  ]}
-                  items={availableVans}
-                  defaultIndex={-1}
-                  resetValue={false}
-                  underlineColorAndroid="transparent"
-                  placeholder={transporter ? "Select Van Number" : "Select Transporter first"}
-                  placeholderTextColor="#999"
-                  searchPlaceholder="Search van numbers..."
-                  nestedScrollEnabled={true}
-                  onRemoveItem={() => setAssignedVanNo('')}
-                  disabled={!transporter}
-                />
+                  <Text style={styles.label}>Assigned Van Number</Text>
+                  {fetchingVans ? (
+                    <ActivityIndicator size="small" color="#FFA500" />
+                  ) : (
+                    <>
+                      <SearchableDropdown
+                        onItemSelect={(item) => {
+                          setAssignedVanNo(item.id);
+                          setErrors(prev => ({ ...prev, assignedVanNo: '' }));
+                        }}
+                        containerStyle={[
+                          styles.dropdownContainer,
+                          errors.assignedVanNo && styles.inputError
+                        ]}
+                        textInputStyle={styles.dropdownTextInput}
+                        itemStyle={styles.dropdownItem}
+                        itemTextStyle={styles.dropdownItemText}
+                        itemsContainerStyle={[
+                          styles.dropdownItemsContainer,
+                          isSmallDevice && { maxHeight: 150 }
+                        ]}
+                        items={availableVans}
+                        defaultIndex={-1}
+                        resetValue={false}
+                        underlineColorAndroid="transparent"
+                        placeholder={transporter 
+                          ? "Select Van Number" 
+                          : "Select Transporter first"}
+                        placeholderTextColor="#999"
+                        searchPlaceholder="Search van numbers..."
+                        nestedScrollEnabled={true}
+                        onRemoveItem={() => setAssignedVanNo('')}
+                        disabled={!transporter}
+                      />
+                      {errors.assignedVanNo && <Text style={styles.errorText}>{errors.assignedVanNo}</Text>}
+                    </>
+                  )}
+                </>
               )}
-              {errors.assignedVanNo && <Text style={styles.errorText}>{errors.assignedVanNo}</Text>}
-            </>
-          )}
-
-          {/* Field Agent Specific Fields */}
-          {selectedCollection === 'fieldagent' && (
-            <>
-              <Text style={styles.label}>Loading Point</Text>
-              {fetchingLoadingPoints ? (
-                <ActivityIndicator size="small" color="#FFA500" />
-              ) : (
-                <SearchableDropdown
-                  onItemSelect={(item) => {
-                    setLoadingPoint(item.id);
-                    setErrors(prev => ({ ...prev, loadingPoint: '' }));
-                  }}
-                  containerStyle={[styles.dropdownContainer, errors.loadingPoint && styles.inputError]}
-                  textInputStyle={styles.dropdownTextInput}
-                  itemStyle={styles.dropdownItem}
-                  itemTextStyle={styles.dropdownItemText}
-                  itemsContainerStyle={[
-                    styles.dropdownItemsContainer,
-                    isSmallDevice && { maxHeight: 150 }
-                  ]}
-                  items={loadingPoints}
-                  defaultIndex={-1}
-                  resetValue={false}
-                  underlineColorAndroid="transparent"
-                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
-                  placeholderTextColor="#999"
-                  searchPlaceholder="Search loading points..."
-                  nestedScrollEnabled={true}
-                  onRemoveItem={() => setLoadingPoint('')}
-                />
-              )}
-              {errors.loadingPoint && <Text style={styles.errorText}>{errors.loadingPoint}</Text>}
             </>
           )}
 
-          {/* Transporter Specific Fields */}
-          {selectedCollection === 'transporter' && (
-            <>
-              <Text style={styles.label}>Loading Point</Text>
-              {fetchingLoadingPoints ? (
-                <ActivityIndicator size="small" color="#FFA500" />
-              ) : (
-                <SearchableDropdown
-                  onItemSelect={(item) => {
-                    setLoadingPoint(item.id);
-                    setErrors(prev => ({ ...prev, loadingPoint: '' }));
-                  }}
-                  containerStyle={[styles.dropdownContainer, errors.loadingPoint && styles.inputError]}
-                  textInputStyle={styles.dropdownTextInput}
-                  itemStyle={styles.dropdownItem}
-                  itemTextStyle={styles.dropdownItemText}
-                  itemsContainerStyle={[
-                    styles.dropdownItemsContainer,
-                    isSmallDevice && { maxHeight: 150 }
-                  ]}
-                  items={loadingPoints}
-                  defaultIndex={-1}
-                  resetValue={false}
-                  underlineColorAndroid="transparent"
-                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
-                  placeholderTextColor="#999"
-                  searchPlaceholder="Search loading points..."
-                  nestedScrollEnabled={true}
-                  onRemoveItem={() => setLoadingPoint('')}
-                />
-              )}
-              {errors.loadingPoint && <Text style={styles.errorText}>{errors.loadingPoint}</Text>}
-            </>
-          )}
-          {/* Customer Specific Fields */}
-          {selectedCollection === 'customer' && (
-            <>
-              <Text style={styles.label}>Loading Point</Text>
-              {fetchingLoadingPoints ? (
-                <ActivityIndicator size="small" color="#FFA500" />
-              ) : (
-                <SearchableDropdown
-                  onItemSelect={(item) => {
-                    setLoadingPoint(item.id);
-                    setErrors(prev => ({ ...prev, loadingPoint: '' }));
-                  }}
-                  containerStyle={[styles.dropdownContainer, errors.loadingPoint && styles.inputError]}
-                  textInputStyle={styles.dropdownTextInput}
-                  itemStyle={styles.dropdownItem}
-                  itemTextStyle={styles.dropdownItemText}
-                  itemsContainerStyle={[
-                    styles.dropdownItemsContainer,
-                    isSmallDevice && { maxHeight: 150 }
-                  ]}
-                  items={loadingPoints}
-                  defaultIndex={-1}
-                  resetValue={false}
-                  underlineColorAndroid="transparent"
-                  placeholder={loadingPoint ? loadingPoints?.find((c) => c.name === loadingPoint)?.name : 'Select Loading Point'}
-                  placeholderTextColor="#999"
-                  searchPlaceholder="Search loading points..."
-                  nestedScrollEnabled={true}
-                  onRemoveItem={() => setLoadingPoint('')}
-                />
-              )}
-              {errors.loadingPoint && <Text style={styles.errorText}>{errors.loadingPoint}</Text>}
-            </>
-          )}
+          {/* Loading Point Dropdown (for fieldagent, transporter, customer) */}
+          {renderLoadingPointDropdown()}
 
           {/* Common Fields */}
           <Text style={styles.label}>Phone Number</Text>
@@ -530,6 +474,7 @@ const AddUserScreen: React.FC = () => {
               style={styles.saveButton} 
               onPress={handleSave}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               <Text style={styles.saveButtonText}>Save User</Text>
               <Ionicons name="save-outline" size={20} color="#FFF" style={styles.saveIcon} />

@@ -82,52 +82,6 @@ const InvoiceScreen = () => {
     return `INV-${new Date().getFullYear()}-${randomNumber}`;
   }
 
-// useEffect(() => {
-//   const fetchclients = async () => {
-//     try {
-//       const clientsCollection = collection(db, 'transporter');
-//       const q = query(clientsCollection);
-//       const querySnapshot = await getDocs(q);
-      
-//       const clientsData: client[] = [];
-      
-//       // Process all transporter documents
-//       for (const transporterDoc of querySnapshot.docs) {
-//         const transporterData = transporterDoc.data();
-        
-//         // Check clients in the document map
-//         if (transporterData.clients) {
-//           Object.entries(transporterData.clients).forEach(([id, client]: [string, any]) => {
-//             clientsData.push({
-//               id,
-//               name: client.name,
-//               address: client.address
-//             });
-//           });
-//         }
-        
-//         // Check clients subcollection
-//         const clientsSubcollection = collection(db, `transporter/${transporterName}/clients`);
-//         const clientsSubSnapshot = await getDocs(clientsSubcollection);
-//         clientsSubSnapshot.forEach((clientDoc) => {
-//           const clientData = clientDoc.data();
-//           clientsData.push({
-//             id: clientDoc.id,
-//             name: clientData.name,
-//             address: clientData.address
-//           });
-//         });
-//       }
-      
-//       setclients(clientsData);
-//     } catch (error) {
-//       console.error("Error fetching clients:", error);
-//       Alert.alert("Error", "Failed to fetch clients");
-//     }
-//   };
-
-//   fetchclients();
-// }, []); // Empty dependency array means this runs once when component mounts
 
 useEffect(() => {
   const fetchclients = async () => {
@@ -192,31 +146,6 @@ useEffect(() => {
     };
   }, []);
 
-  // const uploadPdfToFirebase = async (pdfUri: string, invoiceNumber: string) => {
-  //   try {
-  //     const storage = getStorage();
-  //     const storageRef = ref(storage, `invoices/${invoiceNumber}.pdf`);
-      
-  //     // Read the PDF file
-  //     const pdfBlob = await FileSystem.readAsStringAsync(pdfUri, {
-  //       encoding: FileSystem.EncodingType.Base64,
-  //     });
-      
-  //     // Convert to Blob
-  //     const blob = new Blob([pdfBlob], { type: 'application/pdf' });
-      
-  //     // Upload to Firebase Storage
-  //     await uploadBytes(storageRef, blob);
-      
-  //     // Get download URL
-  //     const downloadUrl = await getDownloadURL(storageRef);
-      
-  //     return downloadUrl;
-  //   } catch (error) {
-  //     console.error("Error uploading PDF:", error);
-  //     throw error;
-  //   }
-  // };
 
   const uploadPdfToFirebase = async (pdfUri: string, invoiceNumber: string) => {
     try {
@@ -442,43 +371,6 @@ useEffect(() => {
       throw error;
     }
   };
-  // const saveInvoiceToFirebase = async (pdfUrl: string) => {
-  //   try {
-  //     if (!billTo) {
-  //       Alert.alert("Error", "Please select a client before saving");
-  //       return;
-  //     }
-  
-  //     // Create a sanitized version of the client name for the path
-  //     const sanitizedclientName = billTo
-  //       .replace(/[^a-zA-Z0-9]/g, '-') // Replace special chars with hyphens
-  //       .toLowerCase()
-  //       .substring(0, 50); // Limit length
-  
-  //     // Create a reference using the client name instead of ID
-  //     const invoiceRef = doc(db, 
-  //       `transporter/${transporterName}/clients/${sanitizedclientName}/invoices/${invoiceNumber}`);
-      
-  //     // Prepare invoice data
-  //     const invoiceData = {
-  //       invoiceNumber,
-  //       date: date.toISOString(),
-  //       billerName,
-  //       billTo,
-  //       billToAddress,
-  //       items,
-  //       ...calculateGrandTotals(),
-  //       pdfUrl,
-  //       createdAt: new Date().toISOString(),
-  //       status: 'unpaid'
-  //     };
-  
-  //     await setDoc(invoiceRef, invoiceData);
-  //   } catch (error) {
-  //     console.error("Error saving invoice:", error);
-  //     throw error;
-  //   }
-  // };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -486,7 +378,9 @@ useEffect(() => {
       currency: 'NGN',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(amount).replace('NGN', '₦');
+    }).format(amount)
+      .replace('NGN', '₦')
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Add commas for thousands
   };
 
   // Generate HTML for PDF
@@ -907,22 +801,44 @@ useEffect(() => {
   //   }
   // };
   const generatePDF = async () => {
-    // Validate required fields
-    if (!billTo || !billToAddress) {
-      Alert.alert("Validation Error", "Please select a client before generating invoice");
+    // Validate all required fields
+    const requiredFields = [
+      { field: billerName, message: "Biller name is required" },
+      { field: billerAddress, message: "Biller address is required" },
+      { field: billTo, message: "Please select a client to bill to" },
+      { field: billToAddress, message: "Client address is required" },
+      { field: bankName, message: "Bank name is required" },
+      { field: accountName, message: "Account name is required" },
+      { field: accountNumber, message: "Account number is required" },
+    ];
+  
+    // Check if any item has empty required fields
+    const invalidItems = items.some(item => 
+      !item.shipmentNo || !item.route || !item.truckType || item.freightCost <= 0
+    );
+  
+    if (invalidItems) {
+      Alert.alert(
+        "Validation Error", 
+        "Please fill all item fields (Shipment No, Route, Truck Type) and ensure Freight Cost is greater than 0"
+      );
       return;
+    }
+  
+    // Check other required fields
+    for (const { field, message } of requiredFields) {
+      if (!field) {
+        Alert.alert("Validation Error", message);
+        return;
+      }
     }
   
     setIsGenerating(true);
     try {
-      // 1. First generate the PDF
-      // const { uri } = await Print.printToFileAsync({
-      //   html: generateInvoiceHTML(),
-      // });
       const { uri } = await Print.printToFileAsync({
         html: generateInvoiceHTML(),
-        width: 595,   // A4 width in points (210mm)
-        height: 842,  // A4 height in points (297mm)
+        width: 595,
+        height: 842,
         margins: {
           left: 30,
           right: 30,
@@ -930,19 +846,15 @@ useEffect(() => {
           bottom: 30
         }
       });
-      // 2. Verify PDF was created
+  
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         throw new Error("PDF file was not generated properly");
       }
   
-      // 3. Upload to Firebase Storage
       const pdfUrl = await uploadPdfToFirebase(uri, invoiceNumber);
-      
-      // 4. Save invoice data to Firestore
       await saveInvoiceToFirebase(pdfUrl);
   
-      // 5. Share the local PDF file
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { 
           mimeType: "application/pdf", 
@@ -951,7 +863,6 @@ useEffect(() => {
         });
       }
   
-      // 6. Only show success and navigate if everything worked
       Alert.alert("Success", "Invoice generated and saved successfully!");
       router.push('/transporter/dashboard');
     } catch (error: any) {
@@ -1244,18 +1155,18 @@ useEffect(() => {
                   </View>
                   <View style={[styles.inputContainer, styles.itemInput, styles.totalContainer]}>
                     <Text style={styles.totalLabel}>Subtotal:</Text>
-                    <Text style={styles.totalValue}>₦{(item.total - item.vat).toFixed(2)}</Text>
+                    <Text style={styles.totalValue}>{formatCurrency(item.total - item.vat)}</Text>
                   </View>
                 </View>
                 
                 <View style={[styles.inputContainer, styles.vatContainer]}>
                   <Text style={styles.vatLabel}>VAT (7.5%):</Text>
-                  <Text style={styles.vatValue}>₦{item.vat.toFixed(2)}</Text>
+                  <Text style={styles.vatValue}>{formatCurrency(item.vat)}</Text>
                 </View>
                 
                 <View style={[styles.inputContainer, styles.grandTotalContainer]}>
                   <Text style={styles.grandTotalLabel}>Total:</Text>
-                  <Text style={styles.grandTotalValue}>₦{item.total.toFixed(2)}</Text>
+                  <Text style={styles.grandTotalValue}>{formatCurrency(item.total)}</Text>
                 </View>
               </View>
             ))}

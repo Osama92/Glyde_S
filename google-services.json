@@ -1,8 +1,8 @@
 {
   "project_info": {
-    "project_number": "375704357328",
-    "project_id": "glyde-f716b",
-    "storage_bucket": "glyde-f716b.firebasestorage.app"
+    "project_number": "475838273562",
+    "project_id": "glyde-s-eb857",
+    "storage_bucket": "glyde-s-eb857.firebasestorage.app"
   },
   "client": [
     {
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBM-nvCQgPxo1xAsSMl9q3xIzbT6eZSWy4"
+          "current_key": "AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0"
         }
       ],
       "services": {

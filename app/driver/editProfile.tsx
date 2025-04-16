@@ -111,7 +111,6 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       Alert.alert("Error", "Failed to upload image!");
-      console.log(storage)
       console.error("Upload error:", error);
     } finally {
       setUploading(false);

@@ -235,10 +235,10 @@ const DriverDashboard = () => {
   
       const shipmentDoc = querySnapshot.docs[0];
       const newData = shipmentDoc.data();
-      console.log('Shipment data:', newData);
+      
   
       if (newData.statusId === 2) {
-        console.log('New assignment detected!');
+        
         
         try {
           // Load deliveries
@@ -254,6 +254,7 @@ const DriverDashboard = () => {
           // Update state
           setShipment({
             id: shipmentDoc.id,
+            statusId: newData.statusId,
             ...newData,
             deliveries
           });
@@ -325,7 +326,6 @@ const DriverDashboard = () => {
         return;
       }
   
-      console.log('Starting data load...');
       setLoading(true);
       setRefreshing(true);
   
@@ -515,7 +515,17 @@ const DriverDashboard = () => {
           const deliveryRef = doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id);
           batch.update(deliveryRef, { statusId: 3 });
         });
+      
+
+      // Set the first delivery as selected
+      if (shipment.deliveries.length > 0) {
+        setSelectedDelivery({
+          ...shipment.deliveries[0],
+          status: 'Ongoing'
+        });
       }
+    }
+    
   
       await batch.commit();
   
@@ -583,24 +593,81 @@ const DriverDashboard = () => {
   };
 
   const uploadPOD = async () => {
-    if (!podImage || !selectedDelivery || !shipment) return;
 
+    if (!podImage) {
+      Alert.alert('Error', 'Please capture POD image first');
+      return;
+    }
+
+    if (!selectedDelivery || !selectedDelivery.deliveryNumber) {
+      Alert.alert('Error', 'No delivery selected for POD upload');
+      return;
+    }
+  
     setUploading(true);
+    
     try {
+      console.log('Starting POD upload process...');
+      console.log('Image URI:', podImage);
+  
+      // 1. Validate image URI
+      if (!podImage.startsWith('file://') && !podImage.startsWith('http')) {
+        throw new Error(`Invalid image URI format: ${podImage}`);
+      }
+  
+      // 2. Fetch the image file
+      console.log('Fetching image file...');
       const response = await fetch(podImage);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+  
+      // 3. Convert to blob
+      console.log('Converting to blob...');
       const blob = await response.blob();
-      const filename = `POD_${shipment.id}_${selectedDelivery.id}_${Date.now()}.jpg`;
+      console.log('Blob size:', blob.size, 'bytes');
+  
+      // 4. Create storage reference with proper file extension
+      const fileExtension = podImage.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `POD_${shipment?.id}_${selectedDelivery?.deliveryNumber || 'no-delivery'}_${Date.now()}.${fileExtension}`;
       const storageRef = ref(storage, `proof-of-delivery/${filename}`);
-      await uploadBytes(storageRef, blob);
+      console.log('Storage reference created:', filename);
+  
+      // 5. Upload with timeout
+      console.log('Starting upload...');
+      const uploadTask = uploadBytes(storageRef, blob);
+      
+      // Add timeout (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Upload timed out after 30 seconds')), 30000)
+      );
+  
+      await Promise.race([uploadTask, timeoutPromise]);
+      console.log('Upload completed successfully');
+  
+      // 6. Get download URL
+      console.log('Getting download URL...');
       const downloadURL = await getDownloadURL(storageRef);
-
-      await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', selectedDelivery.id), {
+      console.log('Download URL:', downloadURL);
+  
+      // 7. Update Firestore
+      console.log('Updating Firestore document...');
+      await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', selectedDelivery.deliveryNumber), {
         podImageUrl: downloadURL,
         statusId: 4,
         deliveredAt: new Date().toISOString(),
       });
-
-      // Send notification
+  
+      // 8. Check if all deliveries are complete
+      const deliveriesRef = collection(db, 'Shipment', shipment.id, 'deliveries');
+      const deliveriesSnapshot = await getDocs(deliveriesRef);
+      const allDelivered = deliveriesSnapshot.docs.every(doc => doc.data().statusId === 4);
+      
+      if (allDelivered) {
+        await updateDoc(doc(db, 'Shipment', shipment.id), { statusId: 4 });
+      }
+  
+      // Success
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Delivery Completed',
@@ -608,15 +675,19 @@ const DriverDashboard = () => {
         },
         trigger: null,
       });
-
-      await loadShipments();
-      
+  
       setShowPODModal(false);
       setPodImage(null);
       setSelectedDelivery(null);
       setPodModalBlocked(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to upload POD');
+      await loadShipments();
+  
+    } catch (error:any) {
+      console.error('POD upload failed:', error);
+      Alert.alert(
+        'Upload Failed', 
+        error.message || 'Failed to upload POD. Please check your connection and try again.'
+      );
     } finally {
       setUploading(false);
     }
@@ -631,6 +702,7 @@ const DriverDashboard = () => {
   const startDelivery = (delivery: Delivery) => {
     setDeliveryToConfirm(delivery);
     setShowDeliveryConfirmation(true);
+    setSelectedDelivery(delivery);
   };
 
   const confirmDelivery = async () => {
@@ -674,12 +746,15 @@ const DriverDashboard = () => {
       <View key={index} style={styles.materialItem}>
         <Text style={styles.materialName}>{item.name}</Text>
         <Text style={styles.materialDetail}>Qty: {item.quantity}</Text>
-        <Text style={styles.materialDetail}>Weight: {item.weight}kg</Text>
+        {/* <Text style={styles.materialDetail}>Weight: {item.weight}kg</Text> */}
       </View>
     ));
   };
 
-  const renderDeliveryActions = (delivery: Delivery) => {
+
+  const renderDeliveryActions = (delivery: Delivery, index: number) => {
+    const isSmallScreen = Dimensions.get('window').width <= 375; // iPhone SE width
+  
     if (delivery.status === 'Delivered') {
       return (
         <TouchableOpacity 
@@ -695,26 +770,89 @@ const DriverDashboard = () => {
         </TouchableOpacity>
       );
     }
-
+  
     return (
-      <View style={styles.deliveryActionButtons}>
-        {delivery.status === 'Pending' && (
-          <TouchableOpacity 
-            style={styles.startDeliveryButton}
-            onPress={() => startDelivery(delivery)}
-          >
-            <MaterialIcons name="play-arrow" size={20} color="white" />
-            <Text style={styles.startDeliveryButtonText}>Start Delivery</Text>
-          </TouchableOpacity>
+      <View style={styles.deliveryActionContainer}>
+        {/* Delivery stepper - only show if multiple deliveries */}
+        {shipment?.deliveries && shipment.deliveries.length >= 1 && (
+          <View style={[
+            styles.deliveryStepper,
+            isSmallScreen && styles.deliveryStepperSmall
+          ]}>
+            {!isSmallScreen && (
+              <TouchableOpacity 
+                disabled={index === 0}
+                onPress={() => setSelectedDelivery(shipment.deliveries[index - 1])}
+                style={[
+                  styles.stepperButton,
+                  index === 0 && styles.stepperButtonDisabled
+                ]}
+              >
+                <MaterialIcons 
+                  name="chevron-left" 
+                  size={20} 
+                  color={index === 0 ? '#ccc' : '#FF6347'} 
+                />
+              </TouchableOpacity>
+            )}
+            
+            <Text style={[
+              styles.stepperText,
+              isSmallScreen && styles.stepperTextSmall
+            ]}>
+              {isSmallScreen ? `${index + 1}/${shipment.deliveries.length}` : `Delivery ${index + 1} of ${shipment.deliveries.length}`}
+            </Text>
+            
+            {!isSmallScreen && (
+              <TouchableOpacity 
+                disabled={index === shipment.deliveries.length - 1}
+                onPress={() => setSelectedDelivery(shipment.deliveries[index + 1])}
+                style={[
+                  styles.stepperButton,
+                  index === shipment.deliveries.length - 1 && styles.stepperButtonDisabled
+                ]}
+              >
+                <MaterialIcons 
+                  name="chevron-right" 
+                  size={20} 
+                  color={index === shipment.deliveries.length - 1 ? '#ccc' : '#FF6347'} 
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         )}
-        
-        <TouchableOpacity 
-          style={styles.navigateButton}
-          onPress={() => openGoogleMaps(delivery)}
-        >
-          <MaterialIcons name="directions" size={24} color="#FF6347" />
-        </TouchableOpacity>
-        
+  
+        {/* Action buttons - always visible */}
+        <View style={[
+          styles.deliveryActionButtons,
+          isSmallScreen && styles.deliveryActionButtonsSmall
+        ]}>
+          {delivery.status === 'Ongoing' && (
+            <TouchableOpacity 
+              style={[
+                styles.startDeliveryButton,
+                isSmallScreen && styles.startDeliveryButtonSmall
+              ]}
+              onPress={() => startDelivery(delivery)}
+            >
+              <MaterialIcons name="play-arrow" size={16} color="white" />
+              {!isSmallScreen && (
+                <Text style={styles.startDeliveryButtonText}>Start</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.navigateButton}
+            onPress={() => openGoogleMaps(delivery)}
+          >
+            <MaterialIcons 
+              name="directions" 
+              size={isSmallScreen ? 20 : 24} 
+              color="#FF6347" 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -759,7 +897,7 @@ const DriverDashboard = () => {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Completed vs Cancelled</Text>
           <BarChart
-            barWidth={40}
+            barWidth={80}
             noOfSections={3}
             barBorderRadius={4}
             frontColor="lightgray"
@@ -787,7 +925,8 @@ const DriverDashboard = () => {
             showGradient
             sectionAutoFocus
             radius={90}
-            innerRadius={60}
+            innerRadius={50}
+            extraRadius={10}
             innerCircleColor={'#f5f5f5'}
             centerLabelComponent={() => (
               <View style={styles.pieCenterLabelContainer}>
@@ -865,7 +1004,8 @@ const DriverDashboard = () => {
         )}
       </View>
       
-      {renderDeliveryActions(delivery)}
+      {renderDeliveryActions(delivery, index)}
+      
     </View>
   );
 
@@ -1175,11 +1315,99 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  deliveryActionContainer: {
+    //width: '100%',
+    marginTop: 8,
+  },
+  deliveryStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  deliveryStepperSmall: {
+    marginBottom: 6,
+  },
+  stepperButton: {
+    padding: 6,
+    marginHorizontal: 4,
+  },
+  stepperButtonDisabled: {
+    opacity: 0.5,
+  },
+  stepperText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginHorizontal: 8,
+    textAlign: 'center',
+  },
+  stepperTextSmall: {
+    fontSize: 12,
+    marginHorizontal: 4,
+  },
+  deliveryActionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  deliveryActionButtonsSmall: {
+    justifyContent: 'center',
+  },
+  startDeliveryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6347',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  startDeliveryButtonSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginRight: 6,
+  },
+  startDeliveryButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  navigateButton: {
+    padding: 8,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
+  },
+  deliverySelector: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 8,
+  },
+  selectorTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  deliveryTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 20,
+  },
+  activeDeliveryTab: {
+    backgroundColor: '#FF6347',
+  },
+  deliveryTabText: {
+    color: '#333',
+  },
+  activeDeliveryTabText: {
+    color: 'white',
   },
   loadingText: {
     marginTop: 20,
@@ -1418,10 +1646,6 @@ const styles = StyleSheet.create({
   deliveryActions: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  navigateButton: {
-    padding: 8,
-    marginLeft: 8,
   },
   podButton: {
     padding: 8,
@@ -1698,25 +1922,6 @@ const styles = StyleSheet.create({
   notificationButtonText: {
     color: 'white',
     fontWeight: 'bold',
-  },
-  deliveryActionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  startDeliveryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF6347',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  startDeliveryButtonText: {
-    color: 'white',
-    fontWeight: '500',
-    marginLeft: 4,
-    fontSize: 12,
   },
   deliveredButton: {
     flexDirection: 'row',

@@ -171,7 +171,7 @@ export default function Dashboard() {
           title="Create Shipment"
           icon={<FontAwesome5 name="shipping-fast" size={42} color="#fff" />}
           color="#6C63FF"
-          onPress={() => router.push(`/agent/createShipment?originPoint=${shippingPoint}`)}
+          onPress={() => router.push(`/agent/createShipment?originPoint=${shippingPoint}&Agent=${displayName}`)}
         />
         
         <ActionCard

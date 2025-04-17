@@ -55,7 +55,7 @@ export default function CreateShipment() {
     Poppins: require("../../assets/fonts/Poppins-Bold.ttf"),
   });
 
-  const { originPoint } = useLocalSearchParams();
+  const { originPoint, Agent } = useLocalSearchParams();
 
   // Animation setup
   useEffect(() => {
@@ -257,14 +257,15 @@ export default function CreateShipment() {
       const shipmentData = {
         transporter: selectedT,
         vehicleNo: selectedItem,
-        tonnage: selectedVehicleDetails?.tonnage,
-        remaining_tons: selectedVehicleDetails.tons,
+        tonnage: selectedVehicleDetails?.tons,
+        remaining_tons: selectedVehicleDetails.tonnage,
         mobileNumber,
         driverName,
         route: selectedRoute.name,
         freightCost: freightCost,
         statusId: 0, // 0 = Pending status
         createdAt: Timestamp.now(),
+        createdBy: Agent, // Assuming the agent is creating the shipment
       };
   
       // Save the shipment

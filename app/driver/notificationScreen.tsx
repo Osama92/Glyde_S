@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useLocalSearchParams } from 'expo-router';
-import { doc, collection, onSnapshot, updateDoc, query, where, writeBatch, getDocs } from 'firebase/firestore';
+import { doc, collection, onSnapshot, updateDoc, query, where, writeBatch, getDocs, Timestamp, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -70,6 +70,13 @@ type DriverProfile = {
   vehicleNo?: string;
 };
 
+type LocationData = {
+  latitude: number;
+  longitude: number;
+  speed?: number;
+  timestamp?: string;
+};
+
 const DriverDashboard = () => {
   const { transporterName } = useLocalSearchParams<{ transporterName: string }>();
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -83,7 +90,7 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [driverProfile, setDriverProfile] = useState<DriverProfile | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [showDeliveryConfirmation, setShowDeliveryConfirmation] = useState(false);
   const [deliveryToConfirm, setDeliveryToConfirm] = useState<Delivery | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
@@ -105,35 +112,151 @@ const DriverDashboard = () => {
     return () => subscription.remove();
   }, []);
 
-  // Initialize and track driver location
-  useEffect(() => {
-    const startLocationTracking = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+
+  // Replace the current location tracking useEffect with:
+// useEffect(() => {
+//   let subscription: Location.LocationSubscription | null = null;
+
+//   const startLocationTracking = async () => {
+//     let { status } = await Location.requestBackgroundPermissionsAsync();
+//     if (status !== 'granted') {
+//       const foregroundPermission = await Location.requestForegroundPermissionsAsync();
+//       status = foregroundPermission.status;
+//       if (status !== 'granted') {
+//         Alert.alert('Permission denied', 'Location permission is required');
+//         setLoading(false);
+//         return;
+//       }
+//     }
+
+//     await Location.startLocationUpdatesAsync('driverLocation', {
+//       accuracy: Location.Accuracy.High,
+//       distanceInterval: 50,
+//       timeInterval: 10000,
+//       foregroundService: {
+//         notificationTitle: 'Location Tracking',
+//         notificationBody: 'Your location is being tracked for deliveries',
+//         notificationColor: '#FF6347',
+//       },
+//     });
+
+//     subscription = await Location.watchPositionAsync(
+//       {
+//         accuracy: Location.Accuracy.High,
+//         distanceInterval: 50,
+//         timeInterval: 10000,
+//       },
+//       (location) => {
+//         const newLocation = {
+//           latitude: location.coords.latitude,
+//           longitude: location.coords.longitude,
+//           speed: location.coords.speed || 0,
+//         };
+//         setCurrentLocation(newLocation);
+//         updateDriverLocation(newLocation);
+//       }
+//     );
+//   };
+
+//   startLocationTracking();
+
+//   return () => {
+//     if (subscription) {
+//       subscription.remove();
+//     }
+//     Location.stopLocationUpdatesAsync('driverLocation');
+//   };
+// }, [phoneNumber]);
+
+
+useEffect(() => {
+  let isMounted = true;
+  let locationSubscription: Location.LocationSubscription | null = null;
+
+  const startLocationTracking = async () => {
+    try {
+      // Request permissions
+      let { status } = await Location.requestBackgroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required');
-        setLoading(false);
-        return;
+        const foregroundPermission = await Location.requestForegroundPermissionsAsync();
+        status = foregroundPermission.status;
+        if (status !== 'granted') {
+          if (isMounted) {
+            Alert.alert(
+              'Location Permission Required',
+              'This app needs location permissions to track deliveries properly',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Open Settings', onPress: () => Linking.openSettings() }
+              ]
+            );
+          }
+          return;
+        }
       }
 
-      await Location.watchPositionAsync(
+      // Configure location tracking
+      await Location.enableNetworkProviderAsync();
+      
+      // Start background service
+      await Location.startLocationUpdatesAsync('driverLocation', {
+        accuracy: Location.Accuracy.Balanced,
+        distanceInterval: 50,
+        timeInterval: 15000,
+        foregroundService: {
+          notificationTitle: 'Delivery in Progress',
+          notificationBody: 'Tracking your location for delivery updates',
+          notificationColor: '#FF6347',
+        },
+        showsBackgroundLocationIndicator: true,
+      });
+
+      // Watch for location updates
+      locationSubscription = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 15000,
           distanceInterval: 50,
-          timeInterval: 10000,
         },
         (location) => {
-          const newLocation = {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          };
-          setCurrentLocation(newLocation);
-          updateDriverLocation(newLocation);
+          if (isMounted) {
+            const newLocation: LocationData = {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              speed: location.coords.speed || undefined,
+              timestamp: new Date().toISOString(),
+            };
+            setCurrentLocation(newLocation);
+            updateDriverLocation(newLocation);
+            
+            // Update ETA for current delivery if needed
+            if (selectedDelivery?.status === 'Ongoing') {
+              updateDeliveryETA(selectedDelivery);
+            }
+          }
         }
       );
-    };
+    } catch (error) {
+      console.error('Location tracking error:', error);
+      if (isMounted) {
+        Alert.alert(
+          'Location Error',
+          'Could not start location tracking. Restart the app or check permissions.'
+        );
+      }
+    }
+  };
 
-    startLocationTracking();
-  }, [phoneNumber]);
+  startLocationTracking();
+
+  return () => {
+    isMounted = false;
+    if (locationSubscription) {
+      locationSubscription.remove();
+    }
+    Location.stopLocationUpdatesAsync('driverLocation').catch(console.error);
+  };
+}, [phoneNumber, selectedDelivery]);
 
   // Handle back button when POD modal is open
   useEffect(() => {
@@ -168,11 +291,38 @@ const DriverDashboard = () => {
         await updateDoc(doc(db, 'deliverydriver', driverDoc.id), {
           latitude: location.latitude,
           longitude: location.longitude,
-          lastUpdated: new Date().toISOString(),
+          lastUpdated: Timestamp.now(),
         });
       }
     } catch (error) {
       console.error('Error updating driver location:', error);
+    }
+  };
+
+  const cleanupDriverData = async () => {
+    if (!phoneNumber) return;
+    
+    try {
+      const driversRef = collection(db, 'deliverydriver');
+      const q = query(driversRef, where('phoneNumber', '==', phoneNumber));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const driverDoc = querySnapshot.docs[0];
+        const data = driverDoc.data();
+        
+        // Check for old fields
+        if (data.Latitude || data.Longitude) {
+          await updateDoc(doc(db, 'deliverydriver', driverDoc.id), {
+            latitude: data.Latitude || data.latitude,
+            longitude: data.Longitude || data.longitude,
+            Latitude: deleteField(),
+            Longitude: deleteField(),
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up driver data:', error);
     }
   };
 
@@ -189,6 +339,7 @@ const DriverDashboard = () => {
       setPhoneNumber(storedPhone);
 
       if (storedPhone) {
+        await cleanupDriverData();
         const driversRef = collection(db, 'deliverydriver');
         const q = query(driversRef, where('phoneNumber', '==', storedPhone));
         const querySnapshot = await getDocs(q);
@@ -455,29 +606,81 @@ const DriverDashboard = () => {
     }
   };
   
+  // const updateDeliveryETA = async (delivery: Delivery) => {
+  //   if (!shipment || !currentLocation) return;
+    
+  //   try {
+  //     const response = await axios.get(
+  //       `https://maps.googleapis.com/maps/api/directions/json?origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${delivery.coordinates.latitude},${delivery.coordinates.longitude}&key=${GOOGLE_MAPS_API_KEY}`
+  //     );
+  
+  //     let eta = 'N/A';
+  //     let distance = 'N/A';
+      
+  //     if (response.data.status === 'OK' && response.data.routes?.[0]?.legs?.[0]) {
+  //       eta = response.data.routes[0].legs[0].duration.text;
+  //       distance = response.data.routes[0].legs[0].distance.text;
+  //     } else {
+  //       console.warn('No route found:', response.data);
+  //     }
+  
+  //     await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id), {
+  //       eta,
+  //       distance,
+  //       statusId: 3,
+  //     });
+  
+  //     await Notifications.scheduleNotificationAsync({
+  //       content: {
+  //         title: 'Delivery Started',
+  //         body: `ETA to ${delivery.customer}: ${eta}`,
+  //       },
+  //       trigger: null,
+  //     });
+  
+  //     await loadShipments();
+  //   } catch (error: any) {
+  //     console.error('ETA update error:', error);
+  //     Alert.alert('Error', `Failed to update ETA: ${error.message}`);
+  //   }
+  // };
+
+
   const updateDeliveryETA = async (delivery: Delivery) => {
     if (!shipment || !currentLocation) return;
     
     try {
       const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${delivery.coordinates.latitude},${delivery.coordinates.longitude}&key=${GOOGLE_MAPS_API_KEY}`
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${delivery.coordinates.latitude},${delivery.coordinates.longitude}&key=${GOOGLE_MAPS_API_KEY}&departure_time=now&traffic_model=best_guess`
       );
   
-      let eta = 'N/A';
-      let distance = 'N/A';
+      let eta = 'Calculating...';
+      let distance = 'Calculating...';
+      let currentSpeed = currentLocation.speed ? `${(currentLocation.speed * 3.6).toFixed(1)} km/h` : 'N/A';
       
       if (response.data.status === 'OK' && response.data.routes?.[0]?.legs?.[0]) {
-        eta = response.data.routes[0].legs[0].duration.text;
-        distance = response.data.routes[0].legs[0].distance.text;
+        const leg = response.data.routes[0].legs[0];
+        eta = leg.duration_in_traffic?.text || leg.duration.text;
+        distance = leg.distance.text;
+        
+        // Update with traffic data if available
+        await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id), {
+          eta,
+          distance,
+          currentSpeed,
+          statusId: 3,
+          lastLocationUpdate: new Date().toISOString(),
+        });
       } else {
         console.warn('No route found:', response.data);
+        // Fallback to simple distance calculation if API fails
+        const simpleDistance = calculateSimpleDistance(
+          currentLocation,
+          delivery.coordinates
+        );
+        distance = `${simpleDistance.toFixed(1)} km`;
+        eta = 'N/A';
       }
-  
-      await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id), {
-        eta,
-        distance,
-        statusId: 3,
-      });
   
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -490,8 +693,21 @@ const DriverDashboard = () => {
       await loadShipments();
     } catch (error: any) {
       console.error('ETA update error:', error);
-      Alert.alert('Error', `Failed to update ETA: ${error.message}`);
+      // Don't show alert for every error to avoid annoying the driver
     }
+  };
+  
+  // Simple distance calculation fallback
+  const calculateSimpleDistance = (loc1: {latitude: number, longitude: number}, loc2: {latitude: number, longitude: number}) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (loc2.latitude - loc1.latitude) * Math.PI / 180;
+    const dLon = (loc2.longitude - loc1.longitude) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(loc1.latitude * Math.PI / 180) * Math.cos(loc2.latitude * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   };
 
   const onRefresh = useCallback(() => {
@@ -1157,23 +1373,7 @@ const DriverDashboard = () => {
         </>
       )}
 
-      {/* Notification Modal */}
-      {/* <Modal visible={notificationModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.notificationModal}>
-            <Text style={styles.notificationTitle}>New Notification</Text>
-            <Text style={styles.notificationText}>{notificationMessage}</Text>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => setNotificationModalVisible(false)}
-            >
-              <Text style={styles.notificationButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal> */}
-
-      {/* Shipment Assignment Modal */}
+            {/* Shipment Assignment Modal */}
       <Modal visible={showAssignmentModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>

@@ -43,7 +43,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [

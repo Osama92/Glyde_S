@@ -245,7 +245,7 @@ export default function CreateShipment() {
       return;
     }
   
-    if (!selectedT || !selectedItem || !mobileNumber || !driverName || !selectedRoute || !freightCost) {
+    if (!selectedT || !selectedItem || !driverName || !selectedRoute || !freightCost) {
       Alert.alert("Error", "Please fill all fields, including selecting a route and ensuring freight cost is available.");
       return;
     }
@@ -259,7 +259,7 @@ export default function CreateShipment() {
         vehicleNo: selectedItem,
         tonnage: selectedVehicleDetails?.tons,
         remaining_tons: selectedVehicleDetails.tonnage,
-        mobileNumber,
+        mobileNumber: selectedVehicleDetails?.mobileNumber,
         driverName,
         route: selectedRoute.name,
         freightCost: freightCost,
@@ -275,7 +275,7 @@ export default function CreateShipment() {
       await sendShipmentNotification(mobileNumber, shipmentId);
       
       Alert.alert("Success", `Shipment created with ID: ${shipmentId}`);
-      router.push({ pathname: "/agent/shipment-detail", params: { shipmentId } });
+      router.push({ pathname: "/agent/shipment-detail", params: { shipmentId, originPoint } });
     } catch (error) {
       console.error("Error saving shipment:", error);
       Alert.alert("Error", "Failed to save shipment. Please try again.");
@@ -299,7 +299,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
     await sendPushNotification(
       pushToken,
       "New Shipment Created",
-      `Shipment #${shipmentId} has been created and assigned to you!`,
+      `Shipment #${shipmentId} has been created and assigned!`,
       { shipmentId, type: "shipment_created" }
     );
     
@@ -394,6 +394,7 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
                   onItemSelect={(item: DropdownItem) => {
                     setSelectedItem(item.name);
                     fetchVehicleDetails(item.name);
+                    setMobileNumber(selectedVehicleDetails?.mobileNumber);
                   }}
                   placeholder="Select a Vehicle No"
                   placeholderTextColor="#888"
@@ -436,12 +437,14 @@ const sendShipmentNotification = async (phoneNumber: string, shipmentId: string)
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Contact Number</Text>
                 <TextInput
-                  placeholder="Enter Reachable Mobile Number"
+                  placeholder="Driver Contact Number"
                   placeholderTextColor="#888"
-                  value={mobileNumber}
-                  onChangeText={setMobileNumber}
-                  keyboardType="phone-pad"
+                  value={selectedVehicleDetails?.mobileNumber || mobileNumber}
+                  // onChangeText={(text) => setMobileNumber(text)}
+                  // keyboardType="phone-pad"
+                  editable={false}
                   style={styles.textInput}
+                  defaultValue={selectedVehicleDetails?.mobileNumber || ""}
                 />
               </View>
               

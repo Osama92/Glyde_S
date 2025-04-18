@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function ShipmentDetail() {
-  const { shipmentId } = useLocalSearchParams(); // Fetch params from route
+  const { shipmentId, originPoint } = useLocalSearchParams(); // Fetch params from route
   const router = useRouter();
 
   return (
     <View style={styles.container}>
         <View style={styles.topSection}>
                 
-                <TouchableOpacity onPress={() => router.push('/agent/createDelivery')}>
+                <TouchableOpacity onPress={() => router.push(`/agent/createDelivery?shippingPoint=${originPoint}`)}>
                   <Text style={{fontSize:20}}>Go to delivery Creation</Text>
                 </TouchableOpacity>
                 <Image

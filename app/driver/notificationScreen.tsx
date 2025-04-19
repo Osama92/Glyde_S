@@ -815,7 +815,7 @@ useEffect(() => {
   
       // 4. Create storage reference with proper file extension
       const fileExtension = podImage.split('.').pop()?.toLowerCase() || 'jpg';
-      const filename = `POD_${shipment?.id}_${selectedDelivery?.deliveryNumber || 'no-delivery'}_${Date.now()}.${fileExtension}`;
+      const filename = `POD_${shipment?.id}_${selectedDelivery?.deliveryNumber || 'unknown-delivery'}_${Date.now()}.${fileExtension}`;
       const storageRef = ref(storage, `proof-of-delivery/${filename}`);
       console.log('Storage reference created:', filename);
   
@@ -824,11 +824,12 @@ useEffect(() => {
       const uploadTask = uploadBytes(storageRef, blob);
       
       // Add timeout (30 seconds)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timed out after 30 seconds')), 30000)
-      );
-  
-      await Promise.race([uploadTask, timeoutPromise]);
+      const timeoutId = setTimeout(() => {
+        throw new Error('Upload timed out after 30 seconds');
+      }, 30000);
+
+      await uploadTask;
+      clearTimeout(timeoutId);
       console.log('Upload completed successfully');
   
       // 6. Get download URL
@@ -1533,7 +1534,7 @@ if (loading && !initialLoadComplete) {
     </View>
   </View>
 </Modal>
-      {/* POD Capture Modal */}
+  {/* POD Capture Modal */}
 <Modal visible={showPODModal} transparent animationType="slide">
   <View style={styles.podModalContainer}>
     <View style={styles.podHeader}>
@@ -1555,7 +1556,7 @@ if (loading && !initialLoadComplete) {
         <MaterialIcons name="arrow-back" size={24} color="#FF6347" />
       </TouchableOpacity>
       <Text style={styles.podTitle}>Proof of Delivery</Text>
-      <View style={{ width: 24 }} /> {/* Spacer */}
+      <View style={{ width: 24 }} /> 
     </View>
     
     <Text style={styles.podSubtitle}>

@@ -19,10 +19,18 @@
       },
       "package": "com.osama92.Glyde_S",
       "config": {
-        "googleMaps": {
-          "apiKey" : "AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0"
-        }
+      "googleMaps": {
+        "apiKey": "AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0"
       }
+    },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ]
+      
     },
     "web": {
       "bundler": "metro",
@@ -43,7 +51,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location.",
+          "locationAlwaysAndWhenInUsePermission": "Allow $(Glyde_S) to use your location. This app collects location data to enable delivery tracking even when the app is closed or not in use.",
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true
         }

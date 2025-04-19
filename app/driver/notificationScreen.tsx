@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView, Linking, Platform, RefreshControl, Dimensions, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, ScrollView, Linking, Platform, RefreshControl, Dimensions, BackHandler, AppState, AppStateStatus } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import * as ImagePicker from 'expo-image-picker';
@@ -101,7 +101,8 @@ const DriverDashboard = () => {
   const [podModalBlocked, setPodModalBlocked] = useState(false);
   const shipmentUnsubscribeRef = useRef<() => void>();
   const deliveriesUnsubscribeRef = useRef<() => void>();
-
+  const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [appState, setAppState] = useState(AppState.currentState);
   // Notification listener
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
@@ -113,150 +114,142 @@ const DriverDashboard = () => {
   }, []);
 
 
-  // Replace the current location tracking useEffect with:
-// useEffect(() => {
-//   let subscription: Location.LocationSubscription | null = null;
-
-//   const startLocationTracking = async () => {
-//     let { status } = await Location.requestBackgroundPermissionsAsync();
-//     if (status !== 'granted') {
-//       const foregroundPermission = await Location.requestForegroundPermissionsAsync();
-//       status = foregroundPermission.status;
-//       if (status !== 'granted') {
-//         Alert.alert('Permission denied', 'Location permission is required');
-//         setLoading(false);
-//         return;
-//       }
-//     }
-
-//     await Location.startLocationUpdatesAsync('driverLocation', {
-//       accuracy: Location.Accuracy.High,
-//       distanceInterval: 50,
-//       timeInterval: 10000,
-//       foregroundService: {
-//         notificationTitle: 'Location Tracking',
-//         notificationBody: 'Your location is being tracked for deliveries',
-//         notificationColor: '#FF6347',
-//       },
-//     });
-
-//     subscription = await Location.watchPositionAsync(
-//       {
-//         accuracy: Location.Accuracy.High,
-//         distanceInterval: 50,
-//         timeInterval: 10000,
-//       },
-//       (location) => {
-//         const newLocation = {
-//           latitude: location.coords.latitude,
-//           longitude: location.coords.longitude,
-//           speed: location.coords.speed || 0,
-//         };
-//         setCurrentLocation(newLocation);
-//         updateDriverLocation(newLocation);
-//       }
-//     );
-//   };
-
-//   startLocationTracking();
-
-//   return () => {
-//     if (subscription) {
-//       subscription.remove();
-//     }
-//     Location.stopLocationUpdatesAsync('driverLocation');
-//   };
-// }, [phoneNumber]);
-
-
 useEffect(() => {
   let isMounted = true;
   let locationSubscription: Location.LocationSubscription | null = null;
+  let appStateSubscription: any = null;
 
   const startLocationTracking = async () => {
     try {
-      // Request permissions
-      let { status } = await Location.requestBackgroundPermissionsAsync();
-      if (status !== 'granted') {
-        const foregroundPermission = await Location.requestForegroundPermissionsAsync();
-        status = foregroundPermission.status;
-        if (status !== 'granted') {
-          if (isMounted) {
-            Alert.alert(
-              'Location Permission Required',
-              'This app needs location permissions to track deliveries properly',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Open Settings', onPress: () => Linking.openSettings() }
-              ]
-            );
-          }
-          return;
-        }
+      console.log('Attempting to start location tracking...');
+      
+      // Check location services
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        Alert.alert(
+          'Location Services Disabled',
+          'Please enable device location services to continue',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        return false;
       }
 
-      // Configure location tracking
-      await Location.enableNetworkProviderAsync();
-      
-      // Start background service
+      // Request permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Location permission is required for delivery tracking',
+          [{ text: 'OK', onPress: () => Linking.openSettings() }]
+        );
+        return false;
+      }
+
+      // Start background location updates
+      console.log('Starting location updates...');
       await Location.startLocationUpdatesAsync('driverLocation', {
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.High,
         distanceInterval: 50,
-        timeInterval: 15000,
+        timeInterval: 10000,
         foregroundService: {
-          notificationTitle: 'Delivery in Progress',
-          notificationBody: 'Tracking your location for delivery updates',
+          notificationTitle: 'Delivery Tracking Active',
+          notificationBody: 'Tracking your location for deliveries',
           notificationColor: '#FF6347',
         },
         showsBackgroundLocationIndicator: true,
       });
 
-      // Watch for location updates
+      // Get initial position
+      const initialPosition = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      
+      if (isMounted) {
+        setCurrentLocation({
+          latitude: initialPosition.coords.latitude,
+          longitude: initialPosition.coords.longitude,
+          speed: initialPosition.coords.speed ?? undefined,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Set up continuous updates
       locationSubscription = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 15000,
+          accuracy: Location.Accuracy.High,
           distanceInterval: 50,
+          timeInterval: 10000,
         },
         (location) => {
           if (isMounted) {
-            const newLocation: LocationData = {
+            setCurrentLocation({
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
-              speed: location.coords.speed || undefined,
+              speed: location.coords.speed ?? undefined,
               timestamp: new Date().toISOString(),
-            };
-            setCurrentLocation(newLocation);
-            updateDriverLocation(newLocation);
-            
-            // Update ETA for current delivery if needed
-            if (selectedDelivery?.status === 'Ongoing') {
-              updateDeliveryETA(selectedDelivery);
-            }
+            });
+            updateDriverLocation({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              speed: location.coords.speed ?? undefined,
+            });
           }
         }
       );
-    } catch (error) {
+
+      console.log('Location tracking started successfully');
+      return true;
+
+    } catch (error: any) {
       console.error('Location tracking error:', error);
       if (isMounted) {
         Alert.alert(
           'Location Error',
-          'Could not start location tracking. Restart the app or check permissions.'
+          error.message || 'Failed to start location tracking'
         );
       }
+      return false;
     }
   };
 
-  startLocationTracking();
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    setAppState(nextAppState);
+    if (nextAppState === 'active' && isMounted) {
+      console.log('App became active, starting location tracking...');
+      await startLocationTracking();
+    }
+  };
+
+  // Initialize
+  const initializeLocationTracking = async () => {
+    appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    // Start immediately if app is active
+    if (appState === 'active') {
+      const success = await startLocationTracking();
+      if (!success && isMounted) {
+        setLoading(false); // Unblock UI if location fails
+      }
+    } else {
+      console.log('App not in foreground, waiting to start tracking...');
+    }
+  };
+
+  initializeLocationTracking();
 
   return () => {
     isMounted = false;
-    if (locationSubscription) {
-      locationSubscription.remove();
-    }
-    Location.stopLocationUpdatesAsync('driverLocation').catch(console.error);
+    if (appStateSubscription) appStateSubscription.remove();
+    if (locationSubscription) locationSubscription.remove();
+    
+    Location.stopLocationUpdatesAsync('driverLocation')
+      .then(() => console.log('Location tracking stopped'))
+      .catch(err => console.warn('Error stopping location:', err));
   };
-}, [phoneNumber, selectedDelivery]);
+}, []);
 
   // Handle back button when POD modal is open
   useEffect(() => {
@@ -278,7 +271,7 @@ useEffect(() => {
     return () => backHandler.remove();
   }, [showPODModal, podModalBlocked]);
 
-  const updateDriverLocation = async (location: {latitude: number, longitude: number}) => {
+  const updateDriverLocation = async (location: LocationData) => {
     if (!phoneNumber) return;
     
     try {
@@ -288,11 +281,23 @@ useEffect(() => {
       
       if (!querySnapshot.empty) {
         const driverDoc = querySnapshot.docs[0];
-        await updateDoc(doc(db, 'deliverydriver', driverDoc.id), {
+        const updateData: any = {
           latitude: location.latitude,
           longitude: location.longitude,
           lastUpdated: Timestamp.now(),
-        });
+        };
+        
+        // Only include speed if available (convert from m/s to km/h)
+        if (location.speed !== undefined) {
+          updateData.speed = Math.round(location.speed * 3.6); // Convert to km/h
+        }
+        
+        await updateDoc(doc(db, 'deliverydriver', driverDoc.id), updateData);
+        
+        // Also update ETA for current delivery if needed
+        if (selectedDelivery?.status === 'Ongoing') {
+          updateDeliveryETA(selectedDelivery);
+        }
       }
     } catch (error) {
       console.error('Error updating driver location:', error);
@@ -606,45 +611,6 @@ useEffect(() => {
     }
   };
   
-  // const updateDeliveryETA = async (delivery: Delivery) => {
-  //   if (!shipment || !currentLocation) return;
-    
-  //   try {
-  //     const response = await axios.get(
-  //       `https://maps.googleapis.com/maps/api/directions/json?origin=${currentLocation.latitude},${currentLocation.longitude}&destination=${delivery.coordinates.latitude},${delivery.coordinates.longitude}&key=${GOOGLE_MAPS_API_KEY}`
-  //     );
-  
-  //     let eta = 'N/A';
-  //     let distance = 'N/A';
-      
-  //     if (response.data.status === 'OK' && response.data.routes?.[0]?.legs?.[0]) {
-  //       eta = response.data.routes[0].legs[0].duration.text;
-  //       distance = response.data.routes[0].legs[0].distance.text;
-  //     } else {
-  //       console.warn('No route found:', response.data);
-  //     }
-  
-  //     await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id), {
-  //       eta,
-  //       distance,
-  //       statusId: 3,
-  //     });
-  
-  //     await Notifications.scheduleNotificationAsync({
-  //       content: {
-  //         title: 'Delivery Started',
-  //         body: `ETA to ${delivery.customer}: ${eta}`,
-  //       },
-  //       trigger: null,
-  //     });
-  
-  //     await loadShipments();
-  //   } catch (error: any) {
-  //     console.error('ETA update error:', error);
-  //     Alert.alert('Error', `Failed to update ETA: ${error.message}`);
-  //   }
-  // };
-
 
   const updateDeliveryETA = async (delivery: Delivery) => {
     if (!shipment || !currentLocation) return;
@@ -679,7 +645,6 @@ useEffect(() => {
           delivery.coordinates
         );
         distance = `${simpleDistance.toFixed(1)} km`;
-        eta = 'N/A';
       }
   
       await Notifications.scheduleNotificationAsync({
@@ -868,6 +833,10 @@ useEffect(() => {
   
       // 7. Update Firestore
       console.log('Updating Firestore document...');
+      if (!shipment) {
+        console.error('Shipment is null. Cannot update document.');
+        return;
+      }
       await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', selectedDelivery.deliveryNumber), {
         podImageUrl: downloadURL,
         statusId: 4,
@@ -1225,18 +1194,34 @@ useEffect(() => {
     </View>
   );
 
-  if (loading && !initialLoadComplete) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6347" />
-        <Text style={styles.loadingText}>
-          {!phoneNumber ? 'Loading profile...' : 
-           !currentLocation ? 'Getting location...' : 
-           'Loading shipments...'}
-        </Text>
-      </View>
-    );
-  }
+  // Replace your loading state check with this
+if (loading && !initialLoadComplete) {
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#FF6347" />
+      {!phoneNumber ? (
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      ) : locationPermissionStatus === 'denied' ? (
+        <Text style={styles.loadingText}>Waiting for location permission...</Text>
+      ) : !currentLocation ? (
+        <View style={styles.locationLoading}>
+          <Text style={styles.loadingText}>Getting location...</Text>
+          <Text style={styles.loadingSubtext}>
+            Make sure location services are enabled
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => setInitialLoadComplete(false)}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <Text style={styles.loadingText}>Loading shipments...</Text>
+      )}
+    </View>
+  );
+}
 
   return (
     <ScrollView 
@@ -1461,51 +1446,72 @@ useEffect(() => {
       </Modal>
 
       {/* POD Capture Modal */}
-      <Modal visible={showPODModal} transparent animationType="slide">
-        <View style={styles.podModalContainer}>
-          <Text style={styles.podTitle}>Proof of Delivery</Text>
-          <Text style={styles.podSubtitle}>
-            Delivery #{selectedDelivery?.deliveryNumber || ''}
-          </Text>
-          
-          <View style={styles.podImageContainer}>
-            {podImage ? (
-              <Image source={{ uri: podImage }} style={styles.podImage} />
-            ) : (
-              <View style={styles.podPlaceholder}>
-                <MaterialIcons name="photo-camera" size={48} color="#FF6347" />
-                <Text style={styles.podPlaceholderText}>No image captured</Text>
-              </View>
-            )}
-          </View>
-          
-          <View style={styles.podButtons}>
-            <TouchableOpacity
-              style={[styles.podButton, styles.captureButton]}
-              onPress={capturePOD}
-              disabled={uploading}
-            >
-              <Text style={styles.captureButtonText}>
-                {podImage ? 'Retake Photo' : 'Take Photo'}
-              </Text>
-            </TouchableOpacity>
-            
-            {podImage && (
-              <TouchableOpacity
-                style={[styles.podButton, styles.uploadButton]}
-                onPress={uploadPOD}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.uploadButtonText}>Upload POD</Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
+<Modal visible={showPODModal} transparent animationType="slide">
+  <View style={styles.podModalContainer}>
+    <View style={styles.podHeader}>
+      <TouchableOpacity 
+        onPress={() => {
+          if (!podModalBlocked) {
+            setShowPODModal(false);
+            setPodImage(null);
+          } else {
+            Alert.alert(
+              'POD Required',
+              'You must upload proof of delivery before exiting',
+              [{ text: 'OK' }]
+            );
+          }
+        }}
+        style={styles.backButton}
+      >
+        <MaterialIcons name="arrow-back" size={24} color="#FF6347" />
+      </TouchableOpacity>
+      <Text style={styles.podTitle}>Proof of Delivery</Text>
+      <View style={{ width: 24 }} /> {/* Spacer for alignment */}
+    </View>
+    
+    <Text style={styles.podSubtitle}>
+      Delivery #{selectedDelivery?.deliveryNumber || ''}
+    </Text>
+    
+    <View style={styles.podImageContainer}>
+      {podImage ? (
+        <Image source={{ uri: podImage }} style={styles.podImage} />
+      ) : (
+        <View style={styles.podPlaceholder}>
+          <MaterialIcons name="photo-camera" size={48} color="#FF6347" />
+          <Text style={styles.podPlaceholderText}>No image captured</Text>
         </View>
-      </Modal>
+      )}
+    </View>
+    
+    <View style={styles.podButtons}>
+      <TouchableOpacity
+        style={[styles.podButton, styles.captureButton]}
+        onPress={capturePOD}
+        disabled={uploading}
+      >
+        <Text style={styles.captureButtonText}>
+          {podImage ? 'Retake Photo' : 'Take Photo'}
+        </Text>
+      </TouchableOpacity>
+      
+      {podImage && (
+        <TouchableOpacity
+          style={[styles.podButton, styles.uploadButton]}
+          onPress={uploadPOD}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.uploadButtonText}>Upload POD</Text>
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  </View>
+</Modal>
     </ScrollView>
   );
 };
@@ -1933,11 +1939,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  podModalContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-    padding: 20,
-  },
   podTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -2157,6 +2158,41 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 4,
     fontSize: 14,
+  },
+  podHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
+  },
+  backButton: {
+    padding: 8,
+  },
+  podModalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 20,
+    alignItems: 'center',
+  },
+  locationLoading: {
+    alignItems: 'center',
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 8,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FF6347',
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

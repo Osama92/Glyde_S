@@ -12,6 +12,7 @@ import { db, storage } from '../firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Location from 'expo-location';
+import { Picker } from '@react-native-picker/picker';
 
 const { width: screenWidth } = Dimensions.get('window');
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB2eJbCGeuoY2t6mvf8SjiYk0QPrevGKi0';
@@ -50,6 +51,7 @@ type Delivery = {
   materials?: MaterialItem[];
   deliveredAt?: string;
   sequence?: number;
+  attemptCount?: number;
 };
 
 type Shipment = {
@@ -103,6 +105,9 @@ const DriverDashboard = () => {
   const deliveriesUnsubscribeRef = useRef<() => void>();
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [appState, setAppState] = useState(AppState.currentState);
+  const [cancellationReason, setCancellationReason] = useState('');
+
+
   // Notification listener
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
@@ -904,6 +909,7 @@ useEffect(() => {
       await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', deliveryToConfirm.id), {
         statusId: 5,
         cancelledAt: new Date().toISOString(),
+        cancellationReason: cancellationReason || "Driver cancelled",
       });
 
       // Send notification
@@ -923,6 +929,34 @@ useEffect(() => {
     } finally {
       setShowCancelConfirmation(false);
       setDeliveryToConfirm(null);
+    }
+  };
+
+  const reattemptDelivery = async (delivery: Delivery) => {
+    if (!shipment) return;
+
+    const maxAttempts = 3;
+  if ((delivery.attemptCount ?? 0) >= maxAttempts) {
+    Alert.alert('Limit Reached', 'Maximum reattempts reached for this delivery');
+    return;
+  }
+    
+    try {
+      await updateDoc(doc(db, 'Shipment', shipment.id, 'deliveries', delivery.id), {
+        statusId: 3, // Set back to Ongoing
+        cancelledAt: deleteField(), // Remove cancellation timestamp
+        cancellationReason: deleteField(), // Remove cancellation reason
+        attemptCount: (delivery.attemptCount || 0) + 1,
+      });
+  
+      await loadShipments();
+      Alert.alert(
+        'Delivery Reattempt', 
+        `Delivery to ${delivery.customer} has been marked for reattempt`
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reattempt delivery');
+      console.error(error);
     }
   };
 
@@ -952,6 +986,17 @@ useEffect(() => {
         >
           <MaterialIcons name="photo" size={20} color="#2196F3" />
           <Text style={styles.deliveredButtonText}>View POD</Text>
+        </TouchableOpacity>
+      );
+    }
+    if (delivery.status === 'Cancelled') {
+      return (
+        <TouchableOpacity
+          style={styles.reattemptButton}
+          onPress={() => reattemptDelivery(delivery)}
+        >
+          <MaterialIcons name="refresh" size={16} color="white" />
+          <Text style={styles.reattemptButtonText}>Reattempt</Text>
         </TouchableOpacity>
       );
     }
@@ -1013,6 +1058,7 @@ useEffect(() => {
           isSmallScreen && styles.deliveryActionButtonsSmall
         ]}>
           {delivery.status === 'Ongoing' && (
+            <>
             <TouchableOpacity 
               style={[
                 styles.startDeliveryButton,
@@ -1025,6 +1071,22 @@ useEffect(() => {
                 <Text style={styles.startDeliveryButtonText}>Start</Text>
               )}
             </TouchableOpacity>
+            <TouchableOpacity
+            style={[
+              styles.cancelDeliveryButton,
+              isSmallScreen && styles.cancelDeliveryButtonSmall
+            ]}
+            onPress={() => {
+              setDeliveryToConfirm(delivery);
+              setShowCancelConfirmation(true);
+            }}
+          >
+            <MaterialIcons name="close" size={16} color="white" />
+            {!isSmallScreen && (
+              <Text style={styles.cancelDeliveryButtonText}>Cancel</Text>
+            )}
+          </TouchableOpacity>
+          </>
           )}
           
           <TouchableOpacity 
@@ -1418,33 +1480,59 @@ if (loading && !initialLoadComplete) {
       </Modal>
 
       {/* Cancel Confirmation Modal */}
-      <Modal visible={showCancelConfirmation} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Cancel Delivery</Text>
-            <Text style={styles.modalText}>
-              Are you sure you want to cancel delivery to {deliveryToConfirm?.customer}?
-            </Text>
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.declineButton]}
-                onPress={() => setShowCancelConfirmation(false)}
-              >
-                <Text style={styles.declineButtonText}>Go Back</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={cancelDelivery}
-              >
-                <Text style={styles.cancelButtonText}>Confirm Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Cancel Confirmation Modal */}
+<Modal visible={showCancelConfirmation} transparent animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContainer}>
+      <Text style={styles.modalTitle}>Cancel Delivery</Text>
+      <Text style={styles.modalText}>
+        Are you sure you want to cancel delivery to {deliveryToConfirm?.customer}?
+      </Text>
+      
+      {/* Add the Picker here */}
+      <Text style={styles.pickerLabel}>Select cancellation reason:</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={cancellationReason}
+          onValueChange={(itemValue) => setCancellationReason(itemValue)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select reason..." value="" />
+          <Picker.Item label="Customer not available" value="Customer not available" />
+          <Picker.Item label="Address issue" value="Address issue" />
+          <Picker.Item label="Vehicle problem" value="Vehicle problem" />
+          <Picker.Item label="Other" value="Other" />
+        </Picker>
+      </View>
 
+      <View style={styles.modalButtons}>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.declineButton]}
+          onPress={() => {
+            setCancellationReason(''); // Reset reason when going back
+            setShowCancelConfirmation(false);
+          }}
+        >
+          <Text style={styles.declineButtonText}>Go Back</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.modalButton, styles.cancelButton]}
+          onPress={() => {
+            if (!cancellationReason) {
+              Alert.alert('Reason Required', 'Please select a cancellation reason');
+              return;
+            }
+            cancelDelivery();
+          }}
+          disabled={!cancellationReason}
+        >
+          <Text style={styles.cancelButtonText}>Confirm Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
       {/* POD Capture Modal */}
 <Modal visible={showPODModal} transparent animationType="slide">
   <View style={styles.podModalContainer}>
@@ -1467,16 +1555,27 @@ if (loading && !initialLoadComplete) {
         <MaterialIcons name="arrow-back" size={24} color="#FF6347" />
       </TouchableOpacity>
       <Text style={styles.podTitle}>Proof of Delivery</Text>
-      <View style={{ width: 24 }} /> {/* Spacer for alignment */}
+      <View style={{ width: 24 }} /> {/* Spacer */}
     </View>
     
     <Text style={styles.podSubtitle}>
-      Delivery #{selectedDelivery?.deliveryNumber || ''}
+      Delivery #{selectedDelivery?.deliveryNumber || ''} - {selectedDelivery?.customer || ''}
     </Text>
     
     <View style={styles.podImageContainer}>
-      {podImage ? (
-        <Image source={{ uri: podImage }} style={styles.podImage} />
+      {selectedDelivery?.podImageUrl ? (
+        <Image 
+          source={{ uri: selectedDelivery.podImageUrl }} 
+          style={styles.podImage}
+          resizeMode="contain"
+          onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+        />
+      ) : podImage ? (
+        <Image 
+          source={{ uri: podImage }} 
+          style={styles.podImage}
+          resizeMode="contain"
+        />
       ) : (
         <View style={styles.podPlaceholder}>
           <MaterialIcons name="photo-camera" size={48} color="#FF6347" />
@@ -1486,28 +1585,37 @@ if (loading && !initialLoadComplete) {
     </View>
     
     <View style={styles.podButtons}>
-      <TouchableOpacity
-        style={[styles.podButton, styles.captureButton]}
-        onPress={capturePOD}
-        disabled={uploading}
-      >
-        <Text style={styles.captureButtonText}>
-          {podImage ? 'Retake Photo' : 'Take Photo'}
-        </Text>
-      </TouchableOpacity>
-      
-      {podImage && (
-        <TouchableOpacity
-          style={[styles.podButton, styles.uploadButton]}
-          onPress={uploadPOD}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.uploadButtonText}>Upload POD</Text>
+      {!selectedDelivery?.podImageUrl ? (
+        <>
+          <TouchableOpacity
+            style={[styles.podButton, styles.captureButton]}
+            onPress={capturePOD}
+            disabled={uploading}
+          >
+            <Text style={styles.captureButtonText}>
+              {podImage ? 'Retake Photo' : 'Take Photo'}
+            </Text>
+          </TouchableOpacity>
+          
+          {podImage && (
+            <TouchableOpacity
+              style={[styles.podButton, styles.uploadButton]}
+              onPress={uploadPOD}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.uploadButtonText}>Upload POD</Text>
+              )}
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </>
+      ) : (
+        <View style={styles.uploadCompleteContainer}>
+          <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+          <Text style={styles.uploadCompleteText}>POD Uploaded Successfully</Text>
+        </View>
       )}
     </View>
   </View>
@@ -1573,6 +1681,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     marginRight: 6,
+  },
+  modalNote: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    fontStyle: 'italic',
   },
   startDeliveryButtonText: {
     color: 'white',
@@ -1951,14 +2065,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  podImageContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
   podImage: {
     width: '100%',
     height: '100%',
@@ -2143,22 +2249,6 @@ const styles = StyleSheet.create({
     borderLeftColor: '#F44336',
     opacity: 0.7,
   },
-  reattemptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF9800',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 10,
-    justifyContent: 'center'
-  },
-  reattemptButtonText: {
-    color: 'white',
-    fontWeight: '500',
-    marginLeft: 4,
-    fontSize: 14,
-  },
   podHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2169,12 +2259,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
-  podModalContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-    padding: 20,
-    alignItems: 'center',
-  },
+ 
   locationLoading: {
     alignItems: 'center',
   },
@@ -2193,6 +2278,86 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  podModalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 20,
+  },
+  podImageContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+    overflow: 'hidden', // Add this to ensure image stays within bounds
+  },
+  uploadCompleteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+    marginTop: 10,
+    flex: 1,
+  },
+  uploadCompleteText: {
+    color: '#4CAF50',
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  cancelDeliveryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F44336',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  cancelDeliveryButtonSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginRight: 6,
+  },
+  cancelDeliveryButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  reattemptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    justifyContent: 'center'
+  },
+  reattemptButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  picker: {
+    width: '100%',
+    backgroundColor: '#f9f9f9',
+  },
+  pickerLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
 });
 
